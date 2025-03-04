@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,8 @@ import { CheckCircle, ArrowRight, Star, Shield, Zap, Clock } from "lucide-react"
 export default function Index() {
   const navigate = useNavigate();
   const [discountApplied, setDiscountApplied] = useState(false);
-  
+  const [showCheckout, setShowCheckout] = useState(false);
+
   // Pricing state
   const regularPrice = 97;
   const discountedPrice = 67;
@@ -198,7 +198,7 @@ export default function Index() {
                   <Badge className="mt-2 bg-green-500 hover:bg-green-600">Save ${regularPrice - discountedPrice}</Badge>
                 )}
                 <Button 
-                  onClick={() => navigate("/register")}
+                  onClick={() => setShowCheckout(true)}
                   className="mt-6 w-full bg-brand-blue hover:bg-brand-blue/90"
                   size="lg"
                 >
@@ -316,7 +316,7 @@ export default function Index() {
             Join hundreds of professionals who are already getting better results with our prompt library.
           </p>
           <Button 
-            onClick={() => navigate("/register")}
+            onClick={() => setShowCheckout(true)}
             size="lg" 
             variant="secondary"
             className="bg-white text-brand-blue hover:bg-white/90"
@@ -330,6 +330,28 @@ export default function Index() {
       </section>
       
       <Footer />
+
+      {/* Checkout Dialog */}
+      {showCheckout && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 relative">
+            <button 
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowCheckout(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">
+                <path d="M18 6 6 18"/>
+                <path d="m6 6 12 12"/>
+              </svg>
+            </button>
+            <CheckoutOptions 
+              priceId={process.env.STRIPE_PRICE_ID || "price_1234567890"}
+              amount={currentPrice}
+              onClose={() => setShowCheckout(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
