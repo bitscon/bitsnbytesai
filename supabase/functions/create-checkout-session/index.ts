@@ -15,9 +15,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { price_id, user_id, success_url, cancel_url } = await req.json();
+    const { price_id, email, success_url, cancel_url } = await req.json();
 
-    if (!price_id || !user_id || !success_url || !cancel_url) {
+    if (!price_id || !email || !success_url || !cancel_url) {
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         {
@@ -39,9 +39,9 @@ const handler = async (req: Request): Promise<Response> => {
       mode: "payment",
       success_url: `${success_url}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancel_url,
-      client_reference_id: user_id,
+      customer_email: email,
       metadata: {
-        user_id: user_id,
+        email: email,
       },
     });
 

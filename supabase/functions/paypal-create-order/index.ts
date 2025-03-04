@@ -29,11 +29,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
   
   try {
-    const { amount, user_id } = await req.json();
+    const { amount, email } = await req.json();
     
-    if (!amount || !user_id) {
+    if (!amount || !email) {
       return new Response(
-        JSON.stringify({ error: "Amount and user ID are required" }),
+        JSON.stringify({ error: "Amount and email are required" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
               currency_code: "USD",
               value: amount.toString(),
             },
-            custom_id: user_id,
+            custom_id: email,
           },
         ],
         application_context: {

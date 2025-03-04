@@ -1,11 +1,12 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface CheckoutOptionsProps {
   price: number;
@@ -13,20 +14,26 @@ interface CheckoutOptionsProps {
 }
 
 export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoadingStripe, setIsLoadingStripe] = useState(false);
   const [isLoadingPayPal, setIsLoadingPayPal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+
+  const validateEmail = (email: string): boolean => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValid = re.test(email);
+    if (!isValid) {
+      setEmailError("Please enter a valid email address");
+    } else {
+      setEmailError("");
+    }
+    return isValid;
+  };
 
   const handleStripeCheckout = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to make a purchase.",
-        variant: "destructive",
-      });
-      navigate("/login");
+    if (!validateEmail(email)) {
       return;
     }
 
@@ -36,7 +43,7 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
         body: {
           price_id: "price_1OtQhgFCNu0wSsHhBRs2ZWZy", // Replace with your actual Stripe price ID
-          user_id: user.id,
+          email: email,
           success_url: `${window.location.origin}/checkout/success`,
           cancel_url: window.location.origin,
         },
@@ -60,13 +67,7 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
   };
 
   const handlePayPalCheckout = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to make a purchase.",
-        variant: "destructive",
-      });
-      navigate("/login");
+    if (!validateEmail(email)) {
       return;
     }
 
@@ -77,7 +78,7 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
       const { data, error } = await supabase.functions.invoke("paypal-create-order", {
         body: {
           amount: price,
-          user_id: user.id,
+          email: email,
         },
       });
 
@@ -85,9 +86,10 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
         throw new Error(error?.message || "Failed to create PayPal order");
       }
 
-      // Store the order ID in session storage for verification
+      // Store the order ID and email in session storage for verification
       sessionStorage.setItem("paypal_order_id", data.id);
-
+      sessionStorage.setItem("customer_email", email);
+      
       // Find the approve URL
       const approveUrl = data.links.find((link: any) => link.rel === "approve").href;
       
@@ -106,11 +108,24 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
 
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="email">Email Address</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={emailError ? "border-red-500" : ""}
+        />
+        {emailError && <p className="text-sm text-red-500">{emailError}</p>}
+      </div>
+      
       <Button
         className="w-full"
         size="lg"
         onClick={handleStripeCheckout}
-        disabled={isLoadingStripe}
+        disabled={isLoadingStripe || !email}
       >
         {isLoadingStripe ? (
           <>
@@ -130,7 +145,7 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
         className="w-full"
         size="lg"
         onClick={handlePayPalCheckout}
-        disabled={isLoadingPayPal}
+        disabled={isLoadingPayPal || !email}
       >
         {isLoadingPayPal ? (
           <>

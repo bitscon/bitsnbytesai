@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
+import { createUserAccount } from "../_shared/create-user.ts";
 
 const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID") || "";
 const PAYPAL_CLIENT_SECRET = Deno.env.get("PAYPAL_CLIENT_SECRET") || "";
@@ -30,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
   
   try {
-    const { order_id } = await req.json();
+    const { order_id, customer_email } = await req.json();
     
     if (!order_id) {
       return new Response(
@@ -69,18 +70,46 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    // Get the user ID from the custom_id field
-    const userId = captureData.purchase_units[0]?.custom_id;
+    // Get the customer email from the custom_id field or from the provided customer_email
+    let customerEmail = customer_email;
+    if (!customerEmail) {
+      customerEmail = captureData.purchase_units[0]?.custom_id;
+    }
+    
     const amount = captureData.purchase_units[0]?.payments?.captures[0]?.amount?.value;
     
-    if (!userId) {
+    if (!customerEmail) {
       return new Response(
-        JSON.stringify({ error: "User ID not found in order" }),
+        JSON.stringify({ error: "Customer email not found in order" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+    
+    // Check if user exists
+    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(customerEmail);
+    
+    let userId;
+    let isNewUser = false;
+
+    if (existingUser?.user) {
+      userId = existingUser.user.id;
+    } else {
+      // Create a new user account
+      const password = generateRandomPassword();
+      const { user, error: userError } = await createUserAccount(customerEmail, password);
+      
+      if (userError || !user) {
+        throw new Error(userError?.message || "Failed to create user account");
+      }
+      
+      userId = user.id;
+      isNewUser = true;
+
+      // Send welcome email with login credentials
+      await sendWelcomeEmail(customerEmail, password);
     }
     
     // Record the purchase in the database
@@ -111,7 +140,9 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        purchase: data 
+        purchase: data,
+        isNewUser,
+        email: customerEmail
       }),
       {
         status: 200,
@@ -126,5 +157,44 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 };
+
+function generateRandomPassword(): string {
+  const length = 12;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  return password;
+}
+
+async function sendWelcomeEmail(email: string, password: string): Promise<void> {
+  // In a real implementation, you would use a service like SendGrid, Resend, etc.
+  console.log(`Sending welcome email to ${email} with password ${password}`);
+  
+  // Simulate sending an email - this is a placeholder
+  // In a production app, you would need to implement proper email sending
+  console.log("Welcome email content:");
+  console.log(`
+    Subject: Your AI Prompts Library Account is Ready
+    
+    Hello and welcome to AI Prompts Library!
+    
+    Your account has been created successfully. Here are your login details:
+    
+    Email: ${email}
+    Password: ${password}
+    
+    Please login at: ${Deno.env.get("APP_URL") || "https://your-app-url.com"}/login
+    
+    For security reasons, we recommend changing your password after your first login.
+    
+    Thank you for your purchase. You now have full access to our premium AI prompts.
+    
+    Best regards,
+    The AI Prompts Library Team
+  `);
+}
 
 serve(handler);

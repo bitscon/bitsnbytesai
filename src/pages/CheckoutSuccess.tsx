@@ -1,18 +1,18 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function CheckoutSuccess() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
-  const { user } = useAuth();
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -23,16 +23,7 @@ export default function CheckoutSuccess() {
         const queryParams = new URLSearchParams(location.search);
         const sessionId = queryParams.get("session_id");
         const paypalOrderId = sessionStorage.getItem("paypal_order_id");
-        
-        if (!user) {
-          toast({
-            title: "Authentication required",
-            description: "Please log in to verify your purchase.",
-            variant: "destructive",
-          });
-          navigate("/login");
-          return;
-        }
+        const storedEmail = sessionStorage.getItem("customer_email");
         
         if (sessionId) {
           // Verify Stripe payment
@@ -44,11 +35,16 @@ export default function CheckoutSuccess() {
             throw new Error(error?.message || data?.message || "Payment verification failed");
           }
           
+          setIsNewUser(data.isNewUser || false);
+          setCustomerEmail(data.email || "");
           setIsVerified(true);
         } else if (paypalOrderId) {
           // Verify PayPal payment
           const { data, error } = await supabase.functions.invoke("paypal-capture-order", {
-            body: { order_id: paypalOrderId },
+            body: { 
+              order_id: paypalOrderId,
+              customer_email: storedEmail
+            },
           });
           
           if (error || !data.success) {
@@ -57,6 +53,10 @@ export default function CheckoutSuccess() {
           
           // Clear the order ID from session storage
           sessionStorage.removeItem("paypal_order_id");
+          sessionStorage.removeItem("customer_email");
+          
+          setIsNewUser(data.isNewUser || false);
+          setCustomerEmail(data.email || "");
           setIsVerified(true);
         } else {
           toast({
@@ -80,7 +80,7 @@ export default function CheckoutSuccess() {
     };
     
     verifyPayment();
-  }, [user, location.search, navigate, toast]);
+  }, [location.search, navigate, toast]);
   
   if (isVerifying) {
     return (
@@ -107,15 +107,42 @@ export default function CheckoutSuccess() {
                 </div>
               </div>
               <h1 className="text-2xl font-bold mb-2">Payment Successful!</h1>
-              <p className="text-muted-foreground mb-6">
-                Thank you for your purchase. You now have access to our full library of AI prompts.
-              </p>
-              <Button 
-                onClick={() => navigate("/dashboard")} 
-                className="w-full bg-brand-blue hover:bg-brand-blue/90"
-              >
-                Access Your Prompts <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              
+              {isNewUser ? (
+                <div>
+                  <p className="text-muted-foreground mb-4">
+                    Thank you for your purchase! We've created an account for you.
+                  </p>
+                  <div className="bg-blue-50 p-4 rounded-md mb-6">
+                    <div className="flex items-center mb-2">
+                      <Mail className="h-5 w-5 text-blue-500 mr-2" />
+                      <h3 className="font-medium text-blue-700">Check your email</h3>
+                    </div>
+                    <p className="text-sm text-blue-600">
+                      We've sent your login details to <strong>{customerEmail}</strong>. 
+                      Check your inbox to access your new account.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => navigate("/login")} 
+                    className="w-full bg-brand-blue hover:bg-brand-blue/90 mb-3"
+                  >
+                    Go to Login
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-muted-foreground mb-6">
+                    Thank you for your purchase. You now have access to our full library of AI prompts.
+                  </p>
+                  <Button 
+                    onClick={() => navigate("/dashboard")} 
+                    className="w-full bg-brand-blue hover:bg-brand-blue/90"
+                  >
+                    Access Your Prompts <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center">
