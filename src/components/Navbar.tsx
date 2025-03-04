@@ -3,12 +3,14 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -86,19 +88,40 @@ export function Navbar() {
                 <Sun className="h-5 w-5" />
               )}
             </Button>
-            <Button 
-              onClick={() => navigate("/login")}
-              variant="outline"
-              className="ml-2"
-            >
-              Sign In
-            </Button>
-            <Button 
-              onClick={() => navigate("/register")}
-              className="ml-2 bg-brand-blue hover:bg-brand-blue/90"
-            >
-              Get Started
-            </Button>
+            
+            {user ? (
+              <>
+                <Button 
+                  onClick={() => navigate("/dashboard")}
+                  variant="outline"
+                  className="ml-2"
+                >
+                  Dashboard
+                </Button>
+                <Button 
+                  onClick={() => signOut()}
+                  className="ml-2 bg-brand-blue hover:bg-brand-blue/90"
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  onClick={() => navigate("/login")}
+                  variant="outline"
+                  className="ml-2"
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  onClick={() => navigate("/register")}
+                  className="ml-2 bg-brand-blue hover:bg-brand-blue/90"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </nav>
 
           {/* Mobile menu button */}
@@ -157,25 +180,51 @@ export function Navbar() {
               FAQ
             </a>
             <div className="pt-2 flex flex-col space-y-2">
-              <Button 
-                onClick={() => {
-                  navigate("/login");
-                  setIsMobileMenuOpen(false);
-                }}
-                variant="outline"
-                className="w-full"
-              >
-                Sign In
-              </Button>
-              <Button 
-                onClick={() => {
-                  navigate("/register");
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full bg-brand-blue hover:bg-brand-blue/90"
-              >
-                Get Started
-              </Button>
+              {user ? (
+                <>
+                  <Button 
+                    onClick={() => {
+                      navigate("/dashboard");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Dashboard
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      signOut();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full bg-brand-blue hover:bg-brand-blue/90"
+                  >
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    onClick={() => {
+                      navigate("/login");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Sign In
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      navigate("/register");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full bg-brand-blue hover:bg-brand-blue/90"
+                  >
+                    Get Started
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

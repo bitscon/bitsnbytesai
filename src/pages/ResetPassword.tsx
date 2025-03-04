@@ -1,22 +1,27 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 
-export default function Register() {
+export default function ResetPassword() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { signUp, isLoading } = useAuth();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const { updatePassword, isLoading } = useAuth();
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check if we have a hash parameter in the URL, which means this is a valid reset
+    const hash = window.location.hash;
+    if (!hash || !hash.includes('type=recovery')) {
+      // If there's no recovery token, redirect to forgot password
+      navigate('/forgot-password');
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,20 +32,15 @@ export default function Register() {
       return;
     }
     
-    const { error } = await signUp(email, password, name);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    
+    const { error } = await updatePassword(password);
     
     if (error) {
       setError(error.message);
-      toast({
-        title: "Error creating account",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
-      });
     }
   };
 
@@ -54,9 +54,9 @@ export default function Register() {
         
         <Card className="w-full animate-fade-in">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Create a new password</CardTitle>
             <CardDescription className="text-center">
-              Sign up to access premium AI prompts
+              Your new password must be different from previously used passwords
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -67,28 +67,7 @@ export default function Register() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">New Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -97,30 +76,24 @@ export default function Register() {
                   required
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="terms" required />
-                <label
-                  htmlFor="terms"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  I agree to the{" "}
-                  <a href="#" className="text-primary hover:underline">
-                    terms of service
-                  </a>{" "}
-                  and{" "}
-                  <a href="#" className="text-primary hover:underline">
-                    privacy policy
-                  </a>
-                </label>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
               </div>
               <Button type="submit" className="w-full bg-brand-blue hover:bg-brand-blue/90" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create account"}
+                {isLoading ? "Updating..." : "Update password"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
+              Remember your old password?{" "}
               <a
                 onClick={() => navigate("/login")}
                 className="text-primary hover:underline cursor-pointer"
