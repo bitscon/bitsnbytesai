@@ -5,14 +5,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
-import { CheckCircle, ArrowRight, Mail } from "lucide-react";
+import { CheckCircle, ArrowRight, Mail, Loader2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function CheckoutSuccess() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -25,21 +27,36 @@ export default function CheckoutSuccess() {
         const paypalOrderId = sessionStorage.getItem("paypal_order_id");
         const storedEmail = sessionStorage.getItem("customer_email");
         
+        console.log("Verifying payment:", { 
+          sessionId, 
+          paypalOrderId, 
+          storedEmail 
+        });
+        
         if (sessionId) {
           // Verify Stripe payment
+          console.log("Verifying Stripe payment with session ID:", sessionId);
           const { data, error } = await supabase.functions.invoke("verify-payment", {
             body: { session_id: sessionId },
           });
           
-          if (error || !data.success) {
-            throw new Error(error?.message || data?.message || "Payment verification failed");
+          if (error) {
+            console.error("Error verifying Stripe payment:", error);
+            throw new Error(error.message);
           }
           
+          if (!data?.success) {
+            console.error("Stripe payment verification failed:", data);
+            throw new Error(data?.message || "Payment verification failed");
+          }
+          
+          console.log("Stripe payment verified:", data);
           setIsNewUser(data.isNewUser || false);
           setCustomerEmail(data.email || "");
           setIsVerified(true);
         } else if (paypalOrderId) {
           // Verify PayPal payment
+          console.log("Verifying PayPal payment with order ID:", paypalOrderId);
           const { data, error } = await supabase.functions.invoke("paypal-capture-order", {
             body: { 
               order_id: paypalOrderId,
@@ -47,33 +64,42 @@ export default function CheckoutSuccess() {
             },
           });
           
-          if (error || !data.success) {
-            throw new Error(error?.message || data?.message || "PayPal payment verification failed");
+          if (error) {
+            console.error("Error verifying PayPal payment:", error);
+            throw new Error(error.message);
+          }
+          
+          if (!data?.success) {
+            console.error("PayPal payment verification failed:", data);
+            throw new Error(data?.message || "PayPal payment verification failed");
           }
           
           // Clear the order ID from session storage
           sessionStorage.removeItem("paypal_order_id");
           sessionStorage.removeItem("customer_email");
           
+          console.log("PayPal payment verified:", data);
           setIsNewUser(data.isNewUser || false);
           setCustomerEmail(data.email || "");
           setIsVerified(true);
         } else {
+          setErrorMessage("No payment information was found to verify.");
+          console.error("No payment information found");
           toast({
             title: "No payment information",
             description: "No payment information was found to verify.",
             variant: "destructive",
           });
-          navigate("/");
+          setTimeout(() => navigate("/"), 3000);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error verifying payment:", error);
+        setErrorMessage(error.message || "Payment verification failed");
         toast({
           title: "Payment verification failed",
-          description: "There was an error verifying your payment. Please contact support.",
+          description: error.message || "There was an error verifying your payment. Please contact support.",
           variant: "destructive",
         });
-        navigate("/");
       } finally {
         setIsVerifying(false);
       }
@@ -88,7 +114,7 @@ export default function CheckoutSuccess() {
         <Navbar />
         <div className="container mx-auto px-4 pt-24 pb-16 flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold mb-4">Verifying your payment...</h1>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </div>
     );
@@ -146,11 +172,14 @@ export default function CheckoutSuccess() {
             </div>
           ) : (
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-2">Payment Verification Failed</h1>
-              <p className="text-muted-foreground mb-6">
-                We couldn't verify your payment. Please contact our support team for assistance.
-              </p>
-              <Button variant="outline" onClick={() => navigate("/")}>
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Payment Verification Failed</AlertTitle>
+                <AlertDescription>
+                  {errorMessage || "We couldn't verify your payment. Please contact our support team for assistance."}
+                </AlertDescription>
+              </Alert>
+              <Button variant="outline" onClick={() => navigate("/")} className="mt-4">
                 Return to Home
               </Button>
             </div>

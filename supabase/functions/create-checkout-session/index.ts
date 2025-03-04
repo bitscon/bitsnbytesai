@@ -27,6 +27,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log(`Creating checkout session for email: ${email}`);
+
     // Create a checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -44,6 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
         email: email,
       },
     });
+
+    console.log(`Checkout session created: ${session.id}`);
 
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,

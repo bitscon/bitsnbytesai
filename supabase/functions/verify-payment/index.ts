@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Stripe } from "https://esm.sh/stripe@12.5.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
-import { createUserAccount } from "../_shared/create-user.ts";
+import { createUserAccount, generateRandomPassword, sendWelcomeEmail } from "../_shared/create-user.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2023-10-16",
@@ -28,10 +28,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log(`Verifying payment for session: ${session_id}`);
+
     // Retrieve the checkout session
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
     if (session.payment_status !== "paid") {
+      console.log(`Payment not completed for session: ${session_id}, status: ${session.payment_status}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -47,6 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
     const customerEmail = session.customer_email || session.metadata?.email;
 
     if (!customerEmail) {
+      console.error("Customer email not found in session");
       return new Response(
         JSON.stringify({ error: "Customer email not found in session" }),
         {
@@ -56,6 +60,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log(`Verified paid session for email: ${customerEmail}`);
+
     // Check if user exists
     const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(customerEmail);
     
@@ -63,13 +69,16 @@ const handler = async (req: Request): Promise<Response> => {
     let isNewUser = false;
 
     if (existingUser?.user) {
+      console.log(`User already exists for email: ${customerEmail}`);
       userId = existingUser.user.id;
     } else {
       // Create a new user account
+      console.log(`Creating new user for email: ${customerEmail}`);
       const password = generateRandomPassword();
       const { user, error: userError } = await createUserAccount(customerEmail, password);
       
       if (userError || !user) {
+        console.error(`Failed to create user account: ${userError?.message}`);
         throw new Error(userError?.message || "Failed to create user account");
       }
       
@@ -78,9 +87,11 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Send welcome email with login credentials
       await sendWelcomeEmail(customerEmail, password);
+      console.log(`Welcome email sent to: ${customerEmail}`);
     }
 
     // Record the purchase in the database
+    console.log(`Recording purchase for user: ${userId}`);
     const { data, error } = await supabaseAdmin
       .from("user_purchases")
       .insert({
@@ -105,6 +116,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log(`Purchase recorded successfully: ${data.id}`);
+
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -125,44 +138,5 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 };
-
-function generateRandomPassword(): string {
-  const length = 12;
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset[randomIndex];
-  }
-  return password;
-}
-
-async function sendWelcomeEmail(email: string, password: string): Promise<void> {
-  // In a real implementation, you would use a service like SendGrid, Resend, etc.
-  console.log(`Sending welcome email to ${email} with password ${password}`);
-  
-  // Simulate sending an email - this is a placeholder
-  // In a production app, you would need to implement proper email sending
-  console.log("Welcome email content:");
-  console.log(`
-    Subject: Your AI Prompts Library Account is Ready
-    
-    Hello and welcome to AI Prompts Library!
-    
-    Your account has been created successfully. Here are your login details:
-    
-    Email: ${email}
-    Password: ${password}
-    
-    Please login at: ${Deno.env.get("APP_URL") || "https://your-app-url.com"}/login
-    
-    For security reasons, we recommend changing your password after your first login.
-    
-    Thank you for your purchase. You now have full access to our premium AI prompts.
-    
-    Best regards,
-    The AI Prompts Library Team
-  `);
-}
 
 serve(handler);
