@@ -4,10 +4,7 @@ import { Stripe } from "https://esm.sh/stripe@12.5.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { createUserAccount, generateRandomPassword, sendWelcomeEmail } from "../_shared/create-user.ts";
-
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2023-10-16",
-});
+import { getApiSetting } from "../_shared/api-settings.ts";
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -29,6 +26,25 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Verifying payment for session: ${session_id}`);
+    
+    // Get Stripe secret key from database
+    const stripeSecretKey = await getApiSetting("STRIPE_SECRET_KEY");
+    
+    if (!stripeSecretKey) {
+      console.error("Stripe secret key not found in database or environment");
+      return new Response(
+        JSON.stringify({ error: "Payment processing is not configured properly" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+    
+    // Initialize Stripe with the retrieved key
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2023-10-16",
+    });
 
     // Retrieve the checkout session
     const session = await stripe.checkout.sessions.retrieve(session_id);

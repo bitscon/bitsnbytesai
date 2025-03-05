@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,54 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
   const { toast } = useToast();
   const [isLoadingStripe, setIsLoadingStripe] = useState(false);
   const [isLoadingPayPal, setIsLoadingPayPal] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [paymentError, setPaymentError] = useState("");
+  const [stripePriceId, setStripePriceId] = useState("");
+
+  useEffect(() => {
+    // Fetch the Stripe price ID from API settings
+    const fetchStripePriceId = async () => {
+      try {
+        setIsInitializing(true);
+        const { data, error } = await supabase.functions.invoke("admin-api-settings", {
+          method: "GET",
+        });
+
+        if (error) {
+          console.error("Error fetching API settings:", error);
+          toast({
+            title: "Error",
+            description: "Unable to initialize checkout. Please try again later.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const settings = data.settings || [];
+        const priceIdSetting = settings.find((s: any) => s.key_name === "STRIPE_PRICE_ID");
+        
+        if (priceIdSetting && priceIdSetting.has_value) {
+          // If we have a price ID configured, use it
+          // Note: For public access we don't show the actual value, just that it exists
+          // The edge function will use the actual value from the database
+          setStripePriceId("configured");
+        } else {
+          // Fallback to hardcoded price ID
+          setStripePriceId("price_1OtQhgFCNu0wSsHhBRs2ZWZy");
+        }
+      } catch (error) {
+        console.error("Error initializing checkout:", error);
+        // Fallback to hardcoded price ID
+        setStripePriceId("price_1OtQhgFCNu0wSsHhBRs2ZWZy");
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    fetchStripePriceId();
+  }, [toast]);
 
   const validateEmail = (email: string): boolean => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,7 +95,7 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
       console.log("Initiating Stripe checkout for email:", email);
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
         body: {
-          price_id: "price_1OtQhgFCNu0wSsHhBRs2ZWZy", // Replace with your actual Stripe price ID
+          price_id: stripePriceId === "configured" ? "use_db_value" : stripePriceId,
           email: email,
           success_url: `${window.location.origin}/checkout/success`,
           cancel_url: window.location.origin,
@@ -140,6 +185,15 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
     }
   };
 
+  if (isInitializing) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Initializing checkout...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {paymentError && (
@@ -167,7 +221,7 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
         className="w-full"
         size="lg"
         onClick={handleStripeCheckout}
-        disabled={isLoadingStripe || isLoadingPayPal || !email}
+        disabled={isLoadingStripe || isLoadingPayPal || !email || !stripePriceId}
       >
         {isLoadingStripe ? (
           <>

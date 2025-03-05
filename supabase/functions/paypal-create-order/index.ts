@@ -1,15 +1,12 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { getApiSetting } from "../_shared/api-settings.ts";
 
-const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID") || "";
-const PAYPAL_CLIENT_SECRET = Deno.env.get("PAYPAL_CLIENT_SECRET") || "";
-const PAYPAL_BASE_URL = Deno.env.get("PAYPAL_BASE_URL") || "https://api-m.sandbox.paypal.com";
-
-const getAccessToken = async (): Promise<string> => {
-  const auth = btoa(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`);
+const getAccessToken = async (clientId: string, clientSecret: string, baseUrl: string): Promise<string> => {
+  const auth = btoa(`${clientId}:${clientSecret}`);
   
-  const response = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
+  const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -41,9 +38,26 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    const accessToken = await getAccessToken();
+    // Get PayPal settings from database
+    const clientId = await getApiSetting("PAYPAL_CLIENT_ID");
+    const clientSecret = await getApiSetting("PAYPAL_CLIENT_SECRET");
+    const baseUrl = await getApiSetting("PAYPAL_BASE_URL");
     
-    const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders`, {
+    if (!clientId || !clientSecret) {
+      console.error("PayPal credentials not found in database or environment");
+      return new Response(
+        JSON.stringify({ error: "Payment processing is not configured properly" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+    
+    // Get PayPal access token
+    const accessToken = await getAccessToken(clientId, clientSecret, baseUrl);
+    
+    const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

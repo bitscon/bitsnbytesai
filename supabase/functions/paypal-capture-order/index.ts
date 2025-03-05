@@ -3,15 +3,22 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { createUserAccount, generateRandomPassword, sendWelcomeEmail } from "../_shared/create-user.ts";
-
-const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID") || "";
-const PAYPAL_CLIENT_SECRET = Deno.env.get("PAYPAL_CLIENT_SECRET") || "";
-const PAYPAL_BASE_URL = Deno.env.get("PAYPAL_BASE_URL") || "https://api-m.sandbox.paypal.com";
+import { getApiSetting } from "../_shared/api-settings.ts";
 
 const getAccessToken = async (): Promise<string> => {
-  const auth = btoa(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`);
+  // Get PayPal settings from database
+  const clientId = await getApiSetting("PAYPAL_CLIENT_ID");
+  const clientSecret = await getApiSetting("PAYPAL_CLIENT_SECRET");
+  const baseUrl = await getApiSetting("PAYPAL_BASE_URL");
   
-  const response = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
+  if (!clientId || !clientSecret) {
+    console.error("PayPal credentials not found in database or environment");
+    throw new Error("Payment processing is not configured properly");
+  }
+  
+  const auth = btoa(`${clientId}:${clientSecret}`);
+  
+  const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -46,9 +53,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Capturing PayPal order: ${order_id}`);
     
     const accessToken = await getAccessToken();
+    const baseUrl = await getApiSetting("PAYPAL_BASE_URL");
     
     // Capture the PayPal order
-    const captureResponse = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders/${order_id}/capture`, {
+    const captureResponse = await fetch(`${baseUrl}/v2/checkout/orders/${order_id}/capture`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
