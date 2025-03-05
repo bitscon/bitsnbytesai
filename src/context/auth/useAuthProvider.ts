@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,7 +113,7 @@ export function useAuthProvider() {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      navigate('/login');
+      navigate('/');
     } catch (err) {
       console.error("Sign out error:", err);
       toast({
