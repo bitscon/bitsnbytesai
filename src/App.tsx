@@ -9,7 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./context/auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import ForgotPassword from "./pages/ForgotPassword";

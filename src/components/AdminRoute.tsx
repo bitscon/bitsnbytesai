@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +24,6 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
       try {
         console.log("Checking admin status for user:", user.id);
         
-        // Use the checkAdminStatus function from AuthContext
         const isUserAdmin = await checkAdminStatus();
         console.log("Admin check result:", isUserAdmin);
         
