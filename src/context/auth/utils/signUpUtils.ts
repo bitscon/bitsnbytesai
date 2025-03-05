@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ToastFunction } from './signInUtils';
+import { handleAuthError, showSuccessToast } from './errorUtils';
 
 export const handleSignUp = async (
   email: string, 
@@ -23,37 +24,24 @@ export const handleSignUp = async (
     });
     
     if (!error) {
-      toast({
-        title: "Verification email sent",
-        description: "Please check your email to verify your account.",
-      });
+      showSuccessToast(
+        toast,
+        "Verification email sent",
+        "Please check your email to verify your account."
+      );
       return { error: null };
     } else {
-      console.error("Sign up error:", error);
-      
-      let errorMessage = "Failed to create your account. Please try again.";
-      
-      if (error.message.includes("email")) {
-        errorMessage = "This email is already registered or invalid. Please use a different email.";
-      } else if (error.message.includes("password")) {
-        errorMessage = "Password is too weak. Please use a stronger password with at least 6 characters.";
-      }
-      
-      toast({
+      handleAuthError(error, {
+        toast,
         title: "Sign Up Failed",
-        description: errorMessage,
-        variant: "destructive",
       });
       
       return { error };
     }
   } catch (err) {
-    console.error("Sign up exception:", err);
-    
-    toast({
-      title: "Sign Up Error",
-      description: "An unexpected error occurred. Please try again later.",
-      variant: "destructive",
+    handleAuthError(err, {
+      toast,
+      title: "Sign Up Error"
     });
     
     return { error: err as Error };
