@@ -2,9 +2,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Navbar } from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
 import { 
   AlertCircle, 
   Loader2,
@@ -15,9 +12,10 @@ import {
   Users
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, checkAdminStatus } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -33,17 +31,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       try {
-        const { data, error } = await supabase
-          .from("admin_users")
-          .select("id")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          console.error("Error checking admin status:", error);
-          setError("You don't have permission to view this page.");
-          setIsAdmin(false);
-        } else if (data) {
+        const isUserAdmin = await checkAdminStatus();
+        
+        console.log("AdminLayout: Admin check result:", isUserAdmin);
+        
+        if (isUserAdmin) {
           setIsAdmin(true);
         } else {
           setError("You don't have permission to view this page.");
@@ -58,15 +50,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     checkAdmin();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, checkAdminStatus]);
 
   if (isLoading || authLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="container mx-auto px-4 pt-24 pb-16 flex flex-col items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="mt-4">Loading...</p>
+          <p className="mt-4">Loading admin dashboard...</p>
         </div>
       </div>
     );
@@ -75,7 +66,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="container mx-auto px-4 pt-24 pb-16">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />

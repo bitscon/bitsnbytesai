@@ -102,7 +102,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!error) {
         console.log("Sign in successful:", data.user?.id);
-        navigate('/dashboard');
+        
+        // Check admin status after successful login
+        const isAdmin = await checkAdminStatus();
+        console.log("User is admin:", isAdmin);
+        
+        if (isAdmin) {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         console.error("Sign in error:", error);
       }
@@ -187,6 +196,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return false;
     
     try {
+      console.log("Checking admin status for user ID:", user.id);
+      
       const { data, error } = await supabase
         .from("admin_users")
         .select("id")
@@ -198,7 +209,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       
-      return !!data;
+      const isAdmin = !!data;
+      console.log("Admin check result:", isAdmin, "Data:", data);
+      
+      return isAdmin;
     } catch (err) {
       console.error("Admin check exception:", err);
       return false;
