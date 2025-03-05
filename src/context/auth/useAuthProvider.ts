@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,7 +67,6 @@ export function useAuthProvider() {
       } else {
         console.error("Sign up error:", error);
         
-        // Provide specific error messages based on error codes
         let errorMessage = "Failed to create your account. Please try again.";
         
         if (error.message.includes("email")) {
@@ -127,7 +125,6 @@ export function useAuthProvider() {
           description: "You have successfully logged in.",
         });
         
-        // Check admin status after successful login
         const isAdmin = await checkAdminStatus();
         console.log("User is admin:", isAdmin);
         
@@ -141,7 +138,6 @@ export function useAuthProvider() {
       } else {
         console.error("Sign in error:", error);
         
-        // Provide specific error messages based on error codes or messages
         let errorMessage = "Invalid email or password. Please try again.";
         
         if (error.message.includes("Invalid login credentials")) {
