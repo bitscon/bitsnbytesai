@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,13 +64,36 @@ export function useAuthProvider() {
           title: "Verification email sent",
           description: "Please check your email to verify your account.",
         });
+        return { error: null };
       } else {
         console.error("Sign up error:", error);
+        
+        // Provide specific error messages based on error codes
+        let errorMessage = "Failed to create your account. Please try again.";
+        
+        if (error.message.includes("email")) {
+          errorMessage = "This email is already registered or invalid. Please use a different email.";
+        } else if (error.message.includes("password")) {
+          errorMessage = "Password is too weak. Please use a stronger password with at least 6 characters.";
+        }
+        
+        toast({
+          title: "Sign Up Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        return { error };
       }
-      
-      return { error };
     } catch (err) {
       console.error("Sign up exception:", err);
+      
+      toast({
+        title: "Sign Up Error",
+        description: "An unexpected error occurred. Please try again later.",
+        variant: "destructive",
+      });
+      
       return { error: err as Error };
     } finally {
       setIsLoading(false);
@@ -80,6 +104,16 @@ export function useAuthProvider() {
     setIsLoading(true);
     
     try {
+      if (!email || !password) {
+        toast({
+          title: "Login Failed",
+          description: "Please provide both email and password.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return { error: new Error("Email and password are required") };
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -87,6 +121,11 @@ export function useAuthProvider() {
       
       if (!error) {
         console.log("Sign in successful:", data.user?.id);
+        
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
         
         // Check admin status after successful login
         const isAdmin = await checkAdminStatus();
@@ -97,13 +136,37 @@ export function useAuthProvider() {
         } else {
           navigate('/dashboard');
         }
+        
+        return { error: null };
       } else {
         console.error("Sign in error:", error);
+        
+        // Provide specific error messages based on error codes or messages
+        let errorMessage = "Invalid email or password. Please try again.";
+        
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "The email or password you entered is incorrect. Please try again.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email before signing in. Check your inbox for a verification link.";
+        }
+        
+        toast({
+          title: "Login Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        return { error };
       }
-      
-      return { error };
     } catch (err) {
       console.error("Sign in exception:", err);
+      
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again later.",
+        variant: "destructive",
+      });
+      
       return { error: err as Error };
     } finally {
       setIsLoading(false);
@@ -112,15 +175,36 @@ export function useAuthProvider() {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error);
+        toast({
+          title: "Error signing out",
+          description: "There was a problem signing out. Please try again.",
+          variant: "destructive",
+        });
+        return { error };
+      }
+      
+      toast({
+        title: "Signed out",
+        description: "You have successfully signed out.",
+      });
+      
       navigate('/');
+      return { error: null };
     } catch (err) {
-      console.error("Sign out error:", err);
+      console.error("Sign out exception:", err);
       toast({
         title: "Error signing out",
         description: "There was a problem signing out. Please try again.",
         variant: "destructive",
       });
+      return { error: err as Error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
