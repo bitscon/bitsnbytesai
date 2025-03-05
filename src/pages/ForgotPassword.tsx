@@ -1,31 +1,61 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
-  const { resetPassword, isLoading } = useAuth();
+  const { resetPassword, isLoading, user } = useAuth();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !isLoading) {
+      navigate('/dashboard');
+    }
+  }, [user, isLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     
-    const { error } = await resetPassword(email);
-    
-    if (error) {
-      setError(error.message);
-    } else {
-      setEmailSent(true);
+    try {
+      console.log("Requesting password reset for:", email);
+      const { error } = await resetPassword(email);
+      
+      if (error) {
+        console.error("Reset password error:", error);
+        setError(error.message || "Failed to send reset email");
+      } else {
+        setEmailSent(true);
+      }
+    } catch (err) {
+      console.error("Reset password exception:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -72,10 +102,22 @@ export default function ForgotPassword() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
-                <Button type="submit" className="w-full bg-brand-blue hover:bg-brand-blue/90" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset link"}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-brand-blue hover:bg-brand-blue/90" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send reset link"
+                  )}
                 </Button>
               </form>
             )}

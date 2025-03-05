@@ -9,16 +9,19 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
   const { user, isLoading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) {
+        console.log("No user found, redirecting to login");
         setIsAdmin(false);
         setIsChecking(false);
         return;
       }
 
       try {
+        console.log("Checking admin status for user:", user.id);
         const { data, error } = await supabase
           .from("admin_users")
           .select("id")
@@ -27,12 +30,15 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
           
         if (error) {
           console.error("Error checking admin status:", error);
+          setError(error.message);
           setIsAdmin(false);
         } else {
+          console.log("Admin check result:", !!data);
           setIsAdmin(!!data);
         }
       } catch (err) {
-        console.error("Error checking admin status:", err);
+        console.error("Exception checking admin status:", err);
+        setError((err as Error).message);
         setIsAdmin(false);
       } finally {
         setIsChecking(false);
@@ -54,12 +60,15 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
   }
 
   if (!user) {
+    console.log("AdminRoute: No user, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
   if (isAdmin === false) {
+    console.log("AdminRoute: Not an admin, redirecting to home");
     return <Navigate to="/" replace />;
   }
 
+  console.log("AdminRoute: Confirmed admin access");
   return <>{children}</>;
 }

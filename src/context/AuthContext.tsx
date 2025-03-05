@@ -14,6 +14,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: any | null }>;
+  checkAdminStatus: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,21 +28,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const fetchSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error fetching session:', error);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error fetching session:', error);
+          throw error;
+        }
+        
+        setSession(session);
+        setUser(session?.user || null);
+      } catch (err) {
+        console.error('Session fetch error:', err);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setSession(session);
-      setUser(session?.user || null);
-      setIsLoading(false);
     };
 
     fetchSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user || null);
         setIsLoading(false);
@@ -54,87 +62,147 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     setIsLoading(true);
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
-      },
-    });
-    
-    setIsLoading(false);
-    
-    if (!error) {
-      toast({
-        title: "Verification email sent",
-        description: "Please check your email to verify your account.",
       });
+      
+      if (!error) {
+        toast({
+          title: "Verification email sent",
+          description: "Please check your email to verify your account.",
+        });
+      } else {
+        console.error("Sign up error:", error);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error("Sign up exception:", err);
+      return { error: err as Error };
+    } finally {
+      setIsLoading(false);
     }
-    
-    return { error };
   };
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    setIsLoading(false);
-    
-    if (!error) {
-      navigate('/dashboard');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (!error) {
+        console.log("Sign in successful:", data.user?.id);
+        navigate('/dashboard');
+      } else {
+        console.error("Sign in error:", error);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error("Sign in exception:", err);
+      return { error: err as Error };
+    } finally {
+      setIsLoading(false);
     }
-    
-    return { error };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (err) {
+      console.error("Sign out error:", err);
+      toast({
+        title: "Error signing out",
+        description: "There was a problem signing out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetPassword = async (email: string) => {
     setIsLoading(true);
     
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    
-    setIsLoading(false);
-    
-    if (!error) {
-      toast({
-        title: "Password reset email sent",
-        description: "Please check your email to reset your password.",
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
+      
+      if (!error) {
+        toast({
+          title: "Password reset email sent",
+          description: "Please check your email to reset your password.",
+        });
+      } else {
+        console.error("Reset password error:", error);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error("Reset password exception:", err);
+      return { error: err as Error };
+    } finally {
+      setIsLoading(false);
     }
-    
-    return { error };
   };
 
   const updatePassword = async (newPassword: string) => {
     setIsLoading(true);
     
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-    
-    setIsLoading(false);
-    
-    if (!error) {
-      toast({
-        title: "Password updated",
-        description: "Your password has been successfully updated.",
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
       });
-      navigate('/dashboard');
+      
+      if (!error) {
+        toast({
+          title: "Password updated",
+          description: "Your password has been successfully updated.",
+        });
+        navigate('/dashboard');
+      } else {
+        console.error("Update password error:", error);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error("Update password exception:", err);
+      return { error: err as Error };
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const checkAdminStatus = async (): Promise<boolean> => {
+    if (!user) return false;
     
-    return { error };
+    try {
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) {
+        console.error("Error checking admin status:", error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (err) {
+      console.error("Admin check exception:", err);
+      return false;
+    }
   };
 
   const value = {
@@ -146,6 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     resetPassword,
     updatePassword,
+    checkAdminStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
