@@ -5,6 +5,7 @@ import { Menu, X, HelpCircle, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { ThemeToggle } from "./ThemeToggle";
+import { UserMobileMenu } from "./UserMobileMenu";
 
 export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -52,11 +53,6 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-  };
-  
-  const handleNavLinkClick = (path: string) => {
-    navigate(path);
-    closeMobileMenu();
   };
 
   return (
@@ -132,47 +128,12 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
       </div>
 
       {/* Mobile menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4 space-y-4">
-            <Button 
-              onClick={() => handleNavLinkClick("/dashboard")}
-              variant="ghost"
-              className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Dashboard
-            </Button>
-            <Button 
-              onClick={() => handleNavLinkClick("/faq")}
-              variant="ghost"
-              className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              <HelpCircle className="mr-2 h-4 w-4" />
-              FAQ
-            </Button>
-            <Button 
-              onClick={() => handleNavLinkClick("/help")}
-              variant="ghost"
-              className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Help
-            </Button>
-            {user && (
-              <Button 
-                onClick={() => {
-                  signOut();
-                  closeMobileMenu();
-                }}
-                className="w-full bg-brand-blue hover:bg-brand-blue/90"
-              >
-                Sign Out
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+      <UserMobileMenu 
+        isOpen={isMobileMenuOpen}
+        user={user}
+        signOut={signOut}
+        closeMobileMenu={closeMobileMenu}
+      />
     </header>
   );
 }
