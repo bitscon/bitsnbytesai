@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
@@ -30,6 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       try {
+        // Use the checkAdminStatus function to check admin status
         const isUserAdmin = await checkAdminStatus();
         
         console.log("AdminLayout: Admin check result:", isUserAdmin);

@@ -8,6 +8,7 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
   try {
     console.log("Checking admin status for user ID:", user.id);
     
+    // Query the admin_users table directly
     const { data, error } = await supabase
       .from("admin_users")
       .select("id")
@@ -19,6 +20,7 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
       return false;
     }
     
+    // If data exists, the user is an admin
     const isAdmin = !!data;
     console.log("Admin check result:", isAdmin, "Data:", data);
     

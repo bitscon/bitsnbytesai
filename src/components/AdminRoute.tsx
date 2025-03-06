@@ -23,6 +23,7 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
       try {
         console.log("Checking admin status for user:", user.id);
         
+        // Call the checkAdminStatus function to verify admin access
         const isUserAdmin = await checkAdminStatus();
         console.log("Admin check result:", isUserAdmin);
         
