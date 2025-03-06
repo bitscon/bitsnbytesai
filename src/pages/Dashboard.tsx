@@ -1,9 +1,7 @@
-
 import React, { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Navbar } from "@/components/Navbar";
 import { UserNavbar } from "@/components/UserNavbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +45,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {hasPurchased ? <UserNavbar hasPurchased={hasPurchased} /> : <Navbar />}
+      <UserNavbar hasPurchased={hasPurchased} /> 
       <div className="container mx-auto px-4 pt-24 pb-16">
         <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
         
