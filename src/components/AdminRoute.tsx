@@ -1,7 +1,7 @@
+
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,7 +9,6 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
   const { user, isLoading: authLoading, checkAdminStatus } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
         }
       } catch (err) {
         console.error("Exception checking admin status:", err);
-        setError((err as Error).message);
         setIsAdmin(false);
         
         toast({
