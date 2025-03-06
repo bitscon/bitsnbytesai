@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Menu, X, HelpCircle, LayoutDashboard } from "lucide-react";
+import { Menu, X, HelpCircle, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,6 +50,15 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+  
+  const handleNavLinkClick = (path: string) => {
+    navigate(path);
+    closeMobileMenu();
+  };
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -90,19 +100,7 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
               <HelpCircle className="mr-2 h-4 w-4" />
               Help
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="ml-2"
-              aria-label="Toggle theme"
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-            </Button>
+            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
             
             {user && (
               <Button 
@@ -116,18 +114,7 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-            </Button>
+            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
             <Button
               variant="ghost"
               size="icon"
@@ -149,10 +136,7 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
         <div className="md:hidden bg-background/95 backdrop-blur-md">
           <div className="container mx-auto px-4 py-4 space-y-4">
             <Button 
-              onClick={() => {
-                navigate("/dashboard");
-                setIsMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavLinkClick("/dashboard")}
               variant="ghost"
               className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
@@ -160,10 +144,7 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
               Dashboard
             </Button>
             <Button 
-              onClick={() => {
-                navigate("/faq");
-                setIsMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavLinkClick("/faq")}
               variant="ghost"
               className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
@@ -171,10 +152,7 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
               FAQ
             </Button>
             <Button 
-              onClick={() => {
-                navigate("/help");
-                setIsMobileMenuOpen(false);
-              }}
+              onClick={() => handleNavLinkClick("/help")}
               variant="ghost"
               className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
@@ -185,7 +163,7 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
               <Button 
                 onClick={() => {
                   signOut();
-                  setIsMobileMenuOpen(false);
+                  closeMobileMenu();
                 }}
                 className="w-full bg-brand-blue hover:bg-brand-blue/90"
               >

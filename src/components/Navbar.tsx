@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Menu, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { useAuth } from "@/context/auth";
+import { ThemeToggle } from "./ThemeToggle";
+import { AuthButtons } from "./AuthButtons";
+import { MobileMenu } from "./MobileMenu";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
   const toggleTheme = () => {
@@ -48,6 +50,10 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -74,69 +80,13 @@ export function Navbar() {
             <a href="#faq" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
               FAQ
             </a>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="ml-2"
-              aria-label="Toggle theme"
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-            </Button>
-            
-            {user ? (
-              <>
-                <Button 
-                  onClick={() => navigate("/dashboard")}
-                  variant="outline"
-                  className="ml-2"
-                >
-                  Dashboard
-                </Button>
-                <Button 
-                  onClick={() => signOut()}
-                  className="ml-2 bg-brand-blue hover:bg-brand-blue/90"
-                >
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button 
-                  onClick={() => navigate("/login")}
-                  variant="outline"
-                  className="ml-2"
-                >
-                  Sign In
-                </Button>
-                <Button 
-                  onClick={() => navigate("/register")}
-                  className="ml-2 bg-brand-blue hover:bg-brand-blue/90"
-                >
-                  Get Started
-                </Button>
-              </>
-            )}
+            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+            <AuthButtons user={user} signOut={signOut} />
           </nav>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-            </Button>
+            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
             <Button
               variant="ghost"
               size="icon"
@@ -154,80 +104,12 @@ export function Navbar() {
       </div>
 
       {/* Mobile menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4 space-y-4">
-            <a 
-              href="#features" 
-              className="block text-sm font-medium text-foreground/80 hover:text-foreground transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Features
-            </a>
-            <a 
-              href="#pricing" 
-              className="block text-sm font-medium text-foreground/80 hover:text-foreground transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Pricing
-            </a>
-            <a 
-              href="#faq" 
-              className="block text-sm font-medium text-foreground/80 hover:text-foreground transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              FAQ
-            </a>
-            <div className="pt-2 flex flex-col space-y-2">
-              {user ? (
-                <>
-                  <Button 
-                    onClick={() => {
-                      navigate("/dashboard");
-                      setIsMobileMenuOpen(false);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Dashboard
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      signOut();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full bg-brand-blue hover:bg-brand-blue/90"
-                  >
-                    Sign Out
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    onClick={() => {
-                      navigate("/login");
-                      setIsMobileMenuOpen(false);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Sign In
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      navigate("/register");
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full bg-brand-blue hover:bg-brand-blue/90"
-                  >
-                    Get Started
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <MobileMenu 
+        isOpen={isMobileMenuOpen}
+        user={user}
+        signOut={signOut}
+        closeMobileMenu={closeMobileMenu}
+      />
     </header>
   );
 }
