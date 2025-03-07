@@ -2,18 +2,19 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Prompt } from '@/types/prompts';
+import { Prompt, PromptCategory } from '@/types/prompts';
 import { Copy, Check, ChevronDown, ChevronUp, Star, Verified, BookText, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface PromptCardProps {
+export interface PromptCardProps {
   prompt: Prompt;
+  category?: PromptCategory;
 }
 
-export function PromptCard({ prompt }: PromptCardProps) {
+export function PromptCard({ prompt, category }: PromptCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();

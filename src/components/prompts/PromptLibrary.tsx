@@ -69,7 +69,7 @@ export function PromptLibrary() {
         </div>
         <DifficultyFilter 
           selectedDifficulty={selectedDifficulty}
-          onDifficultyChange={setSelectedDifficulty}
+          onChange={setSelectedDifficulty}
         />
       </div>
 
@@ -110,7 +110,10 @@ export function PromptLibrary() {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
-                    <PromptCard prompt={prompt} category={categories.find(c => c.id === prompt.category_id)} />
+                    <PromptCard 
+                      prompt={prompt} 
+                      category={categories.find(c => c.id === prompt.category_id)} 
+                    />
                   </motion.div>
                 ))}
               </AnimatePresence>

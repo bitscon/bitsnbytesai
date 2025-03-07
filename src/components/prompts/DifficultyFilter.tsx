@@ -5,8 +5,9 @@ import { DifficultyLevel } from '@/types/prompts';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { BrainCircuit, Sparkles, Zap } from 'lucide-react';
+import { Dispatch, SetStateAction } from 'react';
 
-interface DifficultyFilterProps {
+export interface DifficultyFilterProps {
   selectedDifficulty: DifficultyLevel | null;
   onChange: (difficulty: DifficultyLevel | null) => void;
 }
