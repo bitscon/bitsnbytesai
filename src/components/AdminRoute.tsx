@@ -4,7 +4,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { checkAdminStatus } from "@/context/auth/utils/adminUtils";
 
 export default function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading } = useAuth();
@@ -24,34 +24,17 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
       try {
         console.log("Checking admin status for user:", user.id);
         
-        // Direct database query to check admin status
-        const { data, error } = await supabase
-          .from("admin_users")
-          .select("id")
-          .eq("id", user.id)
-          .single();
+        const isUserAdmin = await checkAdminStatus(user);
+        console.log("Admin status check result:", isUserAdmin);
         
-        console.log("Admin check result:", !!data, "Data:", data, "Error:", error);
+        setIsAdmin(isUserAdmin);
         
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "row not found" error
-          console.error("Error checking admin status:", error);
-          setIsAdmin(false);
+        if (!isUserAdmin) {
           toast({
-            title: "Authentication Error",
-            description: "Failed to verify admin status. Please try again.",
+            title: "Access Denied",
+            description: "You don't have admin privileges to access this page.",
             variant: "destructive",
           });
-        } else {
-          const isUserAdmin = !!data;
-          setIsAdmin(isUserAdmin);
-          
-          if (!isUserAdmin) {
-            toast({
-              title: "Access Denied",
-              description: "You don't have admin privileges to access this page.",
-              variant: "destructive",
-            });
-          }
         }
       } catch (err) {
         console.error("Exception checking admin status:", err);

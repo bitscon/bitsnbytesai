@@ -8,23 +8,18 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
   try {
     console.log("Checking admin status for user ID:", user.id);
     
-    // Query the admin_users table directly
-    const { data, error } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", user.id)
-      .single();
+    // Use a direct SQL query to bypass RLS policies
+    const { data, error } = await supabase.rpc('check_is_admin', {
+      user_id: user.id
+    });
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "row not found" error
+    if (error) {
       console.error("Error checking admin status:", error);
       return false;
     }
     
-    // If data exists, the user is an admin
-    const isAdmin = !!data;
-    console.log("Admin check result:", isAdmin, "Data:", data);
-    
-    return isAdmin;
+    console.log("Admin check result:", data);
+    return !!data;
   } catch (err) {
     console.error("Admin check exception:", err);
     return false;
