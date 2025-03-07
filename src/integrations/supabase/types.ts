@@ -98,6 +98,8 @@ export type Database = {
           category_id: string
           created_at: string
           difficulty_level: Database["public"]["Enums"]["difficulty_level"]
+          explanation: string | null
+          explanation_enabled: boolean | null
           id: string
           prompt_text: string
           updated_at: string
@@ -107,6 +109,8 @@ export type Database = {
           category_id: string
           created_at?: string
           difficulty_level: Database["public"]["Enums"]["difficulty_level"]
+          explanation?: string | null
+          explanation_enabled?: boolean | null
           id?: string
           prompt_text: string
           updated_at?: string
@@ -116,6 +120,8 @@ export type Database = {
           category_id?: string
           created_at?: string
           difficulty_level?: Database["public"]["Enums"]["difficulty_level"]
+          explanation?: string | null
+          explanation_enabled?: boolean | null
           id?: string
           prompt_text?: string
           updated_at?: string
