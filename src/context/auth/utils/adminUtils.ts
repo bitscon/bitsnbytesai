@@ -9,7 +9,7 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
     console.log("Checking admin status for user ID:", user.id);
     
     // Use a direct SQL query to bypass RLS policies
-    const { data, error } = await supabase.rpc('check_is_admin', {
+    const { data, error } = await supabase.rpc('is_admin_user', {
       user_id: user.id
     });
     
