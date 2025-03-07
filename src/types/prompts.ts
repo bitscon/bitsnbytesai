@@ -1,5 +1,17 @@
 
-export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+export interface Prompt {
+  id: string;
+  prompt_text: string;
+  why_it_works: string;
+  category_id: string;
+  difficulty_level: DifficultyLevel;
+  created_at: string;
+  updated_at?: string;
+  prompt_categories?: PromptCategory;
+  image_url?: string;
+  explanation?: string;
+  explanation_enabled?: boolean;
+}
 
 export interface PromptCategory {
   id: string;
@@ -7,15 +19,4 @@ export interface PromptCategory {
   created_at: string;
 }
 
-export interface Prompt {
-  id: string;
-  category_id: string;
-  difficulty_level: DifficultyLevel;
-  prompt_text: string;
-  why_it_works: string;
-  created_at: string;
-  updated_at: string;
-  image_url?: string;
-  explanation?: string;
-  explanation_enabled?: boolean;
-}
+export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
