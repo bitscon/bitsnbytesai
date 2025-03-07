@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { DifficultyLevel } from '@/types/prompts';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface DifficultyFilterProps {
   selectedDifficulty: DifficultyLevel | null;
@@ -23,20 +24,25 @@ export function DifficultyFilter({ selectedDifficulty, onChange }: DifficultyFil
   return (
     <div className="flex flex-wrap gap-2">
       {difficulties.map((difficulty) => (
-        <Badge
+        <motion.div
           key={difficulty}
-          variant="outline"
-          className={cn(
-            "cursor-pointer transition-all hover:opacity-80",
-            selectedDifficulty === difficulty && 
-            (difficulty === "Beginner" ? "bg-green-100 text-green-800 hover:bg-green-100" :
-             difficulty === "Intermediate" ? "bg-blue-100 text-blue-800 hover:bg-blue-100" :
-             "bg-purple-100 text-purple-800 hover:bg-purple-100")
-          )}
-          onClick={() => handleClick(difficulty)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {difficulty}
-        </Badge>
+          <Badge
+            variant="outline"
+            className={cn(
+              "cursor-pointer transition-all px-3 py-1 text-sm font-medium",
+              selectedDifficulty === difficulty && 
+              (difficulty === "Beginner" ? "bg-green-100 text-green-800 hover:bg-green-100" :
+               difficulty === "Intermediate" ? "bg-blue-100 text-blue-800 hover:bg-blue-100" :
+               "bg-purple-100 text-purple-800 hover:bg-purple-100")
+            )}
+            onClick={() => handleClick(difficulty)}
+          >
+            {difficulty}
+          </Badge>
+        </motion.div>
       ))}
     </div>
   );

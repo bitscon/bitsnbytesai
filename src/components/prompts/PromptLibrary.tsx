@@ -5,6 +5,7 @@ import { PromptCategoryCard } from './PromptCategoryCard';
 import { PromptCard } from './PromptCard';
 import { DifficultyFilter } from './DifficultyFilter';
 import { Skeleton } from '@/components/ui/skeleton';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function PromptLibrary() {
   const { 
@@ -22,18 +23,24 @@ export function PromptLibrary() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold mb-4">AI Prompts Library</h2>
-      
       {/* Categories */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {categories.map((category) => (
-          <PromptCategoryCard 
-            key={category.id}
-            category={category}
-            isActive={category.id === selectedCategory}
-            onClick={() => setSelectedCategory(category.id)}
-          />
-        ))}
+        <AnimatePresence>
+          {categories.map((category) => (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <PromptCategoryCard 
+                category={category}
+                isActive={category.id === selectedCategory}
+                onClick={() => setSelectedCategory(category.id)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
         
         {/* Loading skeleton for categories */}
         {categories.length === 0 && (
@@ -46,40 +53,64 @@ export function PromptLibrary() {
       </div>
       
       {/* Selected category prompts */}
-      {selectedCategory && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg font-medium">{currentCategory} Prompts</h3>
-            <DifficultyFilter 
-              selectedDifficulty={selectedDifficulty}
-              onChange={setSelectedDifficulty}
-            />
-          </div>
-          
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Skeleton className="h-[120px] w-full" />
-              <Skeleton className="h-[120px] w-full" />
-              <Skeleton className="h-[120px] w-full" />
-              <Skeleton className="h-[120px] w-full" />
+      <AnimatePresence mode="wait">
+        {selectedCategory && (
+          <motion.div 
+            key={selectedCategory}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h3 className="text-lg font-medium">{currentCategory} Prompts</h3>
+              <DifficultyFilter 
+                selectedDifficulty={selectedDifficulty}
+                onChange={setSelectedDifficulty}
+              />
             </div>
-          ) : prompts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {prompts.map((prompt) => (
-                <PromptCard key={prompt.id} prompt={prompt} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 border border-dashed rounded-lg">
-              <p className="text-muted-foreground">
-                {selectedDifficulty 
-                  ? `No ${selectedDifficulty} prompts found in this category` 
-                  : "No prompts found in this category"}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+            
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+              </div>
+            ) : prompts.length > 0 ? (
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                initial="initial"
+                animate="animate"
+                variants={{
+                  animate: {
+                    transition: {
+                      staggerChildren: 0.1
+                    }
+                  }
+                }}
+              >
+                {prompts.map((prompt) => (
+                  <PromptCard key={prompt.id} prompt={prompt} />
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12 border border-dashed rounded-lg"
+              >
+                <p className="text-muted-foreground">
+                  {selectedDifficulty 
+                    ? `No ${selectedDifficulty} prompts found in this category` 
+                    : "No prompts found in this category"}
+                </p>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
