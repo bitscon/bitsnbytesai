@@ -15,7 +15,7 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
       .eq("id", user.id)
       .single();
     
-    if (error) {
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "row not found" error
       console.error("Error checking admin status:", error);
       return false;
     }

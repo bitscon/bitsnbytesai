@@ -47,8 +47,15 @@ export const handleSignIn = async (
         "You have successfully logged in."
       );
       
-      const isAdmin = await checkAdminStatus();
-      console.log("User is admin:", isAdmin);
+      // Check if user is admin directly via database query for more reliability
+      const { data: adminData } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("id", data.user?.id)
+        .single();
+      
+      const isAdmin = !!adminData;
+      console.log("User is admin:", isAdmin, "Admin data:", adminData);
       
       if (isAdmin) {
         navigate('/admin/dashboard');

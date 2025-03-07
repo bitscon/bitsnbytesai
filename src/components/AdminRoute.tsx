@@ -4,9 +4,10 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading: authLoading, checkAdminStatus } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const { toast } = useToast();
@@ -23,18 +24,34 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
       try {
         console.log("Checking admin status for user:", user.id);
         
-        // Call the checkAdminStatus function to verify admin access
-        const isUserAdmin = await checkAdminStatus();
-        console.log("Admin check result:", isUserAdmin);
+        // Direct database query to check admin status
+        const { data, error } = await supabase
+          .from("admin_users")
+          .select("id")
+          .eq("id", user.id)
+          .single();
         
-        setIsAdmin(isUserAdmin);
+        console.log("Admin check result:", !!data, "Data:", data, "Error:", error);
         
-        if (!isUserAdmin) {
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "row not found" error
+          console.error("Error checking admin status:", error);
+          setIsAdmin(false);
           toast({
-            title: "Access Denied",
-            description: "You don't have admin privileges to access this page.",
+            title: "Authentication Error",
+            description: "Failed to verify admin status. Please try again.",
             variant: "destructive",
           });
+        } else {
+          const isUserAdmin = !!data;
+          setIsAdmin(isUserAdmin);
+          
+          if (!isUserAdmin) {
+            toast({
+              title: "Access Denied",
+              description: "You don't have admin privileges to access this page.",
+              variant: "destructive",
+            });
+          }
         }
       } catch (err) {
         console.error("Exception checking admin status:", err);
@@ -53,7 +70,7 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
     if (!authLoading) {
       verifyAdminAccess();
     }
-  }, [user, authLoading, checkAdminStatus, toast]);
+  }, [user, authLoading, toast]);
 
   if (authLoading || isChecking) {
     return (

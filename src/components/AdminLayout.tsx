@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { 
@@ -13,15 +13,16 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading: authLoading, checkAdminStatus } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkAdmin = async () => {
       if (!user) {
         if (!authLoading) {
@@ -31,16 +32,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       try {
-        // Use the checkAdminStatus function to check admin status
-        const isUserAdmin = await checkAdminStatus();
+        // Direct database query to check admin status
+        const { data, error } = await supabase
+          .from("admin_users")
+          .select("id")
+          .eq("id", user.id)
+          .single();
         
-        console.log("AdminLayout: Admin check result:", isUserAdmin);
+        console.log("AdminLayout: Admin check result:", !!data, "Data:", data, "Error:", error);
         
-        if (isUserAdmin) {
-          setIsAdmin(true);
-        } else {
-          setError("You don't have permission to view this page.");
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "row not found" error
+          console.error("Error checking admin status:", error);
+          setError("An error occurred while checking permissions.");
           setIsAdmin(false);
+        } else {
+          if (data) {
+            setIsAdmin(true);
+          } else {
+            setError("You don't have permission to view this page.");
+            setIsAdmin(false);
+          }
         }
       } catch (err) {
         console.error("Error checking admin status:", err);
@@ -51,7 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     checkAdmin();
-  }, [user, authLoading, navigate, checkAdminStatus]);
+  }, [user, authLoading, navigate]);
 
   if (isLoading || authLoading) {
     return (
