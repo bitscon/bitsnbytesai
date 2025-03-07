@@ -13,8 +13,8 @@ interface VirtualizedPromptGridProps {
 export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPromptGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   
-  // Estimate row heights - adjust based on your card sizes
-  const estimateSize = () => 400;
+  // Increased estimated size to account for images
+  const estimateSize = () => 500;
 
   const virtualizer = useVirtualizer({
     count: prompts.length,

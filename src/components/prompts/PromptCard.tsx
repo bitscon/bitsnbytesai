@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Prompt, PromptCategory } from '@/types/prompts';
-import { Copy, Check, ChevronDown, ChevronUp, Star, Verified, BookText, MessageSquare } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, Star, Verified, BookText, MessageSquare, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 
 export interface PromptCardProps {
   prompt: Prompt;
@@ -49,6 +49,10 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
     }
   };
 
+  // Generate an image URL based on prompt content (for demonstration)
+  const imageUrl = prompt.image_url || 
+    `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80`;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -80,6 +84,19 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
+          
+          {/* Add optimized image based on prompt category */}
+          {category && (
+            <div className="mt-3 mb-2">
+              <OptimizedImage 
+                src={imageUrl}
+                alt={`Illustration for ${category.name} prompt`}
+                aspectRatio="16/9"
+                className="rounded-md transition-all duration-300"
+                containerClassName="rounded-md border border-muted-foreground/10"
+              />
+            </div>
+          )}
           
           <Button 
             variant="ghost" 

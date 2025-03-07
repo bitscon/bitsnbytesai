@@ -10,6 +10,10 @@ export function PromptSkeleton() {
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-4 w-1/2" />
       </div>
+      
+      {/* Image skeleton */}
+      <Skeleton className="h-40 w-full rounded-md" />
+      
       <Skeleton className="h-24 w-full" />
       <div className="space-y-2">
         <Skeleton className="h-4 w-1/4" />
