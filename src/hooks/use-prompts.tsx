@@ -51,7 +51,11 @@ export function usePrompts() {
   // Fetch prompts for selected category
   useEffect(() => {
     const fetchPrompts = async () => {
-      if (!selectedCategory) return;
+      if (!selectedCategory) {
+        setPrompts([]);
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
@@ -74,6 +78,8 @@ export function usePrompts() {
           throw error;
         }
         
+        // Artificial delay to ensure smooth transition
+        await new Promise(resolve => setTimeout(resolve, 300));
         setPrompts(data as Prompt[]);
       } catch (error) {
         console.error('Error fetching prompts:', error);

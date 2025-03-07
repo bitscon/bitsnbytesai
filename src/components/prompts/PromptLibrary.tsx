@@ -8,6 +8,7 @@ import { DifficultyLevel } from '@/types/prompts';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Loader2, Search, SortAsc } from 'lucide-react';
 import { VirtualizedPromptGrid } from './VirtualizedPromptGrid';
+import { PromptSkeleton } from './PromptSkeleton';
 
 export function PromptLibrary() {
   const { categories, prompts, isLoading } = usePrompts();
@@ -15,6 +16,16 @@ export function PromptLibrary() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const [isChangingCategory, setIsChangingCategory] = useState(false);
+  const debouncedCategory = useDebounce(selectedCategory, 300);
+
+  useEffect(() => {
+    if (debouncedCategory !== selectedCategory) {
+      setIsChangingCategory(true);
+    } else {
+      setIsChangingCategory(false);
+    }
+  }, [debouncedCategory, selectedCategory]);
 
   const filteredPrompts = prompts
     .filter(prompt => !selectedCategory || prompt.category_id === selectedCategory)
@@ -68,9 +79,12 @@ export function PromptLibrary() {
                 key={category.id}
                 category={category}
                 isActive={selectedCategory === category.id}
-                onClick={() => setSelectedCategory(
-                  selectedCategory === category.id ? null : category.id
-                )}
+                onClick={() => {
+                  setSelectedCategory(
+                    selectedCategory === category.id ? null : category.id
+                  );
+                  setIsChangingCategory(true);
+                }}
               />
             ))}
           </div>
@@ -79,7 +93,13 @@ export function PromptLibrary() {
 
       <div>
         <h3 className="text-lg font-medium mb-3">Prompts</h3>
-        {filteredPrompts.length > 0 ? (
+        {isChangingCategory ? (
+          <div className="grid grid-cols-1 gap-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <PromptSkeleton key={index} />
+            ))}
+          </div>
+        ) : filteredPrompts.length > 0 ? (
           <VirtualizedPromptGrid
             prompts={filteredPrompts}
             categories={categories}
