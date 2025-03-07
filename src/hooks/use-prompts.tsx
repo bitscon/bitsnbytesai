@@ -3,14 +3,18 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Prompt, PromptCategory, DifficultyLevel } from '@/types/prompts';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export function usePrompts() {
   const [categories, setCategories] = useState<PromptCategory[]>([]);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Fetch categories
   useEffect(() => {
@@ -60,6 +64,10 @@ export function usePrompts() {
           query = query.eq('difficulty_level', selectedDifficulty);
         }
         
+        if (debouncedSearchTerm) {
+          query = query.or(`prompt_text.ilike.%${debouncedSearchTerm}%,why_it_works.ilike.%${debouncedSearchTerm}%`);
+        }
+        
         const { data, error } = await query.order('created_at', { ascending: false });
         
         if (error) {
@@ -80,7 +88,7 @@ export function usePrompts() {
     };
 
     fetchPrompts();
-  }, [selectedCategory, selectedDifficulty, toast]);
+  }, [selectedCategory, selectedDifficulty, debouncedSearchTerm, toast]);
 
   // Set up real-time subscription for prompts
   useEffect(() => {
@@ -106,6 +114,10 @@ export function usePrompts() {
                 query = query.eq('difficulty_level', selectedDifficulty);
               }
               
+              if (debouncedSearchTerm) {
+                query = query.or(`prompt_text.ilike.%${debouncedSearchTerm}%,why_it_works.ilike.%${debouncedSearchTerm}%`);
+              }
+              
               const { data, error } = await query.order('created_at', { ascending: false });
               
               if (error) {
@@ -125,7 +137,7 @@ export function usePrompts() {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [selectedCategory, selectedDifficulty]);
+  }, [selectedCategory, selectedDifficulty, debouncedSearchTerm]);
 
   // Set up real-time subscription for categories
   useEffect(() => {
@@ -169,8 +181,10 @@ export function usePrompts() {
     prompts,
     selectedCategory,
     selectedDifficulty,
+    searchTerm,
     isLoading,
     setSelectedCategory,
     setSelectedDifficulty,
+    setSearchTerm,
   };
 }

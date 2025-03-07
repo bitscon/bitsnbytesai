@@ -6,6 +6,9 @@ import { PromptCard } from './PromptCard';
 import { DifficultyFilter } from './DifficultyFilter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, Filter, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function PromptLibrary() {
   const { 
@@ -15,7 +18,9 @@ export function PromptLibrary() {
     selectedDifficulty, 
     isLoading,
     setSelectedCategory, 
-    setSelectedDifficulty 
+    setSelectedDifficulty,
+    searchTerm,
+    setSearchTerm
   } = usePrompts();
 
   // Find the current category name
@@ -64,11 +69,31 @@ export function PromptLibrary() {
             className="space-y-6"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h3 className="text-lg font-medium">{currentCategory} Prompts</h3>
-              <DifficultyFilter 
-                selectedDifficulty={selectedDifficulty}
-                onChange={setSelectedDifficulty}
-              />
+              <h3 className="text-lg font-medium flex items-center">
+                <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                {currentCategory} Prompts
+              </h3>
+              
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                <div className="relative w-full sm:w-60">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search prompts..."
+                    className="pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <DifficultyFilter 
+                    selectedDifficulty={selectedDifficulty}
+                    onChange={setSelectedDifficulty}
+                  />
+                </div>
+              </div>
             </div>
             
             {isLoading ? (
@@ -101,10 +126,13 @@ export function PromptLibrary() {
                 animate={{ opacity: 1 }}
                 className="text-center py-12 border border-dashed rounded-lg"
               >
+                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">
-                  {selectedDifficulty 
-                    ? `No ${selectedDifficulty} prompts found in this category` 
-                    : "No prompts found in this category"}
+                  {searchTerm
+                    ? `No results found for "${searchTerm}"`
+                    : selectedDifficulty 
+                      ? `No ${selectedDifficulty} prompts found in this category` 
+                      : "No prompts found in this category"}
                 </p>
               </motion.div>
             )}
