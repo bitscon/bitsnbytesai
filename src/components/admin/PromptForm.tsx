@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,7 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | 
-    { name: string; value: string }
+    { name: string; value: string | boolean }
   ) => {
     const { name, value } = 'target' in e ? e.target : e;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -130,10 +131,9 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
       <div className="flex items-center space-x-2">
         <Switch
           id="explanation_enabled"
-          name="explanation_enabled"
           checked={formData.explanation_enabled}
           onCheckedChange={(checked) => 
-            handleChange({ name: 'explanation_enabled', value: checked })
+            setFormData(prev => ({ ...prev, explanation_enabled: checked }))
           }
         />
         <Label htmlFor="explanation_enabled">Enable explanation for this prompt</Label>

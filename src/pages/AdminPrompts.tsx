@@ -4,35 +4,14 @@ import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { CategoryForm } from "@/components/admin/CategoryForm";
-import { PromptForm } from "@/components/admin/PromptForm";
+import { PromptDialog } from "@/components/admin/PromptDialog";
+import { PromptCategoryList } from "@/components/admin/PromptCategoryList";
+import { PromptList } from "@/components/admin/PromptList";
 import { supabase } from "@/integrations/supabase/client";
 import { PromptCategory, Prompt } from "@/types/prompts";
 import { useAdminPrompts } from "@/hooks/use-admin-prompts";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Plus, 
-  MoreVertical, 
-  Edit, 
-  Trash,
-  FileText,
-  FolderPlus,
-  Check
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { FileText, FolderPlus } from "lucide-react";
 
 export default function AdminPrompts() {
   const [activeTab, setActiveTab] = useState<string>("categories");
@@ -259,45 +238,12 @@ export default function AdminPrompts() {
               <CardTitle>Prompt Categories</CardTitle>
             </CardHeader>
             <CardContent>
-              {categories.length > 0 ? (
-                <div className="divide-y">
-                  {categories.map((category) => (
-                    <div key={category.id} className="py-3 flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium">{category.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Created: {new Date(category.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditCategory(category)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDeleteCategory(category)}
-                          >
-                            <Trash className="mr-2 h-4 w-4" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 border border-dashed rounded-lg">
-                  <p className="text-muted-foreground">No categories found</p>
-                  <Button onClick={handleAddCategory} className="mt-4">
-                    <Plus className="mr-2 h-4 w-4" /> Add Category
-                  </Button>
-                </div>
-              )}
+              <PromptCategoryList
+                categories={categories}
+                onAddCategory={handleAddCategory}
+                onEditCategory={handleEditCategory}
+                onDeleteCategory={handleDeleteCategory}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -308,93 +254,27 @@ export default function AdminPrompts() {
               <CardTitle>AI Prompts</CardTitle>
             </CardHeader>
             <CardContent>
-              {prompts.length > 0 ? (
-                <div className="divide-y">
-                  {prompts.map((prompt: any) => (
-                    <div key={prompt.id} className="py-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <div className={cn(
-                              "px-2 py-1 text-xs rounded-full",
-                              prompt.difficulty_level === "Beginner" && "bg-green-100 text-green-800",
-                              prompt.difficulty_level === "Intermediate" && "bg-blue-100 text-blue-800",
-                              prompt.difficulty_level === "Advanced" && "bg-purple-100 text-purple-800",
-                            )}>
-                              {prompt.difficulty_level}
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {prompt.prompt_categories?.name}
-                            </span>
-                          </div>
-                          <h3 className="font-medium">
-                            {prompt.prompt_text.substring(0, 100)}
-                            {prompt.prompt_text.length > 100 ? '...' : ''}
-                          </h3>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditPrompt(prompt)}>
-                              <Edit className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDeletePrompt(prompt)}
-                            >
-                              <Trash className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 border border-dashed rounded-lg">
-                  <p className="text-muted-foreground">No prompts found</p>
-                  <Button onClick={handleAddPrompt} className="mt-4">
-                    <Plus className="mr-2 h-4 w-4" /> Add Prompt
-                  </Button>
-                </div>
-              )}
+              <PromptList
+                prompts={prompts}
+                onAddPrompt={handleAddPrompt}
+                onEditPrompt={handleEditPrompt}
+                onDeletePrompt={handleDeletePrompt}
+              />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
       {/* Dialog for Adding/Editing Categories and Prompts */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>
-              {dialogType === 'category-add' && 'Add Category'}
-              {dialogType === 'category-edit' && 'Edit Category'}
-              {dialogType === 'prompt-add' && 'Add Prompt'}
-              {dialogType === 'prompt-edit' && 'Edit Prompt'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {dialogType.startsWith('category') ? (
-            <CategoryForm
-              category={selectedCategory || undefined}
-              onSuccess={handleDialogClose}
-              onCancel={handleDialogClose}
-            />
-          ) : (
-            <PromptForm
-              prompt={selectedPrompt || undefined}
-              categories={categories}
-              onSuccess={handleDialogClose}
-              onCancel={handleDialogClose}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <PromptDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        dialogType={dialogType}
+        selectedCategory={selectedCategory}
+        selectedPrompt={selectedPrompt}
+        categories={categories}
+        onDialogClose={handleDialogClose}
+      />
     </AdminLayout>
   );
 }
