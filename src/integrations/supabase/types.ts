@@ -75,6 +75,62 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      prompts: {
+        Row: {
+          category_id: string
+          created_at: string
+          difficulty_level: Database["public"]["Enums"]["difficulty_level"]
+          id: string
+          prompt_text: string
+          updated_at: string
+          why_it_works: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          difficulty_level: Database["public"]["Enums"]["difficulty_level"]
+          id?: string
+          prompt_text: string
+          updated_at?: string
+          why_it_works: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          difficulty_level?: Database["public"]["Enums"]["difficulty_level"]
+          id?: string
+          prompt_text?: string
+          updated_at?: string
+          why_it_works?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_purchases: {
         Row: {
           amount: number
@@ -123,7 +179,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      difficulty_level: "Beginner" | "Intermediate" | "Advanced"
     }
     CompositeTypes: {
       [_ in never]: never

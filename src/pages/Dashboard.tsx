@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Lock } from "lucide-react";
 import { Purchase } from "@/types/purchases";
+import { PromptLibrary } from "@/components/prompts/PromptLibrary";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -59,28 +61,7 @@ export default function Dashboard() {
             <Card className="p-6 col-span-1 md:col-span-2">
               <h2 className="text-xl font-semibold mb-4">AI Prompts Library</h2>
               {hasPurchased ? (
-                <div>
-                  <div className="flex items-center mb-4">
-                    <Badge className="bg-green-500 mr-2">
-                      <Check className="h-4 w-4 mr-1" /> Purchased
-                    </Badge>
-                    <span className="text-muted-foreground">You have full access to all prompts!</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {/* Sample prompts that would be populated from database */}
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <Card key={i} className="p-4">
-                        <h3 className="font-medium">Prompt Example {i + 1}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          This is a sample AI prompt that you can use for your projects.
-                        </p>
-                      </Card>
-                    ))}
-                  </div>
-                  
-                  <Button>Export All Prompts</Button>
-                </div>
+                <PromptLibrary />
               ) : (
                 <div className="text-center py-8">
                   <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
