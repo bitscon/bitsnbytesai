@@ -19,13 +19,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the user ID from the request
-    const { user_id } = await req.json()
-    
-    if (!user_id) {
+    // Get the authorization header from the request
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ error: 'No authorization header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Extract the JWT token
+    const token = authHeader.replace('Bearer ', '')
+    
+    // Get the user information from the JWT token
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
+    
+    if (userError || !user) {
+      console.error('Error getting user from token:', userError)
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
     
@@ -33,7 +46,7 @@ serve(async (req) => {
     const { data, error } = await supabaseClient
       .from('admin_users')
       .select('id')
-      .eq('id', user_id)
+      .eq('id', user.id)
       .maybeSingle()
     
     if (error) {
