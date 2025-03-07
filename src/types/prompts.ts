@@ -15,5 +15,7 @@ export interface Prompt {
   why_it_works: string;
   created_at: string;
   updated_at: string;
-  image_url?: string; // Added optional image URL
+  image_url?: string;
+  explanation?: string;
+  explanation_enabled?: boolean;
 }

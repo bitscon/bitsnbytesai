@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useAdminPrompts } from '@/hooks/use-admin-prompts';
 import { Prompt, PromptCategory, DifficultyLevel } from '@/types/prompts';
 
@@ -21,6 +21,8 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
     difficulty_level: prompt?.difficulty_level || 'Beginner' as DifficultyLevel,
     prompt_text: prompt?.prompt_text || '',
     why_it_works: prompt?.why_it_works || '',
+    explanation: prompt?.explanation || '',
+    explanation_enabled: prompt?.explanation_enabled ?? true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createPrompt, updatePrompt } = useAdminPrompts();
@@ -46,10 +48,8 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
       let success = false;
       
       if (prompt) {
-        // Update existing prompt
         success = await updatePrompt(prompt.id, formData);
       } else {
-        // Create new prompt
         const result = await createPrompt(formData);
         success = !!result;
       }
@@ -113,6 +113,30 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
           rows={5}
           required
         />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="explanation">Explanation</Label>
+        <Textarea
+          id="explanation"
+          name="explanation"
+          value={formData.explanation}
+          onChange={handleChange}
+          placeholder="Enter a beginner-friendly explanation of how this prompt works"
+          rows={3}
+        />
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="explanation_enabled"
+          name="explanation_enabled"
+          checked={formData.explanation_enabled}
+          onCheckedChange={(checked) => 
+            handleChange({ name: 'explanation_enabled', value: checked })
+          }
+        />
+        <Label htmlFor="explanation_enabled">Enable explanation for this prompt</Label>
       </div>
       
       <div className="space-y-2">
