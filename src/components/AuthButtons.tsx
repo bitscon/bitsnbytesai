@@ -29,7 +29,7 @@ export function AuthButtons({ user, signOut, closeMobileMenu, isMobile = false }
           variant="outline"
           className={isMobile ? "w-full" : "ml-2"}
         >
-          Dashboard
+          Library
         </Button>
         <Button 
           onClick={() => {

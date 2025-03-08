@@ -35,7 +35,7 @@ export function UserMobileMenu({ isOpen, user, signOut, closeMobileMenu }: UserM
           className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
         >
           <LayoutDashboard className="mr-2 h-4 w-4" />
-          Dashboard
+          Library
         </Button>
         <Button 
           onClick={() => handleNavLinkClick("/account")}

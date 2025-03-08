@@ -47,7 +47,7 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
         <div className="flex items-center space-x-4">
           <nav className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-              Dashboard
+              Library
             </Button>
             <Button variant="ghost" onClick={() => navigate("/account")}>
               Account

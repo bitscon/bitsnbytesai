@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Prompt, PromptCategory } from '@/types/prompts';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,7 +35,7 @@ export function SavedPromptsList({ savedPrompts, categories, isLoading }: SavedP
             <p className="text-muted-foreground">You haven't added any favorites yet.</p>
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Browse prompts
+              Browse Library
             </Button>
           </div>
         </CardContent>
