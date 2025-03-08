@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Prompt, PromptCategory } from '@/types/prompts';
-import { Copy, Check, ChevronDown, ChevronUp, Star, BookText, MessageSquare } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, Star, BookText, MessageSquare, BrainCircuit, Sparkles, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,12 +34,21 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const getDifficultyIcon = (level: string) => {
+    switch(level) {
+      case 'Beginner': return <Sparkles className="h-3.5 w-3.5 mr-1" />;
+      case 'Intermediate': return <Zap className="h-3.5 w-3.5 mr-1" />;
+      case 'Advanced': return <BrainCircuit className="h-3.5 w-3.5 mr-1" />;
+      default: return null;
+    }
+  };
+
   const getDifficultyColor = (level: string) => {
     switch(level) {
-      case 'Beginner': return 'bg-green-100 text-green-800';
-      case 'Intermediate': return 'bg-blue-100 text-blue-800';
-      case 'Advanced': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Beginner': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Intermediate': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'Advanced': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -58,9 +67,10 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={cn(
-                "px-2 py-1 text-xs font-medium rounded-full",
+                "px-2 py-1 text-xs font-medium rounded-full flex items-center",
                 getDifficultyColor(prompt.difficulty_level)
               )}>
+                {getDifficultyIcon(prompt.difficulty_level)}
                 {prompt.difficulty_level}
               </Badge>
               

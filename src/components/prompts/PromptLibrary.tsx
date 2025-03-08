@@ -14,7 +14,7 @@ import { PromptSkeleton } from './PromptSkeleton';
 import { ViewToggle, ViewMode } from './ViewToggle';
 
 export function PromptLibrary() {
-  const { categories, prompts, isLoading } = usePrompts();
+  const { prompts, categories, isLoading } = usePrompts();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +42,10 @@ export function PromptLibrary() {
         prompt.why_it_works.toLowerCase().includes(searchLower)
       );
     });
+
+  const handleDifficultyChange = (difficulty: DifficultyLevel | null) => {
+    setSelectedDifficulty(difficulty);
+  };
 
   if (isLoading) {
     return (
@@ -72,7 +76,7 @@ export function PromptLibrary() {
           />
           <DifficultyFilter 
             selectedDifficulty={selectedDifficulty}
-            onChange={setSelectedDifficulty}
+            onChange={handleDifficultyChange}
           />
         </div>
       </div>

@@ -13,7 +13,7 @@ export function VirtualizedPromptList({ prompts, categories }: VirtualizedPrompt
   const parentRef = useRef<HTMLDivElement>(null);
   
   // Use a smaller estimated size for list items
-  const estimateSize = () => 150;
+  const estimateSize = () => 180; // Increased a bit to accommodate the difficulty tags
 
   const virtualizer = useVirtualizer({
     count: prompts.length,
