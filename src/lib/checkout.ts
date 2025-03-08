@@ -107,12 +107,22 @@ export async function initiatePayPalCheckout(
 
     if (error) {
       console.error("Error invoking paypal-create-order:", error);
-      throw new Error(error.message);
+      throw new Error(error.message || "Failed to create PayPal order");
     }
 
-    if (!data?.id) {
+    if (!data) {
+      console.error("No data returned from paypal-create-order");
+      throw new Error("No response from payment service");
+    }
+    
+    if (data.error) {
+      console.error("Error returned from paypal-create-order:", data.error);
+      throw new Error(data.error);
+    }
+
+    if (!data.id) {
       console.error("No order ID returned:", data);
-      throw new Error("Failed to create PayPal order");
+      throw new Error("Failed to create PayPal order - no order ID returned");
     }
 
     // Store the order ID and email in session storage for verification
@@ -120,7 +130,7 @@ export async function initiatePayPalCheckout(
     sessionStorage.setItem("customer_email", email);
     
     // Find the approve URL
-    const approveUrl = data.links.find((link: any) => link.rel === "approve")?.href;
+    const approveUrl = data.links?.find((link: any) => link.rel === "approve")?.href;
     
     if (!approveUrl) {
       console.error("No approve URL found in PayPal response:", data);
@@ -130,12 +140,12 @@ export async function initiatePayPalCheckout(
     // Redirect to PayPal
     console.log("Redirecting to PayPal approval URL:", approveUrl);
     window.location.href = approveUrl;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating PayPal order:", error);
-    setPaymentError("There was an error starting the PayPal checkout process. Please try again.");
+    setPaymentError(`There was an error starting the PayPal checkout process: ${error.message}`);
     toast({
       title: "Checkout error",
-      description: "There was an error starting the PayPal checkout process. Please try again.",
+      description: `Failed to connect to PayPal: ${error.message}`,
       variant: "destructive",
     });
     setIsLoading(false);

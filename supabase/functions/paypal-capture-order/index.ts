@@ -11,12 +11,16 @@ const getAccessToken = async (): Promise<string> => {
   const clientSecret = await getApiSetting("PAYPAL_CLIENT_SECRET");
   const baseUrl = await getApiSetting("PAYPAL_BASE_URL");
   
+  console.log(`PayPal configuration: baseUrl=${baseUrl}, clientId=${clientId ? "configured" : "missing"}, clientSecret=${clientSecret ? "configured" : "missing"}`);
+  
   if (!clientId || !clientSecret) {
     console.error("PayPal credentials not found in database or environment");
     throw new Error("Payment processing is not configured properly");
   }
   
   const auth = btoa(`${clientId}:${clientSecret}`);
+  
+  console.log(`Getting PayPal access token from ${baseUrl}/v1/oauth2/token`);
   
   const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
     method: "POST",
@@ -27,7 +31,14 @@ const getAccessToken = async (): Promise<string> => {
     body: "grant_type=client_credentials",
   });
   
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Failed to get PayPal access token: ${response.status} ${response.statusText}`, errorText);
+    throw new Error(`PayPal authentication failed: ${response.status} ${response.statusText}`);
+  }
+  
   const data = await response.json();
+  console.log("Successfully obtained PayPal access token");
   return data.access_token;
 };
 
@@ -50,12 +61,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    console.log(`Capturing PayPal order: ${order_id}`);
+    console.log(`Capturing PayPal order: ${order_id}, customer email: ${customer_email || "not provided"}`);
     
     const accessToken = await getAccessToken();
     const baseUrl = await getApiSetting("PAYPAL_BASE_URL");
     
     // Capture the PayPal order
+    console.log(`Sending capture request to ${baseUrl}/v2/checkout/orders/${order_id}/capture`);
+    
     const captureResponse = await fetch(`${baseUrl}/v2/checkout/orders/${order_id}/capture`, {
       method: "POST",
       headers: {
@@ -64,7 +77,14 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
     
+    if (!captureResponse.ok) {
+      const errorText = await captureResponse.text();
+      console.error(`PayPal capture failed: ${captureResponse.status} ${captureResponse.statusText}`, errorText);
+      throw new Error(`PayPal capture failed: ${captureResponse.status} ${captureResponse.statusText}`);
+    }
+    
     const captureData = await captureResponse.json();
+    console.log(`PayPal capture response status: ${captureData.status}`);
     
     if (captureData.status !== "COMPLETED") {
       console.log(`PayPal capture failed for order: ${order_id}, status: ${captureData.status}`);

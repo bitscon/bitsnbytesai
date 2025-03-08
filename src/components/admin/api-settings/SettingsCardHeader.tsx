@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function SettingsCardHeader() {
   return (
@@ -13,6 +14,14 @@ export function SettingsCardHeader() {
       <CardDescription>
         Configure global settings for your application
       </CardDescription>
+      
+      <Alert variant="warning" className="mt-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          When using PayPal sandbox mode, use sandbox test accounts for payments. 
+          These test accounts can be created in the PayPal Developer Dashboard.
+        </AlertDescription>
+      </Alert>
     </CardHeader>
   );
 }
