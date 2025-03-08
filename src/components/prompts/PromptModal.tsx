@@ -83,7 +83,15 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
               )}
             </div>
             
-            <SavePromptButton prompt={prompt} size="sm" className="h-8" />
+            {/* Moved favorite button to a position that doesn't overlap with close button */}
+            <div className="mr-8">
+              <SavePromptButton 
+                prompt={prompt} 
+                size="sm" 
+                className="h-8" 
+                showTooltip
+              />
+            </div>
           </div>
           
           {/* Title */}
