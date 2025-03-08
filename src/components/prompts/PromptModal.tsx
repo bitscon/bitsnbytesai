@@ -65,8 +65,8 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[85vh] flex flex-col">
         <div className="p-6 space-y-4 overflow-y-auto">
-          {/* Header with difficulty badge and category */}
-          <div className="flex flex-col gap-2 mt-6 pt-2">
+          {/* Combined difficulty, category, and save button in one row with justified spacing */}
+          <div className="flex items-center justify-between mt-6 pt-2">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={cn(
                 "px-3 py-1 text-sm font-medium rounded-full flex items-center",
@@ -83,15 +83,12 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
               )}
             </div>
             
-            {/* Favorite button moved to a separate row below */}
-            <div className="flex justify-end">
-              <SavePromptButton 
-                prompt={prompt} 
-                size="sm" 
-                className="h-8" 
-                showTooltip
-              />
-            </div>
+            <SavePromptButton 
+              prompt={prompt} 
+              size="sm" 
+              className="h-8 ml-4" 
+              showTooltip
+            />
           </div>
           
           {/* Title */}
