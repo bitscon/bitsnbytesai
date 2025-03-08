@@ -10,7 +10,7 @@ import {
 import { Prompt, PromptCategory } from '@/types/prompts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Check, Star, MessageSquare, BrainCircuit, Sparkles, Zap } from 'lucide-react';
+import { Copy, Check, Star, MessageSquare, BrainCircuit, Sparkles, Zap, Binary } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { SavePromptButton } from './SavePromptButton';
@@ -64,9 +64,17 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[85vh] flex flex-col">
+        {/* Bits & Bytes branded header */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Binary className="h-5 w-5 text-white" />
+            <span className="text-white font-bold tracking-tight">Bits & Bytes</span>
+          </div>
+        </div>
+        
         <div className="p-6 space-y-4 overflow-y-auto">
           {/* Combined difficulty, category, and save button in one row with justified spacing */}
-          <div className="flex items-center justify-between mt-6 pt-2">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={cn(
                 "px-3 py-1 text-sm font-medium rounded-full flex items-center",

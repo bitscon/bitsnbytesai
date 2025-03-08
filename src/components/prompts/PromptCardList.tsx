@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Prompt, PromptCategory } from '@/types/prompts';
-import { BrainCircuit, Sparkles, Zap, ArrowRight } from 'lucide-react';
+import { BrainCircuit, Sparkles, Zap, ArrowRight, Binary } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { SavePromptButton } from './SavePromptButton';
@@ -37,6 +37,10 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
 
   return (
     <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200">
+      <div className="bg-gradient-to-r from-indigo-600/90 to-purple-600/90 px-3 py-1.5 flex items-center">
+        <Binary className="h-3.5 w-3.5 text-white mr-1.5" />
+        <span className="text-xs text-white font-semibold tracking-tight">Bits & Bytes</span>
+      </div>
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           {/* Left side - category + difficulty */}
