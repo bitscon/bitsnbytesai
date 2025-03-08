@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { usePrompts } from '@/hooks/use-prompts';
 import { Card } from '@/components/ui/card';
@@ -6,15 +7,18 @@ import { DifficultyFilter } from './DifficultyFilter';
 import { Input } from '@/components/ui/input';
 import { DifficultyLevel } from '@/types/prompts';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Loader2, Search, SortAsc } from 'lucide-react';
+import { Loader2, Search, Tag } from 'lucide-react';
 import { VirtualizedPromptGrid } from './VirtualizedPromptGrid';
+import { VirtualizedPromptList } from './VirtualizedPromptList';
 import { PromptSkeleton } from './PromptSkeleton';
+import { ViewToggle, ViewMode } from './ViewToggle';
 
 export function PromptLibrary() {
   const { categories, prompts, isLoading } = usePrompts();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [isChangingCategory, setIsChangingCategory] = useState(false);
   const debouncedCategory = useDebounce(selectedCategory, 300);
@@ -61,19 +65,25 @@ export function PromptLibrary() {
             className="pl-9 w-full"
           />
         </div>
-        <DifficultyFilter 
-          selectedDifficulty={selectedDifficulty}
-          onChange={setSelectedDifficulty}
-        />
+        <div className="flex gap-2 items-center">
+          <ViewToggle 
+            viewMode={viewMode} 
+            onChange={setViewMode} 
+          />
+          <DifficultyFilter 
+            selectedDifficulty={selectedDifficulty}
+            onChange={setSelectedDifficulty}
+          />
+        </div>
       </div>
 
       {categories.length > 0 && (
         <div>
           <h3 className="text-lg font-medium mb-3 flex items-center">
-            <SortAsc className="mr-2 h-4 w-4" />
+            <Tag className="mr-2 h-4 w-4" />
             Categories
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {categories.map((category) => (
               <PromptCategoryCard
                 key={category.id}
@@ -100,10 +110,17 @@ export function PromptLibrary() {
             ))}
           </div>
         ) : filteredPrompts.length > 0 ? (
-          <VirtualizedPromptGrid
-            prompts={filteredPrompts}
-            categories={categories}
-          />
+          viewMode === 'grid' ? (
+            <VirtualizedPromptGrid
+              prompts={filteredPrompts}
+              categories={categories}
+            />
+          ) : (
+            <VirtualizedPromptList
+              prompts={filteredPrompts}
+              categories={categories}
+            />
+          )
         ) : (
           <Card className="p-6 text-center">
             <p className="text-muted-foreground">
