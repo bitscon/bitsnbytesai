@@ -9,6 +9,7 @@ import { useTheme } from '@/context/theme/ThemeContext';
 import { ThemeControls } from './theme/ThemeControls';
 import { ThemePreview } from './theme/ThemePreview';
 import { ThemeSettings } from './theme/types';
+import { CreateThemePreset } from './theme/CreateThemePreset';
 
 export function ThemeCustomization() {
   const [themePresets, setThemePresets] = useState<ThemeSettings[]>([]);
@@ -17,10 +18,11 @@ export function ThemeCustomization() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [currentMode, setCurrentMode] = useState<'light' | 'dark'>('light');
   const [previewStyle, setPreviewStyle] = useState<React.CSSProperties>({});
+  const [isActivateDialogOpen, setIsActivateDialogOpen] = useState<boolean>(false);
+  const [isCreatePresetOpen, setIsCreatePresetOpen] = useState<boolean>(false);
   const { toast } = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
 
-  // Initialize the current mode based on the app's current theme
   useEffect(() => {
     setCurrentMode(isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
@@ -29,7 +31,6 @@ export function ThemeCustomization() {
     fetchThemePresets();
   }, [currentMode]);
 
-  // Fetch all theme presets for the current mode
   const fetchThemePresets = async () => {
     setIsLoading(true);
     try {
@@ -46,7 +47,6 @@ export function ThemeCustomization() {
       
       setThemePresets(data);
       
-      // Find and set the active preset
       const activePreset = data.find(preset => preset.is_active);
       if (activePreset) {
         setSelectedPreset(activePreset);
@@ -67,18 +67,15 @@ export function ThemeCustomization() {
     }
   };
 
-  // Handle mode tab change
   const handleModeChange = (value: string) => {
     const newMode = value as 'light' | 'dark';
     setCurrentMode(newMode);
     
-    // Sync the app's theme with the selected tab
     if ((newMode === 'dark' && !isDarkMode) || (newMode === 'light' && isDarkMode)) {
       toggleTheme();
     }
   };
 
-  // Update the preview style based on the selected preset
   const updatePreviewStyle = (preset: ThemeSettings) => {
     setPreviewStyle({
       filter: `brightness(${preset.brightness}%) contrast(${preset.contrast}%) saturate(${preset.saturation}%)`,
@@ -86,7 +83,6 @@ export function ThemeCustomization() {
     });
   };
 
-  // Handle preset selection change
   const handlePresetChange = (presetId: string) => {
     const preset = themePresets.find(p => p.id === presetId);
     if (preset) {
@@ -95,7 +91,6 @@ export function ThemeCustomization() {
     }
   };
 
-  // Handle slider value changes
   const handleSliderChange = (name: 'brightness' | 'contrast' | 'saturation', value: number[]) => {
     if (!selectedPreset) return;
     
@@ -105,7 +100,6 @@ export function ThemeCustomization() {
     updatePreviewStyle(updatedPreset);
   };
 
-  // Delete a theme preset
   const handleDeletePreset = async (presetId: string) => {
     setIsSaving(true);
     try {
@@ -123,7 +117,6 @@ export function ThemeCustomization() {
         description: 'Theme preset deleted',
       });
       
-      // Refresh presets and reset selection
       fetchThemePresets();
     } catch (error) {
       console.error('Error deleting theme preset:', error);
@@ -137,13 +130,11 @@ export function ThemeCustomization() {
     }
   };
 
-  // Activate a theme preset
   const handleActivatePreset = async (presetId: string) => {
     if (!selectedPreset) return;
     
     setIsSaving(true);
     try {
-      // First, set all presets of this mode to inactive
       const { error: resetError } = await supabase
         .from('theme_settings')
         .update({ is_active: false })
@@ -153,7 +144,6 @@ export function ThemeCustomization() {
         throw new Error(resetError.message);
       }
       
-      // Then activate the selected preset
       const { error } = await supabase
         .from('theme_settings')
         .update({
@@ -173,7 +163,6 @@ export function ThemeCustomization() {
         description: 'Theme activated and settings saved',
       });
       
-      // Refresh presets to get the updated active state
       fetchThemePresets();
     } catch (error) {
       console.error('Error activating theme preset:', error);
@@ -187,7 +176,6 @@ export function ThemeCustomization() {
     }
   };
 
-  // Save the current preset settings
   const savePresetSettings = async () => {
     if (!selectedPreset || !selectedPreset.id) return;
     
@@ -213,13 +201,53 @@ export function ThemeCustomization() {
         description: 'Theme settings saved',
       });
       
-      // Refresh presets to get the updated active state
       fetchThemePresets();
     } catch (error) {
       console.error('Error saving theme settings:', error);
       toast({
         title: 'Error',
         description: 'Failed to save theme settings',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCreatePreset = async (preset: Omit<ThemeSettings, 'id'>) => {
+    setIsSaving(true);
+    try {
+      const newPreset = {
+        ...preset,
+        is_dark: currentMode === 'dark',
+        is_active: false
+      };
+      
+      const { data, error } = await supabase
+        .from('theme_settings')
+        .insert(newPreset)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'New theme preset created',
+      });
+      
+      await fetchThemePresets();
+      if (data) {
+        handlePresetChange(data.id);
+      }
+      setIsCreatePresetOpen(false);
+    } catch (error) {
+      console.error('Error creating theme preset:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create theme preset',
         variant: 'destructive',
       });
     } finally {
@@ -242,45 +270,74 @@ export function ThemeCustomization() {
           </div>
         ) : (
           <div className="space-y-6">
-            <Tabs 
-              value={currentMode} 
-              onValueChange={handleModeChange}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="light">Light Mode</TabsTrigger>
-                <TabsTrigger value="dark">Dark Mode</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="light" className="space-y-4 pt-4">
-                <div className="space-y-4">
-                  <ThemeControls
-                    themePresets={themePresets}
-                    selectedPreset={selectedPreset}
-                    isLoading={isLoading}
-                    isSaving={isSaving}
-                    onPresetChange={handlePresetChange}
-                    onSliderChange={handleSliderChange}
-                    onDeletePreset={handleDeletePreset}
-                    onActivatePreset={handleActivatePreset}
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="dark" className="space-y-4 pt-4">
-                <div className="space-y-4">
-                  <ThemeControls
-                    themePresets={themePresets}
-                    selectedPreset={selectedPreset}
-                    isLoading={isLoading}
-                    isSaving={isSaving}
-                    onPresetChange={handlePresetChange}
-                    onSliderChange={handleSliderChange}
-                    onDeletePreset={handleDeletePreset}
-                    onActivatePreset={handleActivatePreset}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="flex justify-between items-center">
+              <Tabs 
+                value={currentMode} 
+                onValueChange={handleModeChange}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="light">Light Mode</TabsTrigger>
+                  <TabsTrigger value="dark">Dark Mode</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="light" className="space-y-4 pt-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-end mb-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsCreatePresetOpen(true)}
+                        size="sm"
+                      >
+                        Create New Preset
+                      </Button>
+                    </div>
+                    <ThemeControls
+                      themePresets={themePresets}
+                      selectedPreset={selectedPreset}
+                      isLoading={isLoading}
+                      isSaving={isSaving}
+                      onPresetChange={handlePresetChange}
+                      onSliderChange={handleSliderChange}
+                      onDeletePreset={handleDeletePreset}
+                      onActivatePreset={(presetId) => {
+                        if (selectedPreset && selectedPreset.id) {
+                          setIsActivateDialogOpen(true);
+                        }
+                      }}
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="dark" className="space-y-4 pt-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-end mb-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsCreatePresetOpen(true)}
+                        size="sm"
+                      >
+                        Create New Preset
+                      </Button>
+                    </div>
+                    <ThemeControls
+                      themePresets={themePresets}
+                      selectedPreset={selectedPreset}
+                      isLoading={isLoading}
+                      isSaving={isSaving}
+                      onPresetChange={handlePresetChange}
+                      onSliderChange={handleSliderChange}
+                      onDeletePreset={handleDeletePreset}
+                      onActivatePreset={(presetId) => {
+                        if (selectedPreset && selectedPreset.id) {
+                          setIsActivateDialogOpen(true);
+                        }
+                      }}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
 
             <ThemePreview previewStyle={previewStyle} />
           </div>
@@ -312,6 +369,13 @@ export function ThemeCustomization() {
           </Button>
         </div>
       </CardFooter>
+
+      <CreateThemePreset 
+        open={isCreatePresetOpen} 
+        onOpenChange={setIsCreatePresetOpen}
+        onSubmit={handleCreatePreset}
+        isLoading={isSaving}
+      />
     </Card>
   );
 }

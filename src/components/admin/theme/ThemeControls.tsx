@@ -83,6 +83,19 @@ export function ThemeControls({
               </Button>
             </div>
           )}
+          
+          {onActivatePreset && !selectedPreset.is_active && (
+            <div className="mt-2">
+              <Button 
+                variant="default" 
+                size="sm" 
+                disabled={isLoading || isSaving || !selectedPreset || selectedPreset.is_active} 
+                onClick={() => setIsActivateDialogOpen(true)}
+              >
+                Activate Preset
+              </Button>
+            </div>
+          )}
         </>
       )}
 
