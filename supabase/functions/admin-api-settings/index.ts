@@ -31,51 +31,61 @@ function processApiSettings(settings: any[]) {
     
     return {
       ...setting,
-      key_value: isSecret && setting.key_value ? setting.key_value : setting.key_value,
       has_value: !!setting.key_value && setting.key_value.trim() !== ""
     };
   });
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Admin API Settings function called with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
   
-  // Get the authenticated user ID from Supabase Auth
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    return new Response(
-      JSON.stringify({ error: "Missing Authorization header" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-  
-  if (userError || !user) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  
-  // Check if user is an admin
-  const admin = await isAdmin(user.id);
-  if (!admin) {
-    return new Response(
-      JSON.stringify({ error: "Forbidden. Admin access required." }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  
   try {
+    // Get the authenticated user ID from Supabase Auth
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Missing Authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    console.log("Attempting to get user from token");
+    
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (userError || !user) {
+      console.error("Error getting user from token:", userError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized", details: userError?.message }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("User authenticated:", user.id);
+    
+    // Check if user is an admin
+    const admin = await isAdmin(user.id);
+    console.log("Is admin:", admin);
+    
+    if (!admin) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden. Admin access required." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     // Ensure necessary settings exist
     await ensurePayPalSettings();
     
     if (req.method === "GET") {
+      console.log("Fetching all API settings");
       // Get all API settings
       const settings = await getAllApiSettings();
       
@@ -90,6 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (req.method === "POST") {
       // Update an API setting
       const { key_name, key_value } = await req.json();
+      console.log("Updating API setting:", key_name);
       
       if (!key_name) {
         return new Response(
