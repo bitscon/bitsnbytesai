@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { BookmarkPlus, BookmarkCheck } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import { useSavedPrompts } from '@/hooks/use-saved-prompts';
 import { Prompt } from '@/types/prompts';
@@ -21,7 +21,7 @@ export function SavePromptButton({
   variant = 'outline', 
   size = 'sm',
   className,
-  showText = true
+  showText = false // Default to false to only show the icon
 }: SavePromptButtonProps) {
   const { user } = useAuth();
   const { isPromptSaved, savePrompt, unsavePrompt } = useSavedPrompts();
@@ -43,41 +43,34 @@ export function SavePromptButton({
 
   const button = (
     <Button
-      variant={isSaved ? 'secondary' : variant}
+      variant={isSaved ? 'ghost' : variant}
       size={size}
       onClick={handleToggleSave}
-      className={cn(showText ? "gap-1" : "", className)}
-      aria-label={isSaved ? "Unsave prompt" : "Save prompt"}
-    >
-      {isSaved ? (
-        <>
-          <BookmarkCheck className="h-4 w-4" />
-          {showText && 'Saved'}
-        </>
-      ) : (
-        <>
-          <BookmarkPlus className="h-4 w-4" />
-          {showText && 'Save'}
-        </>
+      className={cn(
+        "aspect-square p-0", 
+        isSaved ? "text-red-500 hover:text-red-600" : "", 
+        className
       )}
+      aria-label={isSaved ? "Remove favorite" : "Add to favorites"}
+    >
+      <Heart 
+        className={cn("h-4 w-4", isSaved ? "fill-current" : "")} 
+      />
+      {showText && (isSaved ? 'Saved' : 'Save')}
     </Button>
   );
 
-  // If we're not showing text, wrap in tooltip for better UX
-  if (!showText) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {button}
-          </TooltipTrigger>
-          <TooltipContent>
-            {isSaved ? 'Remove from saved' : 'Save prompt'}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  return button;
+  // Always wrap in tooltip for better UX
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {button}
+        </TooltipTrigger>
+        <TooltipContent>
+          {isSaved ? 'Remove favorite' : 'Favorite'}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
