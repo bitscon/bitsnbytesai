@@ -89,4 +89,73 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  .animate-hover-scale {
+    @apply transition-transform duration-200 hover:scale-105 active:scale-95;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes slideInRight {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Improve contrast for better readability */
+  .dark .text-muted-foreground {
+    @apply text-gray-300;
+  }
+  
+  /* Consistent typography helpers */
+  .heading-xl {
+    @apply text-4xl font-bold tracking-tight;
+  }
+  
+  .heading-lg {
+    @apply text-3xl font-bold tracking-tight;
+  }
+  
+  .heading-md {
+    @apply text-2xl font-semibold;
+  }
+  
+  .heading-sm {
+    @apply text-xl font-semibold;
+  }
+  
+  .body-lg {
+    @apply text-lg leading-relaxed;
+  }
+  
+  .body {
+    @apply text-base leading-relaxed;
+  }
+  
+  .body-sm {
+    @apply text-sm leading-relaxed;
+  }
+  
+  .caption {
+    @apply text-xs text-muted-foreground;
+  }
 }
