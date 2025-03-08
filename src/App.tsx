@@ -25,38 +25,42 @@ import AdminThemeSettings from "./pages/AdminThemeSettings";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/settings" element={<AdminRoute><AdminApiSettings /></AdminRoute>} />
-              <Route path="/admin/theme" element={<AdminRoute><AdminThemeSettings /></AdminRoute>} />
-              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-              <Route path="/admin/prompts" element={<AdminRoute><AdminPrompts /></AdminRoute>} />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <div className="app-root">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+                  
+                  {/* Admin Routes */}
+                  <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                  <Route path="/admin/settings" element={<AdminRoute><AdminApiSettings /></AdminRoute>} />
+                  <Route path="/admin/theme" element={<AdminRoute><AdminThemeSettings /></AdminRoute>} />
+                  <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                  <Route path="/admin/prompts" element={<AdminRoute><AdminPrompts /></AdminRoute>} />
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
       </ThemeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
