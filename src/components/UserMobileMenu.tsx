@@ -25,6 +25,10 @@ export function UserMobileMenu({ isOpen, user, signOut, closeMobileMenu }: UserM
   return (
     <div className="md:hidden bg-background/95 backdrop-blur-md">
       <div className="container mx-auto px-4 py-4 space-y-4">
+        <div className="flex items-center space-x-2 pb-4 mb-2 border-b">
+          <span className="text-lg font-bold text-brand-blue">bits & bytes</span>
+          <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue">AI</span>
+        </div>
         <Button 
           onClick={() => handleNavLinkClick("/dashboard")}
           variant="ghost"

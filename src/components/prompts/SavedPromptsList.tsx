@@ -1,44 +1,63 @@
 
 import React from 'react';
-import { useSavedPrompts } from '@/hooks/use-saved-prompts';
+import { Prompt, PromptCategory } from '@/types/prompts';
+import { Card, CardContent } from '@/components/ui/card';
 import { PromptCard } from './PromptCard';
-import { Card } from '@/components/ui/card';
-import { Loader2, Bookmark } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
-export function SavedPromptsList() {
-  const { savedPrompts, isLoading } = useSavedPrompts();
+interface SavedPromptsListProps {
+  savedPrompts: Prompt[];
+  categories: PromptCategory[];
+  isLoading: boolean;
+}
+
+export function SavedPromptsList({ savedPrompts, categories, isLoading }: SavedPromptsListProps) {
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-lg">Loading saved prompts...</span>
-      </div>
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="flex justify-center items-center min-h-[200px]">
+            <p className="text-muted-foreground">Loading saved prompts...</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (savedPrompts.length === 0) {
     return (
-      <Card className="p-6 text-center">
-        <div className="flex flex-col items-center justify-center gap-2">
-          <Bookmark className="h-8 w-8 text-muted-foreground" />
-          <h3 className="text-lg font-medium">No saved prompts</h3>
-          <p className="text-muted-foreground">
-            You haven't saved any prompts yet. Browse the prompt library and click "Save" on prompts you want to reference later.
-          </p>
-        </div>
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="flex flex-col justify-center items-center min-h-[300px] space-y-4">
+            <p className="text-muted-foreground">You haven't saved any prompts yet.</p>
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Browse prompts
+            </Button>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {savedPrompts.map((savedPrompt) => (
-        <PromptCard 
-          key={savedPrompt.id} 
-          prompt={savedPrompt.prompt!} 
-        />
-      ))}
+      {savedPrompts.map((prompt) => {
+        const category = categories.find((c) => c.id === prompt.category_id);
+        
+        return (
+          <PromptCard
+            key={prompt.id}
+            prompt={prompt}
+            category={category}
+            onClick={() => {}} // Adding the required onClick prop
+          />
+        );
+      })}
     </div>
   );
 }

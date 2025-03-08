@@ -40,8 +40,9 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
   return (
     <div className="bg-background border-b border-border sticky top-0 z-40">
       <div className="container flex h-16 items-center justify-between py-4">
-        <Link to="/" className="font-bold text-xl">
-          AI Toolkit
+        <Link to="/" className="flex items-center space-x-2">
+          <span className="text-xl font-bold text-brand-blue">bits & bytes</span>
+          <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue">AI</span>
         </Link>
         <div className="flex items-center space-x-4">
           <nav className="hidden md:flex items-center space-x-4">
