@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { Purchase } from "@/types/purchases";
 import { PromptLibrary } from "@/components/prompts/PromptLibrary";
+import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -46,7 +47,14 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <UserNavbar hasPurchased={hasPurchased} /> 
       <div className="container mx-auto px-4 pt-24 pb-16">
-        <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+        <motion.h1 
+          className="text-3xl font-bold mb-8"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          AI Prompts Library
+        </motion.h1>
         
         {isLoading ? (
           <div className="animate-pulse">
@@ -54,13 +62,16 @@ export default function Dashboard() {
             <div className="h-32 bg-gray-200 rounded mb-4"></div>
           </div>
         ) : (
-          <div>
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">AI Prompts Library</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <Card className="p-6 shadow-md">
               {hasPurchased ? (
                 <PromptLibrary />
               ) : (
-                <div className="text-center py-8">
+                <div className="text-center py-12">
                   <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-medium mb-2">Access Locked</h3>
                   <p className="text-muted-foreground mb-6">
@@ -72,7 +83,7 @@ export default function Dashboard() {
                 </div>
               )}
             </Card>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

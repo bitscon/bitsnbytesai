@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { PromptCard } from './PromptCard';
 import { Prompt, PromptCategory } from '@/types/prompts';
+import { motion } from 'framer-motion';
 
 interface VirtualizedPromptGridProps {
   prompts: Prompt[];
@@ -43,8 +44,11 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
             const category = categories.find(c => c.id === prompt.category_id);
             
             return (
-              <div
+              <motion.div
                 key={virtualItem.key}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: virtualItem.index * 0.05 }}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -58,7 +62,7 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
                   prompt={prompt}
                   category={category}
                 />
-              </div>
+              </motion.div>
             );
           })}
         </div>

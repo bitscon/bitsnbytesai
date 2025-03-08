@@ -15,6 +15,7 @@ import { ViewToggle, ViewMode } from './ViewToggle';
 import { useAuth } from '@/context/auth';
 import { useSavedPrompts } from '@/hooks/use-saved-prompts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function PromptLibrary() {
   const { prompts, categories, isLoading } = usePrompts();
@@ -59,6 +60,11 @@ export function PromptLibrary() {
 
   const handleDifficultyChange = (difficulty: DifficultyLevel | null) => {
     setSelectedDifficulty(difficulty);
+  };
+
+  const handleCategoryChange = (categoryId: string | null) => {
+    setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
+    setIsChangingCategory(true);
   };
 
   if (isLoading) {
@@ -107,64 +113,83 @@ export function PromptLibrary() {
         </div>
       </div>
 
-      {categories.length > 0 && activeTab === 'all' && (
-        <div>
-          <h3 className="text-lg font-medium mb-3 flex items-center">
-            <Tag className="mr-2 h-4 w-4" />
-            Categories
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {categories.map((category) => (
-              <PromptCategoryCard
-                key={category.id}
-                category={category}
-                isActive={selectedCategory === category.id}
-                onClick={() => {
-                  setSelectedCategory(
-                    selectedCategory === category.id ? null : category.id
-                  );
-                  setIsChangingCategory(true);
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <h3 className="text-lg font-medium mb-3">
-          {activeTab === 'saved' ? 'Saved Prompts' : 'Prompts'}
-        </h3>
-        {isChangingCategory || (activeTab === 'saved' && isSavedPromptsLoading) ? (
-          <div className="grid grid-cols-1 gap-4">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <PromptSkeleton key={index} />
-            ))}
-          </div>
-        ) : filteredPrompts.length > 0 ? (
-          viewMode === 'grid' ? (
-            <VirtualizedPromptGrid
-              prompts={filteredPrompts}
-              categories={categories}
-            />
-          ) : (
-            <VirtualizedPromptList
-              prompts={filteredPrompts}
-              categories={categories}
-            />
-          )
+      <AnimatePresence mode="wait">
+        {(searchTerm || selectedCategory || selectedDifficulty || activeTab === 'saved') ? (
+          <motion.div 
+            key="filtered-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium">
+                {activeTab === 'saved' ? 'Saved Prompts' : 'Results'}
+              </h3>
+              
+              {selectedCategory && (
+                <button 
+                  onClick={() => setSelectedCategory(null)}
+                  className="text-sm text-primary hover:underline flex items-center"
+                >
+                  <Tag className="mr-1 h-3 w-3" /> Clear category filter
+                </button>
+              )}
+            </div>
+            
+            {isChangingCategory || (activeTab === 'saved' && isSavedPromptsLoading) ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <PromptSkeleton key={index} />
+                ))}
+              </div>
+            ) : filteredPrompts.length > 0 ? (
+              viewMode === 'grid' ? (
+                <VirtualizedPromptGrid
+                  prompts={filteredPrompts}
+                  categories={categories}
+                />
+              ) : (
+                <VirtualizedPromptList
+                  prompts={filteredPrompts}
+                  categories={categories}
+                />
+              )
+            ) : (
+              <Card className="p-6 text-center">
+                <p className="text-muted-foreground">
+                  {activeTab === 'saved' ? 
+                    "You haven't saved any prompts yet." : 
+                    "No prompts match your current filters. Try adjusting your search or filters."}
+                </p>
+              </Card>
+            )}
+          </motion.div>
         ) : (
-          <Card className="p-6 text-center">
-            <p className="text-muted-foreground">
-              {activeTab === 'saved' ? 
-                "You haven't saved any prompts yet." : 
-                debouncedSearchTerm || selectedCategory || selectedDifficulty
-                  ? "No prompts match your current filters. Try adjusting your search or filters."
-                  : "No prompts available yet."}
-            </p>
-          </Card>
+          <motion.div
+            key="category-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h3 className="text-lg font-medium mb-3 flex items-center">
+              <Tag className="mr-2 h-4 w-4" />
+              Browse Categories
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {categories.map((category) => (
+                <PromptCategoryCard
+                  key={category.id}
+                  category={category}
+                  isActive={selectedCategory === category.id}
+                  onClick={() => handleCategoryChange(category.id)}
+                />
+              ))}
+            </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
