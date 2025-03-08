@@ -65,8 +65,8 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[85vh] flex flex-col">
         <div className="p-6 space-y-4 overflow-y-auto">
-          {/* Header with category and difficulty */}
-          <div className="flex items-center justify-between sticky top-0 bg-background pt-1 pb-2 z-10">
+          {/* Header with category and difficulty - moved out of the sticky position */}
+          <div className="flex items-center justify-between pt-1 pb-2">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={cn(
                 "px-3 py-1 text-sm font-medium rounded-full flex items-center",
@@ -83,15 +83,13 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
               )}
             </div>
             
-            {/* Moved favorite button to a position that doesn't overlap with close button */}
-            <div className="mr-8">
-              <SavePromptButton 
-                prompt={prompt} 
-                size="sm" 
-                className="h-8" 
-                showTooltip
-              />
-            </div>
+            {/* Favorite button */}
+            <SavePromptButton 
+              prompt={prompt} 
+              size="sm" 
+              className="h-8" 
+              showTooltip
+            />
           </div>
           
           {/* Title */}
