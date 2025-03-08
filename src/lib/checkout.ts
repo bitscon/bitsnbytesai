@@ -21,7 +21,7 @@ export async function fetchStripePriceId(): Promise<string> {
     const priceIdSetting = settings.find((s: any) => s.key_name === "STRIPE_PRICE_ID");
     
     if (priceIdSetting && priceIdSetting.has_value) {
-      return "configured";
+      return priceIdSetting.key_value;
     } else {
       // Fallback to hardcoded price ID
       return "price_1OtQhgFCNu0wSsHhBRs2ZWZy";

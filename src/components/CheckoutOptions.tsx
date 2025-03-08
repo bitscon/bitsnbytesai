@@ -12,6 +12,7 @@ import {
   initiateStripeCheckout,
   initiatePayPalCheckout
 } from "@/lib/checkout";
+import { Separator } from "@/components/ui/separator";
 
 interface CheckoutOptionsProps {
   price: number;
@@ -87,6 +88,13 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
         onClick={handleStripeCheckout}
         disabled={isLoadingStripe || isLoadingPayPal || !email || !stripePriceId}
       />
+      
+      <div className="relative py-2">
+        <Separator />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="bg-background px-2 text-xs text-muted-foreground">or</span>
+        </div>
+      </div>
       
       <PayPalCheckoutButton 
         isLoading={isLoadingPayPal}
