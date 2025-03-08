@@ -1,26 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save } from 'lucide-react';
 import { useTheme } from '@/context/theme/ThemeContext';
-
-interface ThemeSettings {
-  id?: string;
-  preset_name: string;
-  is_dark: boolean;
-  brightness: number;
-  contrast: number;
-  saturation: number;
-  is_active: boolean;
-}
+import { ThemeControls } from './theme/ThemeControls';
+import { ThemePreview } from './theme/ThemePreview';
+import { ThemeSettings } from './theme/types';
 
 export function ThemeCustomization() {
   const [themePresets, setThemePresets] = useState<ThemeSettings[]>([]);
@@ -193,41 +182,32 @@ export function ThemeCustomization() {
               
               <TabsContent value="light" className="space-y-4 pt-4">
                 <div className="space-y-4">
-                  {renderThemeControls()}
+                  <ThemeControls
+                    themePresets={themePresets}
+                    selectedPreset={selectedPreset}
+                    isLoading={isLoading}
+                    isSaving={isSaving}
+                    onPresetChange={handlePresetChange}
+                    onSliderChange={handleSliderChange}
+                  />
                 </div>
               </TabsContent>
               
               <TabsContent value="dark" className="space-y-4 pt-4">
                 <div className="space-y-4">
-                  {renderThemeControls()}
+                  <ThemeControls
+                    themePresets={themePresets}
+                    selectedPreset={selectedPreset}
+                    isLoading={isLoading}
+                    isSaving={isSaving}
+                    onPresetChange={handlePresetChange}
+                    onSliderChange={handleSliderChange}
+                  />
                 </div>
               </TabsContent>
             </Tabs>
 
-            <div className="rounded-lg border p-4 mt-4">
-              <h3 className="text-lg font-medium mb-2">Theme Preview</h3>
-              <div style={previewStyle}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="p-4">
-                    <h4 className="font-semibold">Card Example</h4>
-                    <p className="text-sm text-muted-foreground mt-2">This is how cards will appear with the current settings.</p>
-                  </Card>
-                  
-                  <div className="space-y-2">
-                    <Button>Primary Button</Button>
-                    <Button variant="outline" className="ml-2">Outline Button</Button>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Text Input</Label>
-                    <div className="flex items-center space-x-2">
-                      <Switch id="preview-switch" />
-                      <Label htmlFor="preview-switch">Toggle Example</Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ThemePreview previewStyle={previewStyle} />
           </div>
         )}
       </CardContent>
@@ -259,80 +239,4 @@ export function ThemeCustomization() {
       </CardFooter>
     </Card>
   );
-
-  // Helper function to render theme controls
-  function renderThemeControls() {
-    return (
-      <>
-        <div>
-          <Label htmlFor="preset-select">Select Preset</Label>
-          <Select
-            value={selectedPreset?.id || ''}
-            onValueChange={handlePresetChange}
-            disabled={isLoading || themePresets.length === 0}
-          >
-            <SelectTrigger id="preset-select" className="w-full">
-              <SelectValue placeholder="Select a theme preset" />
-            </SelectTrigger>
-            <SelectContent>
-              {themePresets.map((preset) => (
-                <SelectItem key={preset.id} value={preset.id || ''}>
-                  {preset.preset_name} {preset.is_active ? '(Active)' : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedPreset && (
-          <div className="space-y-6 pt-4">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="brightness-slider">Brightness: {selectedPreset.brightness}%</Label>
-              </div>
-              <Slider
-                id="brightness-slider"
-                min={50}
-                max={150}
-                step={1}
-                value={[selectedPreset.brightness]}
-                onValueChange={(value) => handleSliderChange('brightness', value)}
-                disabled={isLoading || isSaving}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="contrast-slider">Contrast: {selectedPreset.contrast}%</Label>
-              </div>
-              <Slider
-                id="contrast-slider"
-                min={50}
-                max={150}
-                step={1}
-                value={[selectedPreset.contrast]}
-                onValueChange={(value) => handleSliderChange('contrast', value)}
-                disabled={isLoading || isSaving}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="saturation-slider">Saturation: {selectedPreset.saturation}%</Label>
-              </div>
-              <Slider
-                id="saturation-slider"
-                min={50}
-                max={150}
-                step={1}
-                value={[selectedPreset.saturation]}
-                onValueChange={(value) => handleSliderChange('saturation', value)}
-                disabled={isLoading || isSaving}
-              />
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
 }
