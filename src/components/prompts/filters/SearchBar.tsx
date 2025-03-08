@@ -15,7 +15,7 @@ export function SearchBar({ searchTerm, onChange }: SearchBarProps) {
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Search prompts..."
+          placeholder="Search..."
           value={searchTerm}
           onChange={(e) => onChange(e.target.value)}
           className="pl-9 w-full"
