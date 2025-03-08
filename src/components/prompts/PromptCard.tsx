@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { PromptExplanation } from './PromptExplanation';
+import { useAuth } from '@/context/auth';
+import { SavePromptButton } from './SavePromptButton';
 
 export interface PromptCardProps {
   prompt: Prompt;
@@ -20,6 +21,7 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(prompt.prompt_text);
@@ -75,15 +77,18 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
                 {prompt.prompt_text.split(' ').slice(0, 6).join(' ')}...
               </h3>
             </div>
-            <Button
-              size="sm"
-              variant={copied ? "default" : "outline"}
-              onClick={handleCopy}
-              className="gap-1"
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copied" : "Copy"}
-            </Button>
+            <div className="flex space-x-2">
+              {user && <SavePromptButton prompt={prompt} />}
+              <Button
+                size="sm"
+                variant={copied ? "default" : "outline"}
+                onClick={handleCopy}
+                className="gap-1"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
           </div>
           
           <PromptExplanation 
@@ -91,11 +96,11 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
             enabled={prompt.explanation_enabled}
           />
           
-          {category && (
+          {prompt.image_url && (
             <div className="mt-3 mb-2">
               <OptimizedImage 
-                src={imageUrl}
-                alt={`Illustration for ${category.name} prompt`}
+                src={prompt.image_url}
+                alt={`Illustration for ${category?.name || ''} prompt`}
                 aspectRatio="16/9"
                 className="rounded-md transition-all duration-300"
                 containerClassName="rounded-md border border-muted-foreground/10"

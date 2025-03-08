@@ -10,6 +10,7 @@ export interface PromptFormData {
   why_it_works: string;
   explanation: string;
   explanation_enabled: boolean;
+  image_url: string;
 }
 
 interface UsePromptFormProps {
@@ -25,6 +26,7 @@ export function usePromptForm({ prompt, onSuccess }: UsePromptFormProps) {
     why_it_works: prompt?.why_it_works || '',
     explanation: prompt?.explanation || '',
     explanation_enabled: prompt?.explanation_enabled ?? true,
+    image_url: prompt?.image_url || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createPrompt, updatePrompt } = useAdminPrompts();

@@ -20,3 +20,11 @@ export interface PromptCategory {
 }
 
 export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+
+export interface SavedPrompt {
+  id: string;
+  user_id: string;
+  prompt_id: string;
+  created_at: string;
+  prompt?: Prompt;
+}

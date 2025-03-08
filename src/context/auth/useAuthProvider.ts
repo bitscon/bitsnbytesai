@@ -76,6 +76,8 @@ export function useAuthProvider() {
     return checkUserAdminStatus(user);
   };
 
+  const isLoggedIn = !!user && !!session;
+
   return {
     user,
     session,
@@ -86,5 +88,6 @@ export function useAuthProvider() {
     resetPassword,
     updatePassword,
     checkAdminStatus,
+    isLoggedIn,
   };
 }

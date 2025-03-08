@@ -7,6 +7,7 @@ import { DifficultySelector } from '@/components/admin/prompt-form/DifficultySel
 import { PromptTextArea } from '@/components/admin/prompt-form/PromptTextArea';
 import { ExplanationToggle } from '@/components/admin/prompt-form/ExplanationToggle';
 import { FormActions } from '@/components/admin/prompt-form/FormActions';
+import { ImageUrlInput } from '@/components/admin/prompt-form/ImageUrlInput';
 
 interface PromptFormProps {
   prompt?: Prompt;
@@ -72,6 +73,11 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
         rows={3}
         required
         onChange={handleChange}
+      />
+      
+      <ImageUrlInput
+        imageUrl={formData.image_url}
+        onChange={(value) => handleChange({ name: 'image_url', value })}
       />
       
       <FormActions 

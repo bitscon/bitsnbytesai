@@ -101,6 +101,7 @@ export type Database = {
           explanation: string | null
           explanation_enabled: boolean | null
           id: string
+          image_url: string | null
           prompt_text: string
           updated_at: string
           why_it_works: string
@@ -112,6 +113,7 @@ export type Database = {
           explanation?: string | null
           explanation_enabled?: boolean | null
           id?: string
+          image_url?: string | null
           prompt_text: string
           updated_at?: string
           why_it_works: string
@@ -123,6 +125,7 @@ export type Database = {
           explanation?: string | null
           explanation_enabled?: boolean | null
           id?: string
+          image_url?: string | null
           prompt_text?: string
           updated_at?: string
           why_it_works?: string
@@ -133,6 +136,35 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "prompt_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_prompts: {
+        Row: {
+          created_at: string | null
+          id: string
+          prompt_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          prompt_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          prompt_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_prompts_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
             referencedColumns: ["id"]
           },
         ]
