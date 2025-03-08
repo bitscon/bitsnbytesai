@@ -2,11 +2,12 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Prompt, PromptCategory } from '@/types/prompts';
-import { BrainCircuit, Sparkles, Zap, ChevronRight } from 'lucide-react';
+import { BrainCircuit, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { SavePromptButton } from './SavePromptButton';
 import { useAuth } from '@/context/auth';
+import { Button } from '@/components/ui/button';
 
 export interface PromptCardListProps {
   prompt: Prompt;
@@ -78,17 +79,21 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
             </div>
             
             {/* Short description */}
-            {prompt.short_description && (
+            {prompt.short_description ? (
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {prompt.short_description}
               </p>
+            ) : (
+              <p className="text-sm text-muted-foreground line-clamp-2 italic">
+                No description available
+              </p>
             )}
             
-            {/* View details indicator */}
-            <div className="flex items-center justify-end text-xs text-primary mt-2">
-              <span className="flex items-center">
-                View Details <ChevronRight className="h-3 w-3 ml-1" />
-              </span>
+            {/* View Now button */}
+            <div className="flex justify-end mt-2">
+              <Button variant="ghost" size="sm" className="text-xs flex items-center">
+                View Now <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
             </div>
           </div>
         </div>

@@ -2,12 +2,13 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Prompt, PromptCategory } from '@/types/prompts';
-import { BrainCircuit, Sparkles, Zap, ChevronDown } from 'lucide-react';
+import { BrainCircuit, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { SavePromptButton } from './SavePromptButton';
 import { useAuth } from '@/context/auth';
+import { Button } from '@/components/ui/button';
 
 export interface PromptCardProps {
   prompt: Prompt;
@@ -99,12 +100,12 @@ export function PromptCard({ prompt, category, onClick }: PromptCardProps) {
             )}
           </div>
           
-          {/* View details button at the bottom */}
-          <div className="mt-auto pt-3 flex justify-center text-sm text-muted-foreground">
-            <span className="flex items-center text-xs">
-              View Details
-              <ChevronDown className="h-3 w-3 ml-1" />
-            </span>
+          {/* View Now button at the bottom */}
+          <div className="mt-auto pt-3">
+            <Button variant="ghost" size="sm" className="w-full text-xs flex items-center justify-center">
+              View Now
+              <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
           </div>
         </CardContent>
       </Card>
