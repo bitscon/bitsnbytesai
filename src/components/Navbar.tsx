@@ -6,38 +6,15 @@ import { useAuth } from "@/context/auth";
 import { ThemeToggle } from "./ThemeToggle";
 import { AuthButtons } from "./AuthButtons";
 import { MobileMenu } from "./MobileMenu";
+import { useTheme } from "@/context/theme/ThemeContext";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("theme", newTheme);
-  };
+  const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
-    if (savedTheme) {
-      setTheme(savedTheme);
-      if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      }
-    } else if (prefersDark) {
-      setTheme("dark");
-      document.documentElement.classList.add("dark");
-    }
-
     const handleScroll = () => {
       if (window.scrollY > 10) {
         setIsScrolled(true);
@@ -80,13 +57,13 @@ export function Navbar() {
             <a href="#faq" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
               FAQ
             </a>
-            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+            <ThemeToggle theme={isDarkMode ? "dark" : "light"} toggleTheme={toggleTheme} />
             <AuthButtons user={user} signOut={signOut} />
           </nav>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+            <ThemeToggle theme={isDarkMode ? "dark" : "light"} toggleTheme={toggleTheme} />
             <Button
               variant="ghost"
               size="icon"

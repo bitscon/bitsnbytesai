@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
@@ -31,14 +32,13 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { themeStyle } = useTheme();
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
 
   return (
-    <div className="bg-background border-b border-border sticky top-0 z-40" style={themeStyle}>
+    <div className="bg-background border-b border-border sticky top-0 z-40">
       <div className="container flex h-16 items-center justify-between py-4">
         <Link to="/" className="font-bold text-xl">
           AI Toolkit

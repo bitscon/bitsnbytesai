@@ -67,15 +67,32 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Apply theme to document on initial load and when theme changes
+  // Apply theme to document root element
   useEffect(() => {
-    // Update the HTML class for dark mode styling
+    const root = document.documentElement;
+    
+    // Apply dark/light mode class
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
     }
     
+    // Apply theme settings as a CSS filter on the root element
+    if (activeTheme) {
+      root.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
+    } else {
+      root.style.filter = '';
+    }
+    
+    return () => {
+      // Cleanup filter styles when component unmounts
+      root.style.filter = '';
+    };
+  }, [isDarkMode, activeTheme]);
+  
+  // Fetch active theme on initial load
+  useEffect(() => {
     fetchActiveTheme(isDarkMode);
     
     // Subscribe to theme changes in the database
