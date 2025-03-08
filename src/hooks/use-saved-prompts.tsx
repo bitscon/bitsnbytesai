@@ -71,7 +71,7 @@ export function useSavedPrompts() {
 
       toast({
         title: 'Prompt saved',
-        description: 'The prompt has been added to your saved collection',
+        description: 'The prompt has been added to your favorites',
       });
 
       // Update local state
@@ -110,7 +110,7 @@ export function useSavedPrompts() {
 
       toast({
         title: 'Prompt removed',
-        description: 'The prompt has been removed from your saved collection',
+        description: 'The prompt has been removed from your favorites',
       });
 
       // Update local state
