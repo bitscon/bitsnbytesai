@@ -54,18 +54,14 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
 
   // Get first few lines of the prompt for preview
   const previewText = prompt.prompt_text.split('\n').slice(0, 2).join('\n');
-  const shouldTruncate = prompt.prompt_text.length > 120;
-  const displayText = shouldTruncate 
-    ? `${prompt.prompt_text.substring(0, 120)}...` 
-    : prompt.prompt_text;
 
   return (
     <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200">
       <CardContent className="p-4">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           {/* Left side - category + difficulty */}
-          <div className="min-w-20 pt-1 hidden sm:block">
-            <div className="space-y-2">
+          <div className="w-full sm:w-auto sm:min-w-20 pt-1">
+            <div className="flex sm:flex-col items-center sm:items-start gap-2">
               <Badge variant="outline" className={cn(
                 "px-2 py-1 text-xs font-medium rounded-full flex items-center",
                 getDifficultyColor(prompt.difficulty_level)
@@ -84,23 +80,6 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
           
           {/* Right side - main content */}
           <div className="flex-1 space-y-2">
-            {/* Mobile version of category/difficulty */}
-            <div className="flex items-center gap-2 sm:hidden mb-2">
-              <Badge variant="outline" className={cn(
-                "px-2 py-1 text-xs font-medium rounded-full flex items-center",
-                getDifficultyColor(prompt.difficulty_level)
-              )}>
-                {getDifficultyIcon(prompt.difficulty_level)}
-                {prompt.difficulty_level}
-              </Badge>
-              
-              {category && (
-                <span className="text-xs text-muted-foreground">
-                  {category.name}
-                </span>
-              )}
-            </div>
-
             {/* Prompt preview with copy button */}
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold line-clamp-2 text-base">
@@ -171,7 +150,7 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
                       <MessageSquare className="h-3 w-3 mr-1 text-primary/70" />
                       Full Prompt:
                     </h4>
-                    <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap border border-muted-foreground/10">
+                    <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap border border-muted-foreground/10 max-h-60 overflow-y-auto">
                       {prompt.prompt_text}
                     </div>
                   </div>
@@ -181,7 +160,7 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
                       <Star className="h-3 w-3 mr-1 text-amber-500" />
                       Why This Works:
                     </h4>
-                    <div className="p-3 bg-primary/5 border border-primary/10 rounded-md text-sm text-muted-foreground">
+                    <div className="p-3 bg-primary/5 border border-primary/10 rounded-md text-sm text-muted-foreground max-h-40 overflow-y-auto">
                       {prompt.why_it_works}
                     </div>
                   </div>

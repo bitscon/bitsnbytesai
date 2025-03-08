@@ -54,10 +54,6 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
 
   // Get first few lines of the prompt for preview
   const previewText = prompt.prompt_text.split('\n').slice(0, 2).join('\n');
-  const shouldTruncate = prompt.prompt_text.length > 120;
-  const displayText = shouldTruncate 
-    ? `${prompt.prompt_text.substring(0, 120)}...` 
-    : prompt.prompt_text;
 
   return (
     <Card className="overflow-hidden h-full border shadow-sm hover:shadow-md transition-all duration-200">
@@ -94,7 +90,7 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
                 size="sm"
                 variant={copied ? "default" : "outline"}
                 onClick={handleCopy}
-                className="shrink-0 h-8 w-8 p-0"
+                className="shrink-0 h-8 w-8 p-0 ml-1"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
@@ -116,7 +112,7 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="w-full flex justify-between hover:bg-accent/50 text-xs"
+            className="w-full flex justify-between hover:bg-accent/50 text-xs mt-auto"
             onClick={() => setExpanded(!expanded)}
           >
             <span className="flex items-center">
@@ -146,7 +142,7 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
                     <MessageSquare className="h-3 w-3 mr-1 text-primary/70" />
                     Full Prompt:
                   </h4>
-                  <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap border border-muted-foreground/10">
+                  <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap border border-muted-foreground/10 max-h-60 overflow-y-auto">
                     {prompt.prompt_text}
                   </div>
                 </div>
@@ -156,7 +152,7 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
                     <Star className="h-3 w-3 mr-1 text-amber-500" />
                     Why This Works:
                   </h4>
-                  <div className="p-3 bg-primary/5 border border-primary/10 rounded-md text-sm text-muted-foreground">
+                  <div className="p-3 bg-primary/5 border border-primary/10 rounded-md text-sm text-muted-foreground max-h-40 overflow-y-auto">
                     {prompt.why_it_works}
                   </div>
                 </div>

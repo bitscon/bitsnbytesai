@@ -28,7 +28,7 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
   
   // Use a dynamic size estimate based on screen width for row height
   const estimateSize = () => {
-    return 350; // Fixed row height
+    return 380; // Adjusted height for better spacing
   };
 
   const virtualizer = useVirtualizer({
@@ -42,9 +42,6 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
     <div
       ref={parentRef}
       className="w-full h-[650px] overflow-auto"
-      style={{
-        contain: 'strict',
-      }}
     >
       <div
         style={{
@@ -72,31 +69,32 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
                 width: '100%',
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
+                padding: '0 8px',
               }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2"
             >
-              {rowItems.map((prompt, itemIndex) => {
-                const promptIndex = startIndex + itemIndex;
-                const category = categories.find(c => c.id === prompt.category_id);
-                
-                return (
-                  <motion.div
-                    key={prompt.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      duration: 0.3, 
-                      delay: Math.min(0.3, promptIndex * 0.03) 
-                    }}
-                    className="p-2"
-                  >
-                    <PromptCard
-                      prompt={prompt}
-                      category={category}
-                    />
-                  </motion.div>
-                );
-              })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
+                {rowItems.map((prompt, itemIndex) => {
+                  const promptIndex = startIndex + itemIndex;
+                  const category = categories.find(c => c.id === prompt.category_id);
+                  
+                  return (
+                    <motion.div
+                      key={prompt.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ 
+                        duration: 0.3, 
+                        delay: Math.min(0.3, promptIndex * 0.03) 
+                      }}
+                    >
+                      <PromptCard
+                        prompt={prompt}
+                        category={category}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
