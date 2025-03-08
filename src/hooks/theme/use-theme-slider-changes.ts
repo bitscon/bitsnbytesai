@@ -10,6 +10,8 @@ export function useThemeSliderChanges(
     if (!selectedPreset) return;
     
     const newValue = value[0];
+    console.log(`Updating ${name} to ${newValue}`);
+    
     const updatedPreset = { ...selectedPreset, [name]: newValue };
     setSelectedPreset(updatedPreset);
     updatePreviewStyle(updatedPreset);

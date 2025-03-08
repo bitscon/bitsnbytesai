@@ -6,6 +6,7 @@ import { useThemePresetActions } from './theme/use-theme-preset-actions';
 import { useThemePresetCreation } from './theme/use-theme-preset-creation';
 
 export function useThemePresets(currentMode: 'light' | 'dark') {
+  // Get theme presets and selection functionality
   const {
     themePresets,
     selectedPreset,
@@ -15,14 +16,17 @@ export function useThemePresets(currentMode: 'light' | 'dark') {
     handlePresetChange
   } = useThemePresetSelection(currentMode);
 
+  // Preview styles for the theme editor
   const { previewStyle, updatePreviewStyle } = useThemePreview(selectedPreset);
   
+  // Slider control functionality
   const { handleSliderChange } = useThemeSliderChanges(
     selectedPreset,
     setSelectedPreset,
     updatePreviewStyle
   );
 
+  // Theme action functionality (save, delete, activate)
   const {
     isSaving,
     handleDeletePreset,
@@ -30,12 +34,14 @@ export function useThemePresets(currentMode: 'light' | 'dark') {
     savePresetSettings
   } = useThemePresetActions(selectedPreset, fetchThemePresets, currentMode);
 
+  // Theme creation functionality
   const { handleCreatePreset } = useThemePresetCreation(
     currentMode,
     fetchThemePresets,
     handlePresetChange
   );
 
+  // Return all functionality for the theme preset manager
   return {
     themePresets,
     selectedPreset,

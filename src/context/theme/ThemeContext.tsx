@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -58,6 +59,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Error fetching theme:', error);
         setActiveTheme(null);
       } else {
+        console.log('Active theme fetched:', data);
         setActiveTheme(data);
       }
     } catch (error) {
@@ -80,6 +82,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Apply theme settings as a CSS filter on the root element
     if (activeTheme) {
+      console.log('Applying theme settings to root:', activeTheme);
       root.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
     } else {
       root.style.filter = '';
@@ -91,18 +94,33 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [isDarkMode, activeTheme]);
   
-  // Fetch active theme on initial load
+  // Fetch active theme on initial load and subscribe to changes
   useEffect(() => {
     fetchActiveTheme(isDarkMode);
     
-    // Subscribe to theme changes in the database
+    // Subscribe to theme changes in the database using Supabase's realtime features
     const themeSubscription = supabase
-      .channel('theme_changes')
+      .channel('theme-changes')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'theme_settings' },
-        () => {
-          fetchActiveTheme(isDarkMode);
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'theme_settings',
+          filter: `is_active=eq.true`
+        },
+        (payload) => {
+          console.log('Theme settings changed:', payload);
+          
+          // Only update if the change affects the current mode
+          const newTheme = payload.new as ThemeSettings;
+          if (newTheme && newTheme.is_dark === isDarkMode && newTheme.is_active) {
+            console.log('Updating active theme from subscription:', newTheme);
+            setActiveTheme(newTheme);
+          } else {
+            // If an active theme was deactivated, we need to refetch
+            fetchActiveTheme(isDarkMode);
+          }
         }
       )
       .subscribe();

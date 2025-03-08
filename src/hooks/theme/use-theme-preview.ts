@@ -6,6 +6,9 @@ export function useThemePreview(selectedPreset: ThemeSettings | null) {
   const [previewStyle, setPreviewStyle] = useState<React.CSSProperties>({});
 
   const updatePreviewStyle = (preset: ThemeSettings) => {
+    if (!preset) return;
+    
+    console.log('Updating preview style with:', preset);
     setPreviewStyle({
       filter: `brightness(${preset.brightness}%) contrast(${preset.contrast}%) saturate(${preset.saturation}%)`,
       transition: 'filter 0.3s ease'
@@ -15,6 +18,8 @@ export function useThemePreview(selectedPreset: ThemeSettings | null) {
   useEffect(() => {
     if (selectedPreset) {
       updatePreviewStyle(selectedPreset);
+    } else {
+      setPreviewStyle({});
     }
   }, [selectedPreset]);
 
