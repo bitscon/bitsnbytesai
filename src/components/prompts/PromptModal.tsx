@@ -66,9 +66,10 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[85vh] flex flex-col">
         {/* Bits & Bytes branded header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center space-x-2">
             <Binary className="h-5 w-5 text-white" />
-            <span className="text-white font-bold tracking-tight">Bits & Bytes</span>
+            <span className="text-white font-bold tracking-tight">bits & bytes</span>
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-white/20 text-white">AI</span>
           </div>
         </div>
         

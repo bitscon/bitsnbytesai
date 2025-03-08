@@ -39,7 +39,8 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
     <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200">
       <div className="bg-gradient-to-r from-indigo-600/90 to-purple-600/90 px-3 py-1.5 flex items-center">
         <Binary className="h-3.5 w-3.5 text-white mr-1.5" />
-        <span className="text-xs text-white font-semibold tracking-tight">Bits & Bytes</span>
+        <span className="text-xs text-white font-semibold tracking-tight">bits & bytes</span>
+        <span className="text-xs px-1.5 py-0.5 rounded-full bg-white/20 text-white ml-1.5">AI</span>
       </div>
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
