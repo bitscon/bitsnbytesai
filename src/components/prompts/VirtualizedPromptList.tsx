@@ -38,34 +38,32 @@ export function VirtualizedPromptList({ prompts, categories }: VirtualizedPrompt
           position: 'relative',
         }}
       >
-        <div className="absolute top-0 left-0 w-full space-y-4 px-2">
-          {virtualizer.getVirtualItems().map((virtualItem) => {
-            const prompt = prompts[virtualItem.index];
-            const category = categories.find(c => c.id === prompt.category_id);
-            
-            return (
-              <motion.div
-                key={virtualItem.key}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: virtualItem.index * 0.05 }}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-                className="p-2"
-              >
-                <PromptCardList
-                  prompt={prompt}
-                  category={category}
-                />
-              </motion.div>
-            );
-          })}
-        </div>
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const prompt = prompts[virtualItem.index];
+          const category = categories.find(c => c.id === prompt.category_id);
+          
+          return (
+            <motion.div
+              key={virtualItem.key}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: Math.min(0.2, virtualItem.index * 0.02) }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+              className="p-2"
+            >
+              <PromptCardList
+                prompt={prompt}
+                category={category}
+              />
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
