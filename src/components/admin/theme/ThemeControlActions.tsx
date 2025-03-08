@@ -34,6 +34,7 @@ export function ThemeControlActions({
             size="sm" 
             disabled={isLoading || isSaving || !selectedPreset} 
             onClick={onDeleteClick}
+            className="text-foreground"
           >
             <Trash className="mr-2 h-4 w-4" />
             Delete Preset

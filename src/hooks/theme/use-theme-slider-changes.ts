@@ -12,7 +12,11 @@ export function useThemeSliderChanges(
     const newValue = value[0];
     console.log(`Updating ${name} to ${newValue}`);
     
-    const updatedPreset = { ...selectedPreset, [name]: newValue };
+    const updatedPreset = { 
+      ...selectedPreset, 
+      [name]: newValue 
+    };
+    
     setSelectedPreset(updatedPreset);
     updatePreviewStyle(updatedPreset);
   };

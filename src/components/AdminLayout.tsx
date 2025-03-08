@@ -15,9 +15,11 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { checkAdminStatus } from "@/context/auth/utils/adminUtils";
+import { useTheme } from "@/context/theme/ThemeContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading } = useAuth();
+  const { themeStyle } = useTheme();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex" style={themeStyle}>
       {/* Admin Sidebar */}
       <div className="w-64 bg-muted border-r border-border h-screen fixed">
         <div className="p-4">

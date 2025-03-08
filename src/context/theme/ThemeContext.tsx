@@ -48,11 +48,13 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchActiveTheme = async (dark: boolean) => {
     setLoadingTheme(true);
     try {
+      console.log(`Fetching active theme for ${dark ? 'dark' : 'light'} mode`);
+      
       const { data, error } = await supabase
-        .from('theme_settings')
-        .select('*')
-        .eq('is_dark', dark)
-        .eq('is_active', true)
+        .from("theme_settings")
+        .select("*")
+        .eq("is_dark", dark)
+        .eq("is_active", true)
         .single();
 
       if (error) {
@@ -76,21 +78,26 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     // Apply dark/light mode class
     if (isDarkMode) {
       root.classList.add('dark');
+      document.body.classList.add('dark');
     } else {
       root.classList.remove('dark');
+      document.body.classList.remove('dark');
     }
     
     // Apply theme settings as a CSS filter on the root element
     if (activeTheme) {
       console.log('Applying theme settings to root:', activeTheme);
       root.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
+      document.body.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
     } else {
       root.style.filter = '';
+      document.body.style.filter = '';
     }
     
     return () => {
       // Cleanup filter styles when component unmounts
       root.style.filter = '';
+      document.body.style.filter = '';
     };
   }, [isDarkMode, activeTheme]);
   
@@ -126,6 +133,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       .subscribe();
     
     return () => {
+      console.log('Unsubscribing from theme changes');
       supabase.removeChannel(themeSubscription);
     };
   }, [isDarkMode]);
