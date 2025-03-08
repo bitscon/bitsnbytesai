@@ -36,9 +36,9 @@ export function TabsNavigator({
   onClearFilters
 }: TabsNavigatorProps) {
   return (
-    <Tabs defaultValue={activeTab} onValueChange={(value) => onTabChange(value as 'all' | 'saved')}>
+    <Tabs defaultValue={activeTab} onValueChange={(value) => onTabChange(value as 'all' | 'saved')} className="relative">
       <div className="flex items-center justify-between mb-4">
-        <TabsList className="h-10">
+        <TabsList className="h-10 relative z-10">
           <TabsTrigger value="all" className="px-4 py-2">All Prompts</TabsTrigger>
           <TabsTrigger value="saved" className="flex items-center gap-1 px-4 py-2">
             <Bookmark className="h-4 w-4" />
@@ -46,7 +46,7 @@ export function TabsNavigator({
           </TabsTrigger>
         </TabsList>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative z-10">
           <FilterSheet 
             categories={categories}
             selectedCategory={selectedCategory}

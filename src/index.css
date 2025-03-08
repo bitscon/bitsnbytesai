@@ -34,6 +34,27 @@
     --ring: 237 86% 58%;
 
     --radius: 1rem;
+
+    /* Z-index system */
+    --z-negative: -1;
+    --z-base: 0;
+    --z-elevated: 10;
+    --z-dropdown: 50;
+    --z-sticky: 100;
+    --z-overlay: 200;
+    --z-modal: 300;
+    --z-popover: 400;
+    --z-tooltip: 500;
+    
+    /* Spacing system */
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
   }
 
   .dark {
@@ -106,6 +127,28 @@
     animation: slideInRight 0.3s ease-out;
   }
 
+  /* Create new utility class for proper layering */
+  .create-stacking-context {
+    isolation: isolate;
+    z-index: 0;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm z-[var(--z-overlay)];
+  }
+
+  .modal-content {
+    @apply z-[var(--z-modal)] bg-background border rounded-lg shadow-lg;
+  }
+
+  .dropdown {
+    @apply z-[var(--z-dropdown)] relative;
+  }
+
+  .tooltip {
+    @apply z-[var(--z-tooltip)];
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -157,5 +200,32 @@
   
   .caption {
     @apply text-xs text-muted-foreground;
+  }
+
+  /* Fix for edge cases with overflow */
+  .overflow-fix {
+    @apply overflow-hidden;
+  }
+  
+  /* Fix for content disappearing behind fixed elements */
+  .content-padding {
+    @apply pt-16;
+  }
+  
+  /* Consistent spacing utilities */
+  .space-xs {
+    @apply p-1 m-1;
+  }
+  
+  .space-sm {
+    @apply p-2 m-2;
+  }
+  
+  .space-md {
+    @apply p-4 m-4;
+  }
+  
+  .space-lg {
+    @apply p-6 m-6;
   }
 }

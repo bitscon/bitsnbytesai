@@ -63,10 +63,10 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
-        <div className="p-6 space-y-4">
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[85vh] flex flex-col">
+        <div className="p-6 space-y-4 overflow-y-auto">
           {/* Header with category and difficulty */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between sticky top-0 bg-background pt-1 pb-2 z-10">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={cn(
                 "px-3 py-1 text-sm font-medium rounded-full flex items-center",
@@ -132,7 +132,7 @@ export function PromptModal({ prompt, category, isOpen, onClose }: PromptModalPr
           </div>
         </div>
         
-        <DialogFooter className="px-6 py-4 border-t">
+        <DialogFooter className="px-6 py-4 border-t mt-auto shrink-0">
           <Button
             onClick={handleCopy}
             className="w-full md:w-auto"

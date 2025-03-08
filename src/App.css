@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +40,34 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Z-index layering system */
+:root {
+  --z-negative: -1;
+  --z-base: 0;
+  --z-elevated: 10;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-popover: 400;
+  --z-tooltip: 500;
+}
+
+/* Consistent spacing utility classes */
+.spacing-xs { padding: 0.25rem; margin: 0.25rem; }
+.spacing-sm { padding: 0.5rem; margin: 0.5rem; }
+.spacing-md { padding: 1rem; margin: 1rem; }
+.spacing-lg { padding: 1.5rem; margin: 1.5rem; }
+.spacing-xl { padding: 2rem; margin: 2rem; }
+
+/* Fix for z-index stacking contexts */
+.create-stacking-context {
+  isolation: isolate;
+}
+
+/* Prevent content from being hidden behind fixed headers */
+.content-padding-for-header {
+  padding-top: 4rem;
 }

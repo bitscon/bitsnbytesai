@@ -37,35 +37,35 @@ export function FilterSheet({
         <Button 
           variant="outline" 
           size="sm" 
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 relative"
           aria-label="Filter prompts"
         >
           <SlidersHorizontal className="h-4 w-4" />
           <span className="hidden sm:inline">Filters</span>
           {hasActiveFilters && (
-            <span className="flex h-2 w-2 rounded-full bg-primary ml-1" />
+            <span className="flex h-2 w-2 rounded-full bg-primary absolute -top-1 -right-1 sm:static sm:ml-1" />
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[300px] sm:w-[400px] p-6" side="right">
-        <h3 className="text-lg font-medium mb-4">Filter Prompts</h3>
+      <SheetContent className="w-[300px] sm:w-[400px] p-6 overflow-y-auto" side="right">
+        <h3 className="text-lg font-medium mb-6">Filter Prompts</h3>
         
         <div className="space-y-6">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h4 className="text-sm font-medium">Search</h4>
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-9 w-full"
+                className="pl-9 w-full h-10"
               />
             </div>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h4 className="text-sm font-medium">Difficulty</h4>
             <DifficultyFilter 
               selectedDifficulty={selectedDifficulty}
@@ -73,12 +73,12 @@ export function FilterSheet({
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h4 className="text-sm font-medium flex items-center">
               <Tag className="mr-2 h-4 w-4" />
               Categories
             </h4>
-            <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto pr-2 rounded-md">
               {categories.map((category) => (
                 <Button
                   key={category.id}
@@ -97,7 +97,7 @@ export function FilterSheet({
             <Button 
               onClick={onClearFilters}
               variant="ghost" 
-              className="w-full flex items-center justify-center"
+              className="w-full flex items-center justify-center mt-4"
             >
               <X className="h-4 w-4 mr-1" />
               Clear all filters
