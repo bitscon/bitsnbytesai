@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -106,25 +105,99 @@ export function ThemeCustomization() {
     updatePreviewStyle(updatedPreset);
   };
 
+  // Delete a theme preset
+  const handleDeletePreset = async (presetId: string) => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('theme_settings')
+        .delete()
+        .eq('id', presetId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Theme preset deleted',
+      });
+      
+      // Refresh presets and reset selection
+      fetchThemePresets();
+    } catch (error) {
+      console.error('Error deleting theme preset:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete theme preset',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Activate a theme preset
+  const handleActivatePreset = async (presetId: string) => {
+    if (!selectedPreset) return;
+    
+    setIsSaving(true);
+    try {
+      // First, set all presets of this mode to inactive
+      const { error: resetError } = await supabase
+        .from('theme_settings')
+        .update({ is_active: false })
+        .eq('is_dark', currentMode === 'dark');
+      
+      if (resetError) {
+        throw new Error(resetError.message);
+      }
+      
+      // Then activate the selected preset
+      const { error } = await supabase
+        .from('theme_settings')
+        .update({
+          brightness: selectedPreset.brightness,
+          contrast: selectedPreset.contrast,
+          saturation: selectedPreset.saturation,
+          is_active: true
+        })
+        .eq('id', presetId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Theme activated and settings saved',
+      });
+      
+      // Refresh presets to get the updated active state
+      fetchThemePresets();
+    } catch (error) {
+      console.error('Error activating theme preset:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to activate theme preset',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Save the current preset settings
-  const savePresetSettings = async (activate: boolean = false) => {
+  const savePresetSettings = async () => {
     if (!selectedPreset || !selectedPreset.id) return;
     
     setIsSaving(true);
     try {
-      // If activating, set is_active to true
-      const dataToUpdate = activate 
-        ? { 
-            brightness: selectedPreset.brightness, 
-            contrast: selectedPreset.contrast, 
-            saturation: selectedPreset.saturation,
-            is_active: true
-          }
-        : { 
-            brightness: selectedPreset.brightness, 
-            contrast: selectedPreset.contrast, 
-            saturation: selectedPreset.saturation
-          };
+      const dataToUpdate = { 
+        brightness: selectedPreset.brightness, 
+        contrast: selectedPreset.contrast, 
+        saturation: selectedPreset.saturation
+      };
       
       const { error } = await supabase
         .from('theme_settings')
@@ -137,9 +210,7 @@ export function ThemeCustomization() {
       
       toast({
         title: 'Success',
-        description: activate 
-          ? 'Theme activated and settings saved' 
-          : 'Theme settings saved',
+        description: 'Theme settings saved',
       });
       
       // Refresh presets to get the updated active state
@@ -189,6 +260,8 @@ export function ThemeCustomization() {
                     isSaving={isSaving}
                     onPresetChange={handlePresetChange}
                     onSliderChange={handleSliderChange}
+                    onDeletePreset={handleDeletePreset}
+                    onActivatePreset={handleActivatePreset}
                   />
                 </div>
               </TabsContent>
@@ -202,6 +275,8 @@ export function ThemeCustomization() {
                     isSaving={isSaving}
                     onPresetChange={handlePresetChange}
                     onSliderChange={handleSliderChange}
+                    onDeletePreset={handleDeletePreset}
+                    onActivatePreset={handleActivatePreset}
                   />
                 </div>
               </TabsContent>
@@ -221,7 +296,7 @@ export function ThemeCustomization() {
         </Button>
         <div className="space-x-2">
           <Button
-            onClick={() => savePresetSettings(false)}
+            onClick={savePresetSettings}
             disabled={isLoading || isSaving || !selectedPreset}
           >
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -229,7 +304,7 @@ export function ThemeCustomization() {
           </Button>
           <Button
             variant="default"
-            onClick={() => savePresetSettings(true)}
+            onClick={() => selectedPreset && !selectedPreset.is_active ? setIsActivateDialogOpen(true) : null}
             disabled={isLoading || isSaving || !selectedPreset || (selectedPreset && selectedPreset.is_active)}
           >
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
