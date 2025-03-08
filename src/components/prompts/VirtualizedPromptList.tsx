@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { PromptCardList } from './PromptCardList';
 import { Prompt, PromptCategory } from '@/types/prompts';
+import { SavePromptButton } from './SavePromptButton';
 
 interface VirtualizedPromptListProps {
   prompts: Prompt[];
@@ -12,8 +13,8 @@ interface VirtualizedPromptListProps {
 export function VirtualizedPromptList({ prompts, categories }: VirtualizedPromptListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   
-  // Use a smaller estimated size for list items
-  const estimateSize = () => 180; // Increased a bit to accommodate the difficulty tags
+  // Optimize the estimated size for better performance
+  const estimateSize = () => 180; // Adjusted size to accommodate content
 
   const virtualizer = useVirtualizer({
     count: prompts.length,
@@ -37,7 +38,7 @@ export function VirtualizedPromptList({ prompts, categories }: VirtualizedPrompt
           position: 'relative',
         }}
       >
-        <div className="absolute top-0 left-0 w-full space-y-3 px-2">
+        <div className="absolute top-0 left-0 w-full space-y-4 px-2">
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const prompt = prompts[virtualItem.index];
             const category = categories.find(c => c.id === prompt.category_id);

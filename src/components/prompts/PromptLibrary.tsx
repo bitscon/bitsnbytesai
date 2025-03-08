@@ -7,21 +7,27 @@ import { DifficultyFilter } from './DifficultyFilter';
 import { Input } from '@/components/ui/input';
 import { DifficultyLevel } from '@/types/prompts';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Loader2, Search, Tag } from 'lucide-react';
+import { Loader2, Search, Tag, Bookmark } from 'lucide-react';
 import { VirtualizedPromptGrid } from './VirtualizedPromptGrid';
 import { VirtualizedPromptList } from './VirtualizedPromptList';
 import { PromptSkeleton } from './PromptSkeleton';
 import { ViewToggle, ViewMode } from './ViewToggle';
+import { useAuth } from '@/context/auth';
+import { useSavedPrompts } from '@/hooks/use-saved-prompts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function PromptLibrary() {
   const { prompts, categories, isLoading } = usePrompts();
+  const { savedPrompts, isLoading: isSavedPromptsLoading } = useSavedPrompts();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [isChangingCategory, setIsChangingCategory] = useState(false);
   const debouncedCategory = useDebounce(selectedCategory, 300);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (debouncedCategory !== selectedCategory) {
@@ -31,7 +37,15 @@ export function PromptLibrary() {
     }
   }, [debouncedCategory, selectedCategory]);
 
-  const filteredPrompts = prompts
+  // Get saved prompt IDs for filtering
+  const savedPromptIds = savedPrompts.map(sp => sp.prompt_id);
+  
+  // Filter prompts based on selected tab
+  const displayPrompts = activeTab === 'all' 
+    ? prompts 
+    : prompts.filter(prompt => savedPromptIds.includes(prompt.id));
+
+  const filteredPrompts = displayPrompts
     .filter(prompt => !selectedCategory || prompt.category_id === selectedCategory)
     .filter(prompt => !selectedDifficulty || prompt.difficulty_level === selectedDifficulty)
     .filter(prompt => {
@@ -58,6 +72,18 @@ export function PromptLibrary() {
 
   return (
     <div className="space-y-6">
+      {user && (
+        <Tabs defaultValue="all" onValueChange={(value) => setActiveTab(value as 'all' | 'saved')}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="all">All Prompts</TabsTrigger>
+            <TabsTrigger value="saved" className="flex items-center gap-1">
+              <Bookmark className="h-4 w-4" />
+              Saved Prompts
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -81,7 +107,7 @@ export function PromptLibrary() {
         </div>
       </div>
 
-      {categories.length > 0 && (
+      {categories.length > 0 && activeTab === 'all' && (
         <div>
           <h3 className="text-lg font-medium mb-3 flex items-center">
             <Tag className="mr-2 h-4 w-4" />
@@ -106,8 +132,10 @@ export function PromptLibrary() {
       )}
 
       <div>
-        <h3 className="text-lg font-medium mb-3">Prompts</h3>
-        {isChangingCategory ? (
+        <h3 className="text-lg font-medium mb-3">
+          {activeTab === 'saved' ? 'Saved Prompts' : 'Prompts'}
+        </h3>
+        {isChangingCategory || (activeTab === 'saved' && isSavedPromptsLoading) ? (
           <div className="grid grid-cols-1 gap-4">
             {Array.from({ length: 6 }).map((_, index) => (
               <PromptSkeleton key={index} />
@@ -128,9 +156,11 @@ export function PromptLibrary() {
         ) : (
           <Card className="p-6 text-center">
             <p className="text-muted-foreground">
-              {debouncedSearchTerm || selectedCategory || selectedDifficulty
-                ? "No prompts match your current filters. Try adjusting your search or filters."
-                : "No prompts available yet."}
+              {activeTab === 'saved' ? 
+                "You haven't saved any prompts yet." : 
+                debouncedSearchTerm || selectedCategory || selectedDifficulty
+                  ? "No prompts match your current filters. Try adjusting your search or filters."
+                  : "No prompts available yet."}
             </p>
           </Card>
         )}
