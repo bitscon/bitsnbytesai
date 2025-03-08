@@ -70,3 +70,66 @@ export async function updateApiSetting(keyName: string, keyValue: string): Promi
     return false;
   }
 }
+
+export async function createApiSettingIfNotExists(
+  keyName: string, 
+  defaultValue: string = "", 
+  description: string = ""
+): Promise<boolean> {
+  try {
+    // Check if setting already exists
+    const { data, error: checkError } = await supabaseAdmin
+      .from('api_settings')
+      .select('key_name')
+      .eq('key_name', keyName)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error(`Error checking if API setting ${keyName} exists:`, checkError);
+      return false;
+    }
+    
+    // If setting doesn't exist, create it
+    if (!data) {
+      const { error: insertError } = await supabaseAdmin
+        .from('api_settings')
+        .insert({
+          key_name: keyName,
+          key_value: defaultValue,
+          description: description
+        });
+      
+      if (insertError) {
+        console.error(`Error creating API setting ${keyName}:`, insertError);
+        return false;
+      }
+      
+      console.log(`Created API setting: ${keyName}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Exception creating API setting ${keyName}:`, error);
+    return false;
+  }
+}
+
+export async function ensurePayPalSettings(): Promise<void> {
+  await createApiSettingIfNotExists(
+    "PAYPAL_CLIENT_ID", 
+    "", 
+    "Your PayPal Client ID from the PayPal Developer Dashboard"
+  );
+  
+  await createApiSettingIfNotExists(
+    "PAYPAL_CLIENT_SECRET", 
+    "", 
+    "Your PayPal Client Secret from the PayPal Developer Dashboard"
+  );
+  
+  await createApiSettingIfNotExists(
+    "PAYPAL_BASE_URL", 
+    "https://api-m.sandbox.paypal.com", 
+    "PayPal API base URL (sandbox or live)"
+  );
+}
