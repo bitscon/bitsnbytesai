@@ -4,11 +4,17 @@ import { SavedPromptsList } from '@/components/prompts/SavedPromptsList';
 import { Bookmark } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import { Navigate } from 'react-router-dom';
+import { useSavedPrompts } from '@/hooks/use-saved-prompts';
+import { usePrompts } from '@/hooks/use-prompts';
 
 export default function SavedPrompts() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const { savedPrompts, isLoading: savedPromptsLoading } = useSavedPrompts();
+  const { categories } = usePrompts();
   
-  if (isLoading) {
+  const isLoading = authLoading || savedPromptsLoading;
+  
+  if (authLoading) {
     return (
       <div className="container py-12">
         <div className="flex justify-center items-center min-h-[50vh]">
@@ -21,6 +27,9 @@ export default function SavedPrompts() {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  // Extract the prompt objects from the savedPrompts array
+  const prompts = savedPrompts.map(savedPrompt => savedPrompt.prompt).filter(Boolean);
 
   return (
     <div className="container py-12">
@@ -35,7 +44,11 @@ export default function SavedPrompts() {
         </p>
       </div>
       
-      <SavedPromptsList />
+      <SavedPromptsList 
+        savedPrompts={prompts}
+        categories={categories}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
