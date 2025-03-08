@@ -1,16 +1,15 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Prompt, PromptCategory } from '@/types/prompts';
-import { Copy, Check, ChevronDown, ChevronUp, Star, Verified, BookText, MessageSquare } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, Star, BookText, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { OptimizedImage } from '@/components/ui/optimized-image';
-import { PromptExplanation } from './PromptExplanation';
-import { useAuth } from '@/context/auth';
+import { Badge } from '@/components/ui/badge';
 import { SavePromptButton } from './SavePromptButton';
+import { useAuth } from '@/context/auth';
 
 export interface PromptCardProps {
   prompt: Prompt;
@@ -44,80 +43,76 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
     }
   };
 
-  const getDifficultyIcon = (level: string) => {
-    switch(level) {
-      case 'Beginner': return <Star className="h-3 w-3 mr-1" />;
-      case 'Intermediate': return <Verified className="h-3 w-3 mr-1" />;
-      case 'Advanced': return <Star className="h-3 w-3 mr-1" />;
-      default: return null;
-    }
-  };
-
-  const imageUrl = prompt.image_url || 
-    `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80`;
+  // Get first few lines of the prompt for preview
+  const previewText = prompt.prompt_text.split('\n').slice(0, 2).join('\n');
+  const shouldTruncate = prompt.prompt_text.length > 120;
+  const displayText = shouldTruncate 
+    ? `${prompt.prompt_text.substring(0, 120)}...` 
+    : prompt.prompt_text;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="overflow-hidden h-full border-muted-foreground/20 hover:border-primary/30 transition-colors">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <div className={cn(
-                "inline-flex items-center px-2 py-1 text-xs rounded-full mb-2",
+    <Card className="overflow-hidden h-full border shadow-sm hover:shadow-md transition-all duration-200">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          {/* Header with difficulty and category */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={cn(
+                "px-2 py-1 text-xs font-medium rounded-full",
                 getDifficultyColor(prompt.difficulty_level)
               )}>
-                {getDifficultyIcon(prompt.difficulty_level)}
                 {prompt.difficulty_level}
-              </div>
-              <h3 className="font-semibold truncate">
-                {prompt.prompt_text.split(' ').slice(0, 6).join(' ')}...
-              </h3>
+              </Badge>
+              
+              {category && (
+                <span className="text-xs text-muted-foreground">
+                  {category.name}
+                </span>
+              )}
             </div>
-            <div className="flex space-x-2">
-              {user && <SavePromptButton prompt={prompt} />}
+            
+            {user && <SavePromptButton prompt={prompt} size="icon" className="h-7 w-7" />}
+          </div>
+          
+          {/* Prompt preview with copy button */}
+          <div className="space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-semibold line-clamp-2 text-base">
+                {previewText}
+              </h3>
               <Button
                 size="sm"
                 variant={copied ? "default" : "outline"}
                 onClick={handleCopy}
-                className="gap-1"
+                className="shrink-0 h-8 w-8 p-0"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copied" : "Copy"}
               </Button>
             </div>
           </div>
           
-          <PromptExplanation 
-            explanation={prompt.explanation} 
-            enabled={prompt.explanation_enabled}
-          />
-          
+          {/* Optional image */}
           {prompt.image_url && (
-            <div className="mt-3 mb-2">
-              <OptimizedImage 
+            <div className="my-2">
+              <img 
                 src={prompt.image_url}
                 alt={`Illustration for ${category?.name || ''} prompt`}
-                aspectRatio="16/9"
-                className="rounded-md transition-all duration-300"
-                containerClassName="rounded-md border border-muted-foreground/10"
+                className="rounded-md w-full h-32 object-cover"
               />
             </div>
           )}
           
+          {/* Expand/collapse button */}
           <Button 
             variant="ghost" 
             size="sm" 
-            className="mt-2 p-0 h-auto w-full flex justify-between hover:bg-transparent"
+            className="w-full flex justify-between hover:bg-accent/50 text-xs"
             onClick={() => setExpanded(!expanded)}
           >
-            <span className="text-xs text-muted-foreground flex items-center">
+            <span className="flex items-center">
               {expanded ? 
-                (<><ChevronUp className="h-3 w-3 mr-1 text-muted-foreground" /> Hide details</>) : 
-                (<><ChevronDown className="h-3 w-3 mr-1 text-muted-foreground" /> Show details</>)
+                (<><ChevronUp className="h-3 w-3 mr-1" /> Hide details</>) : 
+                (<><ChevronDown className="h-3 w-3 mr-1" /> View full prompt</>)
               }
             </span>
             {expanded ? 
@@ -126,19 +121,20 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
             }
           </Button>
           
+          {/* Expanded content */}
           <AnimatePresence>
             {expanded && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-4 mt-4 overflow-hidden"
+                transition={{ duration: 0.2 }}
+                className="space-y-3 overflow-hidden pt-2"
               >
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center">
-                    <MessageSquare className="h-4 w-4 mr-1 text-primary/70" />
-                    Prompt:
+                  <h4 className="text-xs font-semibold flex items-center">
+                    <MessageSquare className="h-3 w-3 mr-1 text-primary/70" />
+                    Full Prompt:
                   </h4>
                   <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap border border-muted-foreground/10">
                     {prompt.prompt_text}
@@ -146,21 +142,19 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
                 </div>
                 
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center">
-                    <Star className="h-4 w-4 mr-1 text-amber-500" />
+                  <h4 className="text-xs font-semibold flex items-center">
+                    <Star className="h-3 w-3 mr-1 text-amber-500" />
                     Why This Works:
                   </h4>
-                  <Alert variant="default" className="bg-primary/5 border-primary/20">
-                    <AlertDescription className="text-sm text-muted-foreground">
-                      {prompt.why_it_works}
-                    </AlertDescription>
-                  </Alert>
+                  <div className="p-3 bg-primary/5 border border-primary/10 rounded-md text-sm text-muted-foreground">
+                    {prompt.why_it_works}
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </CardContent>
-      </Card>
-    </motion.div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

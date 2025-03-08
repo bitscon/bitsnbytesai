@@ -1,9 +1,8 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { PromptCard } from './PromptCard';
 import { Prompt, PromptCategory } from '@/types/prompts';
-import { motion } from 'framer-motion';
 
 interface VirtualizedPromptGridProps {
   prompts: Prompt[];
@@ -13,8 +12,8 @@ interface VirtualizedPromptGridProps {
 export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPromptGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   
-  // Increased estimated size to account for images
-  const estimateSize = () => 500;
+  // Use a smaller estimated size for more compact cards
+  const estimateSize = () => 300;
 
   const virtualizer = useVirtualizer({
     count: prompts.length,
@@ -26,7 +25,7 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
   return (
     <div
       ref={parentRef}
-      className="w-full h-[800px] overflow-auto"
+      className="w-full h-[650px] overflow-auto"
       style={{
         contain: 'strict',
       }}
@@ -38,33 +37,31 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
           position: 'relative',
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualItem) => {
-          const prompt = prompts[virtualItem.index];
-          return (
-            <div
-              key={virtualItem.key}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualItem.start}px)`,
-              }}
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="p-3"
+        <div className="absolute top-0 left-0 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2">
+          {virtualizer.getVirtualItems().map((virtualItem) => {
+            const prompt = prompts[virtualItem.index];
+            const category = categories.find(c => c.id === prompt.category_id);
+            
+            return (
+              <div
+                key={virtualItem.key}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualItem.start}px)`,
+                }}
+                className="p-2"
               >
                 <PromptCard
                   prompt={prompt}
-                  category={categories.find(c => c.id === prompt.category_id)}
+                  category={category}
                 />
-              </motion.div>
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
