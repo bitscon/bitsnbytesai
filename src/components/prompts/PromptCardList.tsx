@@ -70,6 +70,7 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
                     prompt={prompt} 
                     size="sm" 
                     showText={false}
+                    showTooltip={false}
                     className="h-8 w-8"
                   />
                 )}

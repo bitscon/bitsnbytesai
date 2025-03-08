@@ -41,7 +41,7 @@ export function PromptCard({ prompt, category, onClick }: PromptCardProps) {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 300, damping: 15 }}
-      className="h-full"
+      className="h-full overflow-visible"
     >
       <Card 
         className="h-full overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
@@ -67,7 +67,7 @@ export function PromptCard({ prompt, category, onClick }: PromptCardProps) {
                 )}
               </div>
               
-              {user && <SavePromptButton prompt={prompt} size="icon" className="h-7 w-7" />}
+              {user && <SavePromptButton prompt={prompt} size="icon" className="h-7 w-7" showTooltip={false} />}
             </div>
             
             {/* Title and preview */}

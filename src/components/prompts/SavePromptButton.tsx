@@ -14,6 +14,7 @@ interface SavePromptButtonProps {
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
   showText?: boolean;
+  showTooltip?: boolean;
 }
 
 export function SavePromptButton({ 
@@ -21,7 +22,8 @@ export function SavePromptButton({
   variant = 'outline', 
   size = 'sm',
   className,
-  showText = false // Default to false to only show the icon
+  showText = false, // Default to false to only show the icon
+  showTooltip = true, // Default to true to maintain backward compatibility
 }: SavePromptButtonProps) {
   const { user } = useAuth();
   const { isPromptSaved, savePrompt, unsavePrompt } = useSavedPrompts();
@@ -60,17 +62,22 @@ export function SavePromptButton({
     </Button>
   );
 
-  // Always wrap in tooltip for better UX
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {button}
-        </TooltipTrigger>
-        <TooltipContent>
-          {isSaved ? 'Remove favorite' : 'Favorite'}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+  // Only wrap in tooltip if showTooltip is true
+  if (showTooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {button}
+          </TooltipTrigger>
+          <TooltipContent>
+            {isSaved ? 'Remove favorite' : 'Favorite'}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Just return the button without tooltip
+  return button;
 }
