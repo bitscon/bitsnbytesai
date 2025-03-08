@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save } from 'lucide-react';
+import { useTheme } from '@/context/theme/ThemeContext';
 
 interface ThemeSettings {
   id?: string;
@@ -29,6 +30,12 @@ export function ThemeCustomization() {
   const [currentMode, setCurrentMode] = useState<'light' | 'dark'>('light');
   const [previewStyle, setPreviewStyle] = useState<React.CSSProperties>({});
   const { toast } = useToast();
+  const { isDarkMode, toggleTheme } = useTheme();
+
+  // Initialize the current mode based on the app's current theme
+  useEffect(() => {
+    setCurrentMode(isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   useEffect(() => {
     fetchThemePresets();
@@ -69,6 +76,17 @@ export function ThemeCustomization() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle mode tab change
+  const handleModeChange = (value: string) => {
+    const newMode = value as 'light' | 'dark';
+    setCurrentMode(newMode);
+    
+    // Sync the app's theme with the selected tab
+    if ((newMode === 'dark' && !isDarkMode) || (newMode === 'light' && isDarkMode)) {
+      toggleTheme();
     }
   };
 
@@ -164,7 +182,10 @@ export function ThemeCustomization() {
           </div>
         ) : (
           <div className="space-y-6">
-            <Tabs defaultValue="light" onValueChange={(value) => setCurrentMode(value as 'light' | 'dark')}>
+            <Tabs 
+              value={currentMode} 
+              onValueChange={handleModeChange}
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="light">Light Mode</TabsTrigger>
                 <TabsTrigger value="dark">Dark Mode</TabsTrigger>
