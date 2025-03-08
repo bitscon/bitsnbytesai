@@ -76,9 +76,13 @@ export function PromptCard({ prompt, category, onClick }: PromptCardProps) {
                 {prompt.title}
               </h3>
               
-              {prompt.short_description && (
+              {prompt.short_description ? (
                 <p className="text-sm text-muted-foreground line-clamp-2">
                   {prompt.short_description}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground line-clamp-2 italic">
+                  No description available
                 </p>
               )}
             </div>

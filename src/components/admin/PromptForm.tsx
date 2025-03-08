@@ -65,10 +65,11 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
       
       <PromptTextArea
         id="short_description"
-        label="Short Description"
+        label="Summary"
         name="short_description"
         value={formData.short_description}
-        placeholder="Enter a short description (max 120 characters)"
+        placeholder="Enter a brief summary (displayed on the prompt card)"
+        description="This summary will be displayed on the prompt card. Keep it concise (1-2 sentences)."
         rows={2}
         onChange={handleChange}
       />

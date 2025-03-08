@@ -12,6 +12,7 @@ interface PromptTextAreaProps {
   rows?: number;
   required?: boolean;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  description?: string;
 }
 
 export function PromptTextArea({
@@ -22,11 +23,18 @@ export function PromptTextArea({
   placeholder,
   rows = 5,
   required = false,
-  onChange
+  onChange,
+  description
 }: PromptTextAreaProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-baseline justify-between">
+        <Label htmlFor={id}>{label}</Label>
+        {required && <span className="text-xs text-red-500">*Required</span>}
+      </div>
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
       <Textarea
         id={id}
         name={name}

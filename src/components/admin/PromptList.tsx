@@ -46,9 +46,13 @@ export function PromptList({
                     </span>
                   </div>
                   <h3 className="font-medium">
-                    {prompt.prompt_text.substring(0, 100)}
-                    {prompt.prompt_text.length > 100 ? '...' : ''}
+                    {prompt.title}
                   </h3>
+                  {prompt.short_description && (
+                    <p className="text-sm text-muted-foreground">
+                      {prompt.short_description}
+                    </p>
+                  )}
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
