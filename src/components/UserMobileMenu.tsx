@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
-import { HelpCircle, LayoutDashboard } from "lucide-react";
+import { HelpCircle, LayoutDashboard, User as UserIcon } from "lucide-react";
 
 interface UserMobileMenuProps {
   isOpen: boolean;
@@ -34,12 +34,12 @@ export function UserMobileMenu({ isOpen, user, signOut, closeMobileMenu }: UserM
           Dashboard
         </Button>
         <Button 
-          onClick={() => handleNavLinkClick("/faq")}
+          onClick={() => handleNavLinkClick("/account")}
           variant="ghost"
           className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
         >
-          <HelpCircle className="mr-2 h-4 w-4" />
-          FAQ
+          <UserIcon className="mr-2 h-4 w-4" />
+          Account
         </Button>
         <Button 
           onClick={() => handleNavLinkClick("/help")}

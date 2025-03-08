@@ -5,8 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { UserNavbar } from "@/components/UserNavbar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Purchase } from "@/types/purchases";
 import { PromptLibrary } from "@/components/prompts/PromptLibrary";
 
@@ -14,14 +13,13 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [hasPurchased, setHasPurchased] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
 
   useEffect(() => {
     const checkPurchaseStatus = async () => {
       if (!user) return;
 
       try {
-        // Query the user_purchases table instead of profiles
+        // Query the user_purchases table
         const { data, error } = await supabase
           .from("user_purchases")
           .select("*")
@@ -34,7 +32,6 @@ export default function Dashboard() {
         }
 
         setHasPurchased(data && data.length > 0);
-        setPurchases(data as Purchase[] || []);
       } catch (error) {
         console.error("Error checking purchase status:", error);
       } finally {
@@ -57,8 +54,8 @@ export default function Dashboard() {
             <div className="h-32 bg-gray-200 rounded mb-4"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6 col-span-1 md:col-span-2">
+          <div>
+            <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">AI Prompts Library</h2>
               {hasPurchased ? (
                 <PromptLibrary />
@@ -72,36 +69,6 @@ export default function Dashboard() {
                   <Button onClick={() => window.location.href = "/"}>
                     Purchase Access
                   </Button>
-                </div>
-              )}
-            </Card>
-            
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Your Account</h2>
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
-                <p>{user?.email}</p>
-              </div>
-              
-              {hasPurchased && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Purchase History</h3>
-                  {purchases.map((purchase) => (
-                    <div key={purchase.id} className="border-t pt-2 mt-2">
-                      <div className="flex justify-between">
-                        <span>Amount:</span>
-                        <span>${purchase.amount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Date:</span>
-                        <span>{new Date(purchase.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Payment:</span>
-                        <span className="capitalize">{purchase.payment_provider}</span>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               )}
             </Card>

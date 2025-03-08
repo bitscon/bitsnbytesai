@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, HelpCircle, LayoutDashboard } from "lucide-react";
+import { Menu, X, HelpCircle, LayoutDashboard, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { ThemeToggle } from "./ThemeToggle";
@@ -81,12 +81,12 @@ export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean })
               Dashboard
             </Button>
             <Button 
-              onClick={() => navigate("/faq")}
+              onClick={() => navigate("/account")}
               variant="ghost"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors flex items-center"
             >
-              <HelpCircle className="mr-2 h-4 w-4" />
-              FAQ
+              <User className="mr-2 h-4 w-4" />
+              Account
             </Button>
             <Button 
               onClick={() => navigate("/help")}
