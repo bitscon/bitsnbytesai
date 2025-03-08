@@ -102,6 +102,8 @@ export async function initiatePayPalCheckout(
       body: {
         amount: price,
         email: email,
+        returnUrl: `${window.location.origin}/checkout/success`,
+        cancelUrl: window.location.origin,
       },
     });
 

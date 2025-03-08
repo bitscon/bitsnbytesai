@@ -15,7 +15,7 @@ export function SettingsCardHeader() {
         Configure global settings for your application
       </CardDescription>
       
-      <Alert variant="warning" className="mt-4">
+      <Alert variant="destructive" className="mt-4 bg-amber-50 border-amber-200 text-amber-800">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           When using PayPal sandbox mode, use sandbox test accounts for payments. 

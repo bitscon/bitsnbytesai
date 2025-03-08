@@ -35,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
   
   try {
-    const { amount, email } = await req.json();
+    const { amount, email, returnUrl, cancelUrl } = await req.json();
     
     if (!amount || !email) {
       return new Response(
@@ -48,6 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     console.log(`Creating PayPal order for ${email} with amount ${amount}`);
+    console.log(`Return URL: ${returnUrl}, Cancel URL: ${cancelUrl}`);
     
     // Get PayPal settings from database
     const clientId = await getApiSetting("PAYPAL_CLIENT_ID");
@@ -87,8 +88,8 @@ const handler = async (req: Request): Promise<Response> => {
         brand_name: "AI Prompts Library",
         shipping_preference: "NO_SHIPPING",
         user_action: "PAY_NOW",
-        return_url: `${window.location.origin}/checkout/success`,
-        cancel_url: window.location.origin,
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
       },
     };
     
