@@ -13,8 +13,13 @@ interface VirtualizedPromptGridProps {
 export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPromptGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   
-  // Use a smaller estimated size for more compact cards
-  const estimateSize = () => 300;
+  // Use a dynamic size estimate based on screen width
+  const estimateSize = () => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 640 ? 350 : 320; // Mobile vs desktop sizing
+    }
+    return 320;
+  };
 
   const virtualizer = useVirtualizer({
     count: prompts.length,
@@ -48,7 +53,7 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
                 key={virtualItem.key}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: virtualItem.index * 0.05 }}
+                transition={{ duration: 0.3, delay: Math.min(0.3, virtualItem.index * 0.03) }}
                 style={{
                   position: 'absolute',
                   top: 0,

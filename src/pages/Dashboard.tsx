@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { UserNavbar } from "@/components/UserNavbar";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
-import { Purchase } from "@/types/purchases";
 import { PromptLibrary } from "@/components/prompts/PromptLibrary";
 import { motion } from "framer-motion";
 
@@ -46,15 +45,18 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <UserNavbar hasPurchased={hasPurchased} /> 
-      <div className="container mx-auto px-4 pt-24 pb-16">
-        <motion.h1 
-          className="text-3xl font-bold mb-8"
+      <div className="container mx-auto px-4 pt-20 pb-16">
+        <motion.div 
+          className="mb-6"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          AI Prompts Library
-        </motion.h1>
+          <h1 className="text-3xl font-bold">AI Prompts Library</h1>
+          <p className="text-muted-foreground mt-2">
+            Discover and use specialized AI prompts for your projects
+          </p>
+        </motion.div>
         
         {isLoading ? (
           <div className="animate-pulse">
@@ -73,11 +75,11 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-12">
                   <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-medium mb-2">Access Locked</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Purchase access to unlock our full library of specialized AI prompts.
+                  <h3 className="text-xl font-medium mb-2">Access Locked</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    Purchase access to unlock our full library of specialized AI prompts designed to enhance your productivity and creativity.
                   </p>
-                  <Button onClick={() => window.location.href = "/"}>
+                  <Button onClick={() => window.location.href = "/"} size="lg">
                     Purchase Access
                   </Button>
                 </div>
