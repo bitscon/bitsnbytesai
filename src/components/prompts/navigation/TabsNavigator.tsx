@@ -42,7 +42,7 @@ export function TabsNavigator({
           <TabsTrigger value="all" className="px-4 py-2">All Prompts</TabsTrigger>
           <TabsTrigger value="saved" className="flex items-center gap-1 px-4 py-2">
             <Bookmark className="h-4 w-4" />
-            Saved Prompts
+            Favorites
           </TabsTrigger>
         </TabsList>
         
