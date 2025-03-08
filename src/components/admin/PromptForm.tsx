@@ -8,6 +8,8 @@ import { PromptTextArea } from '@/components/admin/prompt-form/PromptTextArea';
 import { ExplanationToggle } from '@/components/admin/prompt-form/ExplanationToggle';
 import { FormActions } from '@/components/admin/prompt-form/FormActions';
 import { ImageUrlInput } from '@/components/admin/prompt-form/ImageUrlInput';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface PromptFormProps {
   prompt?: Prompt;
@@ -37,6 +39,18 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
         difficulty={formData.difficulty_level} 
         onValueChange={(value) => handleChange({ name: 'difficulty_level', value })}
       />
+
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          name="title"
+          value={formData.title}
+          placeholder="Enter a concise title for the prompt"
+          required
+          onChange={handleChange}
+        />
+      </div>
       
       <PromptTextArea
         id="prompt_text"
@@ -46,6 +60,16 @@ export function PromptForm({ prompt, categories, onSuccess, onCancel }: PromptFo
         placeholder="Enter the prompt text"
         rows={5}
         required
+        onChange={handleChange}
+      />
+      
+      <PromptTextArea
+        id="short_description"
+        label="Short Description"
+        name="short_description"
+        value={formData.short_description}
+        placeholder="Enter a short description (max 120 characters)"
+        rows={2}
         onChange={handleChange}
       />
       

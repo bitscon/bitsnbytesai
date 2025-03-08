@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { PromptCard } from './PromptCard';
 import { Prompt, PromptCategory } from '@/types/prompts';
@@ -12,24 +12,33 @@ interface VirtualizedPromptGridProps {
 
 export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPromptGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [itemsPerRow, setItemsPerRow] = useState(3);
   
-  // Calculate items per row based on screen width
-  const getItemsPerRow = () => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 3;
-    }
-    return 3; // Default to 3 columns for SSR
-  };
-  
-  const itemsPerRow = getItemsPerRow();
+  // Update items per row based on screen width
+  useEffect(() => {
+    const updateGridColumns = () => {
+      if (window.innerWidth < 640) {
+        setItemsPerRow(1);
+      } else if (window.innerWidth < 1024) {
+        setItemsPerRow(2);
+      } else {
+        setItemsPerRow(3);
+      }
+    };
+    
+    // Initial call
+    updateGridColumns();
+    
+    // Add resize listener
+    window.addEventListener('resize', updateGridColumns);
+    return () => window.removeEventListener('resize', updateGridColumns);
+  }, []);
   
   // Calculate how many rows we need
   const rowCount = Math.ceil(prompts.length / itemsPerRow);
   
-  // Use a dynamic size estimate based on screen width for row height
-  const estimateSize = () => {
-    return 380; // Adjusted height for better spacing
-  };
+  // Use a better size estimate for row height
+  const estimateSize = () => 380; // Adjusted height for better spacing
 
   const virtualizer = useVirtualizer({
     count: rowCount,
@@ -41,7 +50,7 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
   return (
     <div
       ref={parentRef}
-      className="w-full h-[650px] overflow-auto"
+      className="w-full h-[650px] overflow-auto rounded-md bg-background"
     >
       <div
         style={{
@@ -86,6 +95,7 @@ export function VirtualizedPromptGrid({ prompts, categories }: VirtualizedPrompt
                         duration: 0.3, 
                         delay: Math.min(0.3, promptIndex * 0.03) 
                       }}
+                      className="h-full" // Ensure full height
                     >
                       <PromptCard
                         prompt={prompt}

@@ -103,6 +103,8 @@ export type Database = {
           id: string
           image_url: string | null
           prompt_text: string
+          short_description: string | null
+          title: string
           updated_at: string
           why_it_works: string
         }
@@ -115,6 +117,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           prompt_text: string
+          short_description?: string | null
+          title: string
           updated_at?: string
           why_it_works: string
         }
@@ -127,6 +131,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           prompt_text?: string
+          short_description?: string | null
+          title?: string
           updated_at?: string
           why_it_works?: string
         }

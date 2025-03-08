@@ -11,6 +11,8 @@ export interface Prompt {
   image_url?: string;
   explanation?: string;
   explanation_enabled?: boolean;
+  title: string;
+  short_description?: string;
 }
 
 export interface PromptCategory {

@@ -52,9 +52,6 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
     }
   };
 
-  // Get first few lines of the prompt for preview
-  const previewText = prompt.prompt_text.split('\n').slice(0, 2).join('\n');
-
   return (
     <Card className="overflow-hidden h-full border shadow-sm hover:shadow-md transition-all duration-200">
       <CardContent className="p-4">
@@ -80,11 +77,11 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
             {user && <SavePromptButton prompt={prompt} size="icon" className="h-7 w-7" />}
           </div>
           
-          {/* Prompt preview with copy button */}
+          {/* Title and preview */}
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold line-clamp-2 text-base">
-                {previewText}
+              <h3 className="font-semibold text-base line-clamp-2">
+                {prompt.title || prompt.prompt_text.split('\n')[0]}
               </h3>
               <Button
                 size="sm"
@@ -95,6 +92,12 @@ export function PromptCard({ prompt, category }: PromptCardProps) {
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
+            
+            {prompt.short_description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {prompt.short_description}
+              </p>
+            )}
           </div>
           
           {/* Optional image */}

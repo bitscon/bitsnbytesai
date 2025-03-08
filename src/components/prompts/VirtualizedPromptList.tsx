@@ -13,8 +13,8 @@ interface VirtualizedPromptListProps {
 export function VirtualizedPromptList({ prompts, categories }: VirtualizedPromptListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   
-  // Optimize the estimated size for better performance
-  const estimateSize = () => 200; // Adjusted size for better spacing
+  // Use a better size estimate for items
+  const estimateSize = () => 220; // Increased height for better spacing
 
   const virtualizer = useVirtualizer({
     count: prompts.length,
@@ -26,7 +26,7 @@ export function VirtualizedPromptList({ prompts, categories }: VirtualizedPrompt
   return (
     <div
       ref={parentRef}
-      className="w-full h-[650px] overflow-auto"
+      className="w-full h-[650px] overflow-auto rounded-md bg-background"
     >
       <div
         style={{
@@ -52,6 +52,7 @@ export function VirtualizedPromptList({ prompts, categories }: VirtualizedPrompt
                 width: '100%',
                 transform: `translateY(${virtualItem.start}px)`,
                 padding: '0 8px 16px',
+                height: `${virtualItem.size}px`,
               }}
             >
               <PromptCardList

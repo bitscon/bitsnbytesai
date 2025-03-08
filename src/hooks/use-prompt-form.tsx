@@ -6,7 +6,9 @@ import { Prompt, DifficultyLevel } from '@/types/prompts';
 export interface PromptFormData {
   category_id: string;
   difficulty_level: DifficultyLevel;
+  title: string;
   prompt_text: string;
+  short_description: string;
   why_it_works: string;
   explanation: string;
   explanation_enabled: boolean;
@@ -22,7 +24,9 @@ export function usePromptForm({ prompt, onSuccess }: UsePromptFormProps) {
   const [formData, setFormData] = useState<PromptFormData>({
     category_id: prompt?.category_id || '',
     difficulty_level: prompt?.difficulty_level || 'Beginner' as DifficultyLevel,
+    title: prompt?.title || '',
     prompt_text: prompt?.prompt_text || '',
+    short_description: prompt?.short_description || '',
     why_it_works: prompt?.why_it_works || '',
     explanation: prompt?.explanation || '',
     explanation_enabled: prompt?.explanation_enabled ?? true,
@@ -42,7 +46,7 @@ export function usePromptForm({ prompt, onSuccess }: UsePromptFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.category_id || !formData.prompt_text || !formData.why_it_works) {
+    if (!formData.category_id || !formData.title || !formData.prompt_text || !formData.why_it_works) {
       return;
     }
     
@@ -66,7 +70,7 @@ export function usePromptForm({ prompt, onSuccess }: UsePromptFormProps) {
     }
   };
 
-  const isValid = !!formData.category_id && !!formData.prompt_text && !!formData.why_it_works;
+  const isValid = !!formData.category_id && !!formData.title && !!formData.prompt_text && !!formData.why_it_works;
 
   return {
     formData,

@@ -52,15 +52,12 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
     }
   };
 
-  // Get first few lines of the prompt for preview
-  const previewText = prompt.prompt_text.split('\n').slice(0, 2).join('\n');
-
   return (
     <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200">
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           {/* Left side - category + difficulty */}
-          <div className="w-full sm:w-auto sm:min-w-20 pt-1">
+          <div className="w-full sm:w-auto sm:min-w-24 pt-1">
             <div className="flex sm:flex-col items-center sm:items-start gap-2">
               <Badge variant="outline" className={cn(
                 "px-2 py-1 text-xs font-medium rounded-full flex items-center",
@@ -80,10 +77,10 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
           
           {/* Right side - main content */}
           <div className="flex-1 space-y-2">
-            {/* Prompt preview with copy button */}
+            {/* Title and copy button */}
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold line-clamp-2 text-base">
-                {previewText}
+              <h3 className="font-semibold text-base line-clamp-2">
+                {prompt.title || prompt.prompt_text.split('\n')[0]}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
                 {user && (
@@ -104,6 +101,13 @@ export function PromptCardList({ prompt, category }: PromptCardListProps) {
                 </Button>
               </div>
             </div>
+            
+            {/* Short description */}
+            {prompt.short_description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {prompt.short_description}
+              </p>
+            )}
             
             {/* Optional image - smaller in list view */}
             {prompt.image_url && (
