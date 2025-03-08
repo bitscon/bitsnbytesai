@@ -42,7 +42,7 @@ export function PromptResultsView({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-medium">
-            {activeTab === 'saved' ? 'Saved Prompts' : 'Results'}
+            {activeTab === 'saved' ? 'Favorites' : 'Results'}
           </h3>
           
           {selectedCategory && (
@@ -88,7 +88,7 @@ export function PromptResultsView({
         <Card className="p-6 text-center">
           <p className="text-muted-foreground">
             {activeTab === 'saved' ? 
-              "You haven't saved any prompts yet." : 
+              "You haven't added any favorites yet." : 
               "No prompts match your current filters. Try adjusting your search or filters."}
           </p>
         </Card>

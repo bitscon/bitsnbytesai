@@ -21,7 +21,7 @@ export function SavedPromptsList({ savedPrompts, categories, isLoading }: SavedP
       <Card className="w-full">
         <CardContent className="p-6">
           <div className="flex justify-center items-center min-h-[200px]">
-            <p className="text-muted-foreground">Loading saved prompts...</p>
+            <p className="text-muted-foreground">Loading favorites...</p>
           </div>
         </CardContent>
       </Card>
@@ -33,7 +33,7 @@ export function SavedPromptsList({ savedPrompts, categories, isLoading }: SavedP
       <Card className="w-full">
         <CardContent className="p-6">
           <div className="flex flex-col justify-center items-center min-h-[300px] space-y-4">
-            <p className="text-muted-foreground">You haven't saved any prompts yet.</p>
+            <p className="text-muted-foreground">You haven't added any favorites yet.</p>
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Browse prompts

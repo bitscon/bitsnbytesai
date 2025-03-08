@@ -35,12 +35,12 @@ export default function SavedPrompts() {
     <div className="container py-12">
       <div className="flex items-center mb-8">
         <Bookmark className="mr-3 h-6 w-6" />
-        <h1 className="text-3xl font-bold">Saved Prompts</h1>
+        <h1 className="text-3xl font-bold">Favorites</h1>
       </div>
       
       <div className="mb-8">
         <p className="text-muted-foreground">
-          Here are the prompts you've saved for quick reference. You can remove items from your saved collection by clicking the "Unsave" button.
+          Here are the prompts you've saved for quick reference. You can remove items from your favorites by clicking the heart icon.
         </p>
       </div>
       
