@@ -1,139 +1,103 @@
-
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Menu, X, HelpCircle, LayoutDashboard, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
-import { ThemeToggle } from "./ThemeToggle";
-import { UserMobileMenu } from "./UserMobileMenu";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/ModeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { UserMobileMenu } from "@/components/UserMobileMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "@/context/theme/ThemeContext";
 
-export function UserNavbar({ hasPurchased = false }: { hasPurchased?: boolean }) {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+interface UserNavbarProps {
+  hasPurchased?: boolean;
+}
+
+export function UserNavbar({ hasPurchased }: UserNavbarProps) {
   const { user, signOut } = useAuth();
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("theme", newTheme);
-  };
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
-    if (savedTheme) {
-      setTheme(savedTheme);
-      if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      }
-    } else if (prefersDark) {
-      setTheme("dark");
-      document.documentElement.classList.add("dark");
-    }
-
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { themeStyle } = useTheme();
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-background/80 backdrop-blur-lg shadow-sm" : "bg-transparent"
-      }`}
-    >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          <div className="flex items-center space-x-4">
-            <a href="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-brand-blue">bits & bytes</span>
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue">AI</span>
-            </a>
-          </div>
-
-          {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Button 
-              onClick={() => navigate("/dashboard")}
-              variant="ghost"
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors flex items-center"
-            >
-              <LayoutDashboard className="mr-2 h-4 w-4" />
+    <div className="bg-background border-b border-border sticky top-0 z-40" style={themeStyle}>
+      <div className="container flex h-16 items-center justify-between py-4">
+        <Link to="/" className="font-bold text-xl">
+          AI Toolkit
+        </Link>
+        <div className="flex items-center space-x-4">
+          <nav className="hidden md:flex items-center space-x-4">
+            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
               Dashboard
             </Button>
-            <Button 
-              onClick={() => navigate("/account")}
-              variant="ghost"
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors flex items-center"
-            >
-              <User className="mr-2 h-4 w-4" />
+            <Button variant="ghost" onClick={() => navigate("/account")}>
               Account
             </Button>
-            <Button 
-              onClick={() => navigate("/help")}
-              variant="ghost"
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors flex items-center"
-            >
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Help
-            </Button>
-            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
-            
             {user && (
-              <Button 
-                onClick={() => signOut()}
-                className="ml-2 bg-brand-blue hover:bg-brand-blue/90"
-              >
-                Sign Out
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url as string} alt={user.email as string} />
+                      <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuItem onClick={() => navigate("/account")}>
+                    Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </nav>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Open menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
+          <ThemeToggle />
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="sm">
                 <Menu className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="sm:max-w-xs p-0">
+              <SheetHeader className="pl-6 pr-8">
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>
+                  Navigate through your account settings and preferences.
+                </SheetDescription>
+              </SheetHeader>
+              <UserMobileMenu
+                isOpen={isMobileMenuOpen}
+                user={user}
+                signOut={signOut}
+                closeMobileMenu={closeMobileMenu}
+              />
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      <UserMobileMenu 
-        isOpen={isMobileMenuOpen}
-        user={user}
-        signOut={signOut}
-        closeMobileMenu={closeMobileMenu}
-      />
-    </header>
+    </div>
   );
 }

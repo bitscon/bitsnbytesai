@@ -137,6 +137,42 @@ export type Database = {
           },
         ]
       }
+      theme_settings: {
+        Row: {
+          brightness: number
+          contrast: number
+          created_at: string
+          id: string
+          is_active: boolean
+          is_dark: boolean
+          preset_name: string
+          saturation: number
+          updated_at: string
+        }
+        Insert: {
+          brightness?: number
+          contrast?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_dark?: boolean
+          preset_name: string
+          saturation?: number
+          updated_at?: string
+        }
+        Update: {
+          brightness?: number
+          contrast?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_dark?: boolean
+          preset_name?: string
+          saturation?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           amount: number
@@ -175,6 +211,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_active_theme: {
+        Args: {
+          mode: boolean
+        }
+        Returns: {
+          brightness: number
+          contrast: number
+          created_at: string
+          id: string
+          is_active: boolean
+          is_dark: boolean
+          preset_name: string
+          saturation: number
+          updated_at: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

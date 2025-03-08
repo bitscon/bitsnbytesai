@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
@@ -8,7 +9,8 @@ import {
   LayoutDashboard,
   KeyRound,
   MessageSquare,
-  Users
+  Users,
+  Palette
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -109,6 +111,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <KeyRound className="mr-2 h-4 w-4" />
                 API Settings
+              </Button>
+            </li>
+            <li>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start"
+                onClick={() => navigate("/admin/theme")}
+              >
+                <Palette className="mr-2 h-4 w-4" />
+                Theme Settings
               </Button>
             </li>
             <li>
