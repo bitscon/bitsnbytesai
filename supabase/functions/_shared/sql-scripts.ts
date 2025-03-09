@@ -70,3 +70,104 @@ BEGIN
 END;
 $$;
 `;
+
+export const VALIDATE_SUBSCRIPTION = `
+-- Function to validate subscription data integrity
+CREATE OR REPLACE FUNCTION public.validate_subscription_data(user_uuid UUID)
+RETURNS TABLE (
+  validation_check TEXT,
+  result BOOLEAN,
+  details TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  has_user_subscription BOOLEAN;
+  has_events BOOLEAN;
+  subscription_tier TEXT;
+  event_count INTEGER;
+BEGIN
+  -- Check if user has a subscription record
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_subscriptions 
+    WHERE user_id = user_uuid
+  ) INTO has_user_subscription;
+  
+  -- Return first validation result
+  validation_check := 'User has subscription record';
+  result := has_user_subscription;
+  details := CASE WHEN has_user_subscription 
+               THEN 'User has a subscription record' 
+               ELSE 'User is missing a subscription record'
+             END;
+  RETURN NEXT;
+  
+  -- If no subscription record, exit early
+  IF NOT has_user_subscription THEN
+    RETURN;
+  END IF;
+  
+  -- Check if subscription tier is valid
+  SELECT tier INTO subscription_tier
+  FROM public.user_subscriptions
+  WHERE user_id = user_uuid;
+  
+  validation_check := 'Subscription tier is valid';
+  result := subscription_tier IN ('free', 'pro', 'premium', 'enterprise');
+  details := CASE WHEN result 
+               THEN 'User has valid tier: ' || subscription_tier
+               ELSE 'User has invalid tier: ' || COALESCE(subscription_tier, 'NULL')
+             END;
+  RETURN NEXT;
+  
+  -- Check if paid subscription has Stripe data
+  IF subscription_tier != 'free' THEN
+    validation_check := 'Paid subscription has Stripe data';
+    result := EXISTS (
+      SELECT 1 FROM public.user_subscriptions
+      WHERE user_id = user_uuid
+        AND stripe_customer_id IS NOT NULL
+        AND stripe_subscription_id IS NOT NULL
+    );
+    details := CASE WHEN result 
+                 THEN 'Paid subscription has valid Stripe data'
+                 ELSE 'Paid subscription is missing Stripe data'
+               END;
+    RETURN NEXT;
+  END IF;
+  
+  -- Check if user has subscription events
+  SELECT EXISTS (
+    SELECT 1 FROM public.subscription_events
+    WHERE user_id = user_uuid
+  ) INTO has_events;
+  
+  SELECT COUNT(*) INTO event_count
+  FROM public.subscription_events
+  WHERE user_id = user_uuid;
+  
+  validation_check := 'User has subscription event history';
+  result := has_events;
+  details := CASE WHEN has_events 
+               THEN 'User has ' || event_count || ' subscription events' 
+               ELSE 'User has no subscription events'
+             END;
+  RETURN NEXT;
+  
+  -- Check for payment failures if any
+  validation_check := 'Payment failure tracking';
+  result := EXISTS (
+    SELECT 1 FROM public.payment_failures
+    WHERE user_id = user_uuid
+  );
+  details := CASE WHEN result 
+               THEN 'User has payment failure records' 
+               ELSE 'No payment failures detected for user'
+             END;
+  RETURN NEXT;
+  
+  -- Add more validation checks as needed...
+END;
+$$;
+`;

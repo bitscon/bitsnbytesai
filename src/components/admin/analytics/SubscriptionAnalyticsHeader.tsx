@@ -64,6 +64,7 @@ export default function SubscriptionAnalyticsHeader({
           size="icon" 
           onClick={onRefresh}
           disabled={isLoading}
+          title="Refresh analytics data"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
