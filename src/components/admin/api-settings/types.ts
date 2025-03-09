@@ -20,3 +20,6 @@ export interface ApiKeyMetadata {
   last_renewed_at?: string | null;
   environment?: string;
 }
+
+// Define allowed alert variants to include "warning"
+export type AlertVariant = "default" | "destructive" | "warning";

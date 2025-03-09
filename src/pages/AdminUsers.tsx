@@ -58,41 +58,66 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
+      setError(""); // Clear any previous errors
       
       // Fetch admin users
       const { data: adminData, error: adminError } = await supabase
         .from("admin_users")
         .select("id, created_at");
 
-      if (adminError) throw new Error(adminError.message);
+      if (adminError) {
+        console.error("Error fetching admin users:", adminError);
+        throw new Error(adminError.message);
+      }
 
       // For each admin ID, get the user's email
       const adminUsersWithDetails = await Promise.all(
         (adminData || []).map(async (admin) => {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("email")
-            .eq("id", admin.id)
-            .single();
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from("profiles")
+              .select("email")
+              .eq("id", admin.id)
+              .single();
 
-          return {
-            id: admin.id,
-            email: profileData?.email || "Unknown",
-            created_at: admin.created_at,
-          };
+            if (profileError) {
+              console.warn(`Could not fetch profile for admin ${admin.id}:`, profileError);
+              return {
+                id: admin.id,
+                email: "Unknown",
+                created_at: admin.created_at,
+              };
+            }
+
+            return {
+              id: admin.id,
+              email: profileData?.email || "Unknown",
+              created_at: admin.created_at,
+            };
+          } catch (err) {
+            console.error(`Error processing admin ${admin.id}:`, err);
+            return {
+              id: admin.id,
+              email: "Error",
+              created_at: admin.created_at,
+            };
+          }
         })
       );
 
       setAdminUsers(adminUsersWithDetails);
       
-      // Fetch regular users (users not in admin_users)
+      // Fetch all profiles (users)
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, email, full_name, created_at");
         
-      if (profilesError) throw new Error(profilesError.message);
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw new Error(profilesError.message);
+      }
       
-      // Filter out admin users
+      // Filter out admin users to get regular users
       const adminIds = adminUsersWithDetails.map(admin => admin.id);
       const regularUsersData = (profilesData || []).filter(
         user => !adminIds.includes(user.id)
@@ -101,10 +126,11 @@ export default function AdminUsers() {
       setRegularUsers(regularUsersData);
     } catch (error) {
       console.error("Error fetching users:", error);
-      setError("Failed to load users. Please try again.");
+      const errorMessage = (error as Error).message || "Failed to load users. Please try again.";
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Failed to load users.",
+        description: "Failed to load users. Please try again.",
         variant: "destructive",
       });
     } finally {
