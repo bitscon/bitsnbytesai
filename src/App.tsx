@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -6,9 +7,10 @@ import {
   Navigate,
 } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './context/auth';
 import { Toaster } from '@/components/ui/toaster';
+import { supabase } from './integrations/supabase/client';
 
 // Import pages
 import Index from './pages/Index';
@@ -21,7 +23,7 @@ import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import Account from './pages/Account';
 import SavedPrompts from './pages/SavedPrompts';
 import CheckoutSuccess from './pages/CheckoutSuccess';
-import AdminLayout from './pages/admin/AdminLayout';
+import AdminLayout from './components/AdminLayout';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -45,7 +47,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { supabase } = useAuth();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -64,7 +65,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     };
 
     checkAdminStatus();
-  }, [supabase]);
+  }, []);
 
   if (isLoading) {
     return <div>Loading...</div>; // Or a loading spinner
@@ -74,8 +75,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { auth } = useAuth();
-
   return (
     <Router>
       <div className="App">
