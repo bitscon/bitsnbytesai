@@ -1,113 +1,146 @@
+import React, { useState, useEffect } from 'react';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { useAuth } from './context/auth';
+import { Toaster } from '@/components/ui/toaster';
 
-import { Navigate, Route, Routes } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import "@/App.css";
+// Import pages
+import Index from './pages/Index';
+import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Dashboard from './pages/Dashboard';
+import Subscription from './pages/Subscription';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
+import Account from './pages/Account';
+import SavedPrompts from './pages/SavedPrompts';
+import CheckoutSuccess from './pages/CheckoutSuccess';
+import AdminLayout from './pages/admin/AdminLayout';
+import NotFound from './pages/NotFound';
 
-// Page imports
-import Index from "@/pages/Index";
-import Login from "@/pages/Login";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import Dashboard from "@/pages/Dashboard";
-import SavedPrompts from "@/pages/SavedPrompts";
-import Account from "@/pages/Account";
-import Subscription from "@/pages/Subscription";
-import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
-import CheckoutSuccess from "@/pages/CheckoutSuccess";
-import NotFound from "@/pages/NotFound";
+const queryClient = new QueryClient();
 
-// Admin pages
-import AdminDashboard from "@/pages/AdminDashboard";
-import AdminPrompts from "@/pages/AdminPrompts";
-import AdminUsers from "@/pages/AdminUsers";
-import AdminApiSettings from "@/pages/AdminApiSettings";
-import AdminThemeSettings from "@/pages/AdminThemeSettings";
+// Protected route component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isLoggedIn, isLoading } = useAuth();
 
-// Layout and routes
-import AdminLayout from "@/components/AdminLayout";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import AdminRoute from "@/components/AdminRoute";
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a loading spinner
+  }
 
-// Context providers
-import { AuthProvider } from "@/context/auth";
-import { ThemeProvider } from "@/context/theme/ThemeContext";
-
-export default function App() {
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/checkout/success" element={<CheckoutSuccess />} />
-
-          {/* Protected routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/saved"
-            element={
-              <ProtectedRoute>
-                <SavedPrompts />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/account"
-            element={
-              <ProtectedRoute>
-                <Account />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subscription"
-            element={
-              <ProtectedRoute>
-                <Subscription />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subscription/success"
-            element={
-              <ProtectedRoute>
-                <SubscriptionSuccess />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Admin routes */}
-          <Route path="/admin" element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }>
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="prompts" element={<AdminPrompts />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="api-settings" element={<AdminApiSettings />} />
-            <Route path="theme-settings" element={<AdminThemeSettings />} />
-          </Route>
-
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-
-        <Toaster />
-        <Sonner />
-      </AuthProvider>
-    </ThemeProvider>
+  return isLoggedIn ? (
+    children
+  ) : (
+    <Navigate to="/login" replace />
   );
 }
+
+// Admin route component
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { supabase } = useAuth();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('is-admin');
+
+        if (error) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false); // Default to false in case of error
+        } else {
+          setIsAdmin(data.isAdmin);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [supabase]);
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a loading spinner
+  }
+
+  return isAdmin ? children : <Navigate to="/" replace />;
+}
+
+function App() {
+  const { auth } = useAuth();
+
+  return (
+    <Router>
+      <div className="App">
+        <Toaster />
+        <QueryClientProvider client={queryClient}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subscription"
+              element={
+                <ProtectedRoute>
+                  <Subscription />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subscription/success"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionSuccess />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <ProtectedRoute>
+                  <Account />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/saved-prompts"
+              element={
+                <ProtectedRoute>
+                  <SavedPrompts />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            <Route
+              path="/admin/*"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </QueryClientProvider>
+      </div>
+    </Router>
+  );
+}
+
+export default App;

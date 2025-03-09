@@ -86,6 +86,12 @@ const handler = async (req: Request): Promise<Response> => {
         break;
       }
       
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        await handlePaymentIntentFailed(paymentIntent);
+        break;
+      }
+      
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -165,17 +171,157 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 }
 
-// Helper function to handle payment failures
+// Enhanced helper function to handle invoice payment failures
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   try {
     console.log(`Payment failed for invoice: ${invoice.id}`);
     
-    if (invoice.subscription) {
-      // Log the payment failure - could add notification logic here
-      console.log(`Payment failed for subscription: ${invoice.subscription}`);
+    if (!invoice.subscription) {
+      console.log("No subscription associated with this invoice");
+      return;
+    }
+    
+    // Get subscription details
+    const subscriptionId = typeof invoice.subscription === 'string' 
+      ? invoice.subscription 
+      : invoice.subscription.id;
+    
+    console.log(`Payment failed for subscription: ${subscriptionId}`);
+    
+    // Update payment failure count in user's subscription
+    await updatePaymentFailureStatus(subscriptionId, invoice);
+    
+    // Send admin notification about the payment failure
+    await notifyAdminOfPaymentFailure(invoice);
+  } catch (error) {
+    console.error(`Error handling invoice payment failure: ${error.message}`);
+  }
+}
+
+// New helper function to handle payment intent failures
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+  try {
+    console.log(`Payment intent failed: ${paymentIntent.id}`);
+    console.log(`Failure reason: ${paymentIntent.last_payment_error?.message || 'Unknown'}`);
+    
+    // If this payment intent is associated with an invoice/subscription, we can lookup
+    // and update accordingly. For this example, we'll just log the details.
+    const invoiceId = paymentIntent.invoice as string;
+    if (invoiceId) {
+      console.log(`Associated invoice ID: ${invoiceId}`);
+      // Could fetch the invoice and then process similarly to handlePaymentFailed
+    }
+    
+    // Log detailed error for tracking
+    if (paymentIntent.last_payment_error) {
+      const error = paymentIntent.last_payment_error;
+      console.log(`Payment error type: ${error.type}`);
+      console.log(`Payment error code: ${error.code}`);
+      console.log(`Payment error message: ${error.message}`);
+      
+      // Log card-specific errors if available
+      if (error.payment_method?.card) {
+        console.log(`Card brand: ${error.payment_method.card.brand}`);
+        console.log(`Card country: ${error.payment_method.card.country}`);
+        console.log(`Last 4 digits: ${error.payment_method.card.last4}`);
+      }
+    }
+    
+    // Notify admin of payment intent failure
+    await notifyAdminOfPaymentIntentFailure(paymentIntent);
+  } catch (error) {
+    console.error(`Error handling payment intent failure: ${error.message}`);
+  }
+}
+
+// Helper function to update payment failure status in database
+async function updatePaymentFailureStatus(subscriptionId: string, invoice: Stripe.Invoice) {
+  try {
+    // Get the current subscription
+    const { data: subscription, error: fetchError } = await supabaseAdmin
+      .from('user_subscriptions')
+      .select('*')
+      .eq('stripe_subscription_id', subscriptionId)
+      .single();
+    
+    if (fetchError || !subscription) {
+      console.error(`Error fetching subscription for ID ${subscriptionId}: ${fetchError?.message || 'Not found'}`);
+      return;
+    }
+    
+    // Add a flag in metadata or a separate table to indicate payment failure
+    // For this implementation, we'll add a payment_failed_at timestamp to track when payment failed
+    
+    const { error: updateError } = await supabaseAdmin
+      .from('user_subscriptions')
+      .update({
+        payment_failed_at: new Date().toISOString(),
+        payment_failure_reason: invoice.last_payment_error?.message || 'Unknown payment failure',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscriptionId);
+    
+    if (updateError) {
+      console.error(`Error updating payment failure status: ${updateError.message}`);
+    } else {
+      console.log(`Updated payment failure status for subscription: ${subscriptionId}`);
     }
   } catch (error) {
-    console.error(`Error handling payment failure: ${error.message}`);
+    console.error(`Error in updatePaymentFailureStatus: ${error.message}`);
+  }
+}
+
+// Helper function to notify admin of payment failures
+async function notifyAdminOfPaymentFailure(invoice: Stripe.Invoice) {
+  try {
+    // For now, we'll just log the notification
+    // In a production environment, this could send an email or push notification
+    console.log(`
+      ADMIN NOTIFICATION: Payment Failed
+      Invoice ID: ${invoice.id}
+      Subscription ID: ${invoice.subscription}
+      Customer ID: ${invoice.customer}
+      Amount: ${(invoice.amount_due / 100).toFixed(2)} ${invoice.currency.toUpperCase()}
+      Attempt Count: ${invoice.attempt_count}
+      Next Payment Attempt: ${invoice.next_payment_attempt ? new Date(invoice.next_payment_attempt * 1000).toISOString() : 'None scheduled'}
+      Reason: ${invoice.last_payment_error?.message || 'Unknown'}
+    `);
+    
+    // In the future, you could implement an actual notification system here:
+    // 1. Send an email via a service like SendGrid or AWS SES
+    // 2. Create an entry in an admin notifications table
+    // 3. Send a Slack message or other team communication
+    // 4. Trigger an SMS alert for urgent issues
+  } catch (error) {
+    console.error(`Error notifying admin of payment failure: ${error.message}`);
+  }
+}
+
+// Helper function to notify admin of payment intent failures
+async function notifyAdminOfPaymentIntentFailure(paymentIntent: Stripe.PaymentIntent) {
+  try {
+    // Similar to invoice payment failure notification, but with payment intent specific details
+    console.log(`
+      ADMIN NOTIFICATION: Payment Intent Failed
+      Payment Intent ID: ${paymentIntent.id}
+      Customer ID: ${paymentIntent.customer}
+      Amount: ${(paymentIntent.amount / 100).toFixed(2)} ${paymentIntent.currency.toUpperCase()}
+      Status: ${paymentIntent.status}
+      Error: ${paymentIntent.last_payment_error?.message || 'Unknown'}
+    `);
+    
+    // Additional details that might be relevant
+    if (paymentIntent.last_payment_error?.payment_method) {
+      const paymentMethod = paymentIntent.last_payment_error.payment_method;
+      console.log(`
+        Payment Method: ${paymentMethod.type}
+        Payment Method ID: ${paymentMethod.id}
+        Card: ${paymentMethod.card?.brand} ending in ${paymentMethod.card?.last4}
+        Country: ${paymentMethod.card?.country}
+      `);
+    }
+  } catch (error) {
+    console.error(`Error notifying admin of payment intent failure: ${error.message}`);
   }
 }
 
