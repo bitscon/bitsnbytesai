@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,8 @@ import {
   Users, 
   ShieldAlert,
   Mail,
-  UserCheck
+  UserCheck,
+  Star
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +33,7 @@ interface RegularUser {
   email: string;
   full_name: string;
   created_at: string;
+  is_admin?: boolean; // Flag to indicate if user is also an admin
 }
 
 export default function AdminUsers() {
@@ -65,7 +68,7 @@ export default function AdminUsers() {
         "check-admin-status",
         {
           method: "GET",
-          query: { action: "list_admins" }
+          queryParams: { action: "list_admins" }
         }
       );
 
@@ -86,11 +89,12 @@ export default function AdminUsers() {
         throw new Error(profilesError.message);
       }
       
-      // Filter out admin users to get regular users
-      const adminIds = (adminResponse?.admin_users || []).map(admin => admin.id);
-      const regularUsersData = (profilesData || []).filter(
-        user => !adminIds.includes(user.id)
-      );
+      // Filter out admin users to get regular users, but mark those who are admins
+      const adminIds = new Set((adminResponse?.admin_users || []).map(admin => admin.id));
+      const regularUsersData = (profilesData || []).map(user => ({
+        ...user,
+        is_admin: adminIds.has(user.id)
+      }));
       
       setRegularUsers(regularUsersData);
     } catch (error) {
@@ -287,26 +291,31 @@ export default function AdminUsers() {
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
                           <Mail className="h-4 w-4 text-primary" />
                         </div>
-                        <div>
+                        <div className="flex items-center">
                           <p className="font-medium">{user.email}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {user.full_name || 'No name'} • Created on {new Date(user.created_at).toLocaleDateString()}
-                          </p>
+                          {user.is_admin && (
+                            <div className="ml-2" title="This user is also an administrator">
+                              <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                            </div>
+                          )}
                         </div>
+                        <p className="text-xs text-muted-foreground ml-1">
+                          {user.full_name || 'No name'} • Created on {new Date(user.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                       <Button 
                         variant="outline" 
                         size="sm"
                         className="flex items-center gap-1"
                         onClick={() => promoteToAdmin(user.id, user.email)}
-                        disabled={isPromoting && selectedUserId === user.id}
+                        disabled={isPromoting && selectedUserId === user.id || user.is_admin}
                       >
                         {isPromoting && selectedUserId === user.id ? (
                           <Loader2 className="h-3 w-3 animate-spin mr-1" />
                         ) : (
                           <ShieldAlert className="h-3 w-3 mr-1" />
                         )}
-                        Make Admin
+                        {user.is_admin ? 'Admin' : 'Make Admin'}
                       </Button>
                     </li>
                   ))}

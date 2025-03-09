@@ -1,89 +1,58 @@
+import * as React from "react"
 import {
-  atom,
-  useAtom,
-} from 'jotai'
-import {
-  useEffect,
-} from 'react'
-import { AlertVariant } from "@/components/admin/api-settings/types";
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast"
 
-type Toast = {
-  id: string
-  title?: string
-  description?: string
-  action?: React.ReactNode
-  duration?: number
-  variant?: AlertVariant
-}
+import { useToast as useToastHooks } from "@/hooks/use-toast"
 
-const toastsAtom = atom<Toast[]>([])
+const VIEWPORT_PADDING = 16
 
-type AddToast = Omit<Toast, 'id'> & {
-  id?: string
-}
+type ToastProps = React.ComponentProps<typeof Toast>
 
-type UpdateToast = Partial<Toast> & {
-  id: string
-}
+type ToastActionProps = React.ComponentProps<typeof ToastClose>
 
-type ToastProps = {
-  id: string
-  title?: string
-  description?: string
-  action?: React.ReactNode
-  duration?: number
-  variant?: AlertVariant;
-}
+const ToastProviderComponent = ToastProvider
 
-function useToast() {
-  const [toasts, setToasts] = useAtom(toastsAtom)
+const ToastViewportComponent = ToastViewport
 
-  useEffect(() => {
-    if (toasts.length && toasts[0].duration !== Infinity) {
-      const timer = setTimeout(() => {
-        removeToast(toasts[0].id)
-      }, toasts[0].duration || 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [toasts])
+const ToastComponent = Toast
 
-  function addToast(props: AddToast) {
-    const id = props.id || Math.random().toString(36).substring(2)
-    const toast = {
-      ...props,
-      id,
-    }
-    setToasts([...toasts, toast])
-    return id
-  }
+const ToastTitleComponent = ToastTitle
 
-  function updateToast(props: UpdateToast) {
-    setToasts(
-      toasts.map((toast) => {
-        if (toast.id === props.id) {
-          return {
-            ...toast,
-            ...props,
-          }
-        }
-        return toast
-      })
-    )
-  }
+const ToastDescriptionComponent = ToastDescription
 
-  function removeToast(id: string) {
-    setToasts(toasts.filter((toast) => toast.id !== id))
-  }
+const ToastCloseComponent = ToastClose
 
-  return {
-    toasts,
-    addToast,
-    updateToast,
-    removeToast,
-  }
-}
+const ToastAction = React.forwardRef<
+  HTMLButtonElement,
+  ToastActionProps
+>(({ className, ...props }, ref) => {
+  return (
+    <ToastClose
+      ref={ref}
+      className={className}
+      {...props}
+    />
+  )
+})
+
+ToastAction.displayName = "ToastAction"
+
+type ToastActionElement = React.ReactElement<typeof ToastAction>
 
 export {
-  useToast,
-  ToastProps,
+  useToastHooks as useToast,
+  ToastProviderComponent as ToastProvider,
+  ToastViewportComponent as ToastViewport,
+  ToastComponent as Toast,
+  ToastTitleComponent as ToastTitle,
+  ToastDescriptionComponent as ToastDescription,
+  ToastCloseComponent as ToastClose,
+  ToastAction,
 }
+export type { ToastProps, ToastActionProps, ToastActionElement }
