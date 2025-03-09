@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, ShieldAlert } from "lucide-react";
 import { UserMobileMenu } from "@/components/UserMobileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/context/theme/ThemeContext";
@@ -29,9 +29,23 @@ interface UserNavbarProps {
 }
 
 export function UserNavbar({ hasPurchased }: UserNavbarProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, checkAdminStatus } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user) {
+        const isUserAdmin = await checkAdminStatus();
+        setIsAdmin(isUserAdmin);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdmin();
+  }, [user, checkAdminStatus]);
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
@@ -46,6 +60,16 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
         </Link>
         <div className="flex items-center space-x-4">
           <nav className="hidden md:flex items-center space-x-4">
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/admin/dashboard")}
+                className="flex items-center gap-1"
+              >
+                <ShieldAlert className="h-4 w-4" />
+                Admin
+              </Button>
+            )}
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
               Library
             </Button>
@@ -93,6 +117,7 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
                 user={user}
                 signOut={signOut}
                 closeMobileMenu={closeMobileMenu}
+                isAdmin={isAdmin}
               />
             </SheetContent>
           </Sheet>

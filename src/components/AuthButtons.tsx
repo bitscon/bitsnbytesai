@@ -1,17 +1,19 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
+import { ShieldAlert } from "lucide-react";
 
 interface AuthButtonsProps {
   user: User | null;
   signOut: () => Promise<{ error: any | null }>;
   closeMobileMenu?: () => void;
   isMobile?: boolean;
+  isAdmin?: boolean;
 }
 
-export function AuthButtons({ user, signOut, closeMobileMenu, isMobile = false }: AuthButtonsProps) {
+export function AuthButtons({ user, signOut, closeMobileMenu, isMobile = false, isAdmin = false }: AuthButtonsProps) {
   const navigate = useNavigate();
   
   const handleNavigation = (path: string) => {
@@ -24,6 +26,16 @@ export function AuthButtons({ user, signOut, closeMobileMenu, isMobile = false }
   if (user) {
     return (
       <>
+        {isAdmin && (
+          <Button 
+            onClick={() => handleNavigation("/admin/dashboard")}
+            variant="outline"
+            className={`${isMobile ? "w-full" : "ml-2"} flex items-center gap-1`}
+          >
+            <ShieldAlert className="h-4 w-4" />
+            Admin
+          </Button>
+        )}
         <Button 
           onClick={() => handleNavigation("/dashboard")}
           variant="outline"

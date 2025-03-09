@@ -11,7 +11,8 @@ import { useTheme } from "@/context/theme/ThemeContext";
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const { user, signOut, checkAdminStatus } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -26,6 +27,19 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user) {
+        const isUserAdmin = await checkAdminStatus();
+        setIsAdmin(isUserAdmin);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdmin();
+  }, [user, checkAdminStatus]);
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
@@ -58,7 +72,7 @@ export function Navbar() {
               FAQ
             </a>
             <ThemeToggle theme={isDarkMode ? "dark" : "light"} toggleTheme={toggleTheme} />
-            <AuthButtons user={user} signOut={signOut} />
+            <AuthButtons user={user} signOut={signOut} isAdmin={isAdmin} />
           </nav>
 
           {/* Mobile menu button */}
@@ -86,6 +100,7 @@ export function Navbar() {
         user={user}
         signOut={signOut}
         closeMobileMenu={closeMobileMenu}
+        isAdmin={isAdmin}
       />
     </header>
   );

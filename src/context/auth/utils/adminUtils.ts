@@ -16,8 +16,17 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
       return false;
     }
     
-    console.log("Admin check result:", data);
-    return !!data;
+    const isAdmin = !!data;
+    console.log("Admin check result:", isAdmin);
+    
+    // For audit purposes, log admin access attempts
+    if (isAdmin) {
+      console.log("Admin access verified for user:", user.id, user.email);
+    } else {
+      console.log("Admin access check failed for user:", user.id, user.email);
+    }
+    
+    return isAdmin;
   } catch (err) {
     console.error("Admin check exception:", err);
     return false;
