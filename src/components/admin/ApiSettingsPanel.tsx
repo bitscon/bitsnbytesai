@@ -9,6 +9,7 @@ import { SettingsCardFooter } from './api-settings/SettingsCardFooter';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AlertVariant } from './api-settings/types';
 
 export function ApiSettingsPanel() {
   const {
@@ -48,7 +49,7 @@ export function ApiSettingsPanel() {
       toast({
         title: `${expiringKeys.length} key(s) expiring soon`,
         description: expiringKeys.map(k => formatSettingName(k.key_name)).join(', '),
-        variant: "warning",
+        variant: "warning" as AlertVariant,
       });
     } else {
       toast({
