@@ -1,3 +1,4 @@
+
 /**
  * Base Styles & CSS Variables
  * 
@@ -112,5 +113,10 @@
   html, body, #root, .app-root {
     @apply min-h-screen;
     transition: filter 0.3s ease;
+  }
+
+  /* Ensure borders are visible and have proper roundness */
+  .card, [class*="rounded-lg"] {
+    @apply rounded-lg border-[1px] overflow-hidden;
   }
 }
