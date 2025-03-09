@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Stripe } from "https://esm.sh/stripe@12.5.0";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -171,7 +170,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 }
 
-// Enhanced helper function to handle invoice payment failures
+// Helper function to handle invoice payment failures
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   try {
     console.log(`Payment failed for invoice: ${invoice.id}`);
@@ -188,46 +187,135 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     
     console.log(`Payment failed for subscription: ${subscriptionId}`);
     
-    // Update payment failure count in user's subscription
+    // Update payment failure status in user's subscription
     await updatePaymentFailureStatus(subscriptionId, invoice);
     
     // Send admin notification about the payment failure
     await notifyAdminOfPaymentFailure(invoice);
+    
+    // New: Send email notification to the user about payment failure
+    await sendPaymentFailureEmail(invoice, subscriptionId);
   } catch (error) {
     console.error(`Error handling invoice payment failure: ${error.message}`);
   }
 }
 
-// New helper function to handle payment intent failures
+// New helper function for sending payment failure emails
+async function sendPaymentFailureEmail(invoice: Stripe.Invoice, subscriptionId: string) {
+  try {
+    // Find the subscription in our database
+    const { data: subscription, error: subscriptionError } = await supabaseAdmin
+      .from('user_subscriptions')
+      .select('user_id, tier')
+      .eq('stripe_subscription_id', subscriptionId)
+      .single();
+    
+    if (subscriptionError || !subscription) {
+      console.error(`Error finding subscription in database: ${subscriptionError?.message || 'Not found'}`);
+      return;
+    }
+    
+    // Get subscription plan details for the email
+    const { data: plan, error: planError } = await supabaseAdmin
+      .from('subscription_plans')
+      .select('name')
+      .eq('tier', subscription.tier)
+      .single();
+    
+    if (planError || !plan) {
+      console.error(`Error finding plan for tier ${subscription.tier}: ${planError?.message || 'Not found'}`);
+      return;
+    }
+    
+    // Generate customer portal URL for updating payment method
+    const stripeSecretKey = await getApiSetting("STRIPE_SECRET_KEY");
+    if (!stripeSecretKey) {
+      console.error("Stripe secret key not found");
+      return;
+    }
+    
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2023-10-16",
+    });
+    
+    // Get customer ID
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer.id;
+    
+    // Create a billing portal session
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${Deno.env.get('SUPABASE_URL') || ''}/subscription`,
+    });
+    
+    // Format failure reason
+    const failureReason = invoice.last_payment_error?.message || 
+                         "Your payment method was declined. Please update your payment information.";
+    
+    // Send the email notification
+    const response = await fetch(`${Deno.env.get('SUPABASE_URL') || ''}/functions/v1/send-subscription-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`
+      },
+      body: JSON.stringify({
+        userId: subscription.user_id,
+        emailType: "payment_failure",
+        data: {
+          subscriptionName: plan.name,
+          failureReason,
+          portalUrl: portalSession.url
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`Error sending payment failure email: ${error}`);
+      return;
+    }
+    
+    const result = await response.json();
+    console.log(`Payment failure email sent successfully: ${result.emailId}`);
+    
+  } catch (error) {
+    console.error(`Error sending payment failure email: ${error.message}`);
+  }
+}
+
+// Helper function to handle payment intent failures
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   try {
     console.log(`Payment intent failed: ${paymentIntent.id}`);
     console.log(`Failure reason: ${paymentIntent.last_payment_error?.message || 'Unknown'}`);
     
-    // If this payment intent is associated with an invoice/subscription, we can lookup
-    // and update accordingly. For this example, we'll just log the details.
+    // If this payment intent is associated with an invoice that has a subscription,
+    // send a payment failure email to the user
     const invoiceId = paymentIntent.invoice as string;
     if (invoiceId) {
       console.log(`Associated invoice ID: ${invoiceId}`);
-      // Could fetch the invoice and then process similarly to handlePaymentFailed
-    }
-    
-    // Log detailed error for tracking
-    if (paymentIntent.last_payment_error) {
-      const error = paymentIntent.last_payment_error;
-      console.log(`Payment error type: ${error.type}`);
-      console.log(`Payment error code: ${error.code}`);
-      console.log(`Payment error message: ${error.message}`);
       
-      // Log card-specific errors if available
-      if (error.payment_method?.card) {
-        console.log(`Card brand: ${error.payment_method.card.brand}`);
-        console.log(`Card country: ${error.payment_method.card.country}`);
-        console.log(`Last 4 digits: ${error.payment_method.card.last4}`);
+      // Get Stripe API key
+      const stripeSecretKey = await getApiSetting("STRIPE_SECRET_KEY");
+      if (!stripeSecretKey) {
+        console.error("Stripe secret key not found");
+        return;
+      }
+      
+      const stripe = new Stripe(stripeSecretKey, {
+        apiVersion: "2023-10-16",
+      });
+      
+      // Get the invoice details
+      const invoice = await stripe.invoices.retrieve(invoiceId);
+      
+      // If the invoice has a subscription, handle it like a regular payment failure
+      if (invoice.subscription) {
+        await sendPaymentFailureEmail(invoice, invoice.subscription as string);
       }
     }
     
-    // Notify admin of payment intent failure
+    // Send admin notification about the payment intent failure
     await notifyAdminOfPaymentIntentFailure(paymentIntent);
   } catch (error) {
     console.error(`Error handling payment intent failure: ${error.message}`);
