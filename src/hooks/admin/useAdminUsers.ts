@@ -45,11 +45,11 @@ export function useAdminUsers() {
       setIsLoading(true);
       setError(""); // Clear any previous errors
       
-      // Fetch admin users using the edge function with correct parameters format
+      // Fetch admin users using the edge function - IMPORTANT: use POST method with a body instead of GET with a body
       const { data: adminResponse, error: adminError } = await supabase.functions.invoke(
         "check-admin-status",
         {
-          method: "GET",
+          method: "POST", // Changed from GET to POST since we need to send a body
           body: { action: "list_admins" }
         }
       );
