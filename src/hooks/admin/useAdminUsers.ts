@@ -45,12 +45,12 @@ export function useAdminUsers() {
       setIsLoading(true);
       setError(""); // Clear any previous errors
       
-      // Fetch admin users using the edge function
+      // Fetch admin users using the edge function with correct parameters format
       const { data: adminResponse, error: adminError } = await supabase.functions.invoke(
         "check-admin-status",
         {
           method: "GET",
-          queryParams: { action: "list_admins" }
+          body: { action: "list_admins" }
         }
       );
 
@@ -59,6 +59,7 @@ export function useAdminUsers() {
         throw new Error(adminError.message);
       }
 
+      console.log("Admin users response:", adminResponse);
       setAdminUsers(adminResponse?.admin_users || []);
       
       // Fetch all profiles (users)

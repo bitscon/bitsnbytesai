@@ -42,9 +42,33 @@ serve(async (req) => {
       )
     }
     
-    // Parse URL to check for action parameter
+    // Check for action parameter from URL query params or request body
     const url = new URL(req.url)
-    const action = url.searchParams.get('action')
+    let action = url.searchParams.get('action')
+    
+    // If action is not in query params, check in the request body
+    if (!action && req.method === 'POST') {
+      try {
+        const body = await req.json()
+        action = body.action
+      } catch (e) {
+        // If parsing fails, continue without body action
+        console.log('Could not parse request body')
+      }
+    }
+    
+    // For GET requests, try to get action from the body too
+    if (!action && req.method === 'GET') {
+      try {
+        const body = await req.json()
+        action = body.action
+      } catch (e) {
+        // If parsing fails, continue without body action
+        console.log('Could not parse request body for GET')
+      }
+    }
+    
+    console.log('Action parameter:', action)
     
     if (action === 'list_admins') {
       console.log('Listing all admin users')
@@ -61,6 +85,8 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
+      
+      console.log('Found admin users:', adminUsersData.length)
       
       // Get profile details for each admin
       const adminUsersWithDetails = await Promise.all(
@@ -79,6 +105,8 @@ serve(async (req) => {
           }
         })
       )
+      
+      console.log('Returning admin users with details:', adminUsersWithDetails.length)
       
       return new Response(
         JSON.stringify({ admin_users: adminUsersWithDetails }),
