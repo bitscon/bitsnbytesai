@@ -1,8 +1,8 @@
 
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 import { AlertVariant } from "@/components/admin/api-settings/types";
 
-type ToastProps = {
+export type ToastProps = {
   id?: string;
   title?: string;
   description?: string;
@@ -11,7 +11,17 @@ type ToastProps = {
   variant?: AlertVariant;
 };
 
-function useToast() {
+// Create a toast array for the toaster component
+type ToastType = ToastProps & {
+  id: string;
+};
+
+const TOAST_LIMIT = 20;
+const TOAST_REMOVE_DELAY = 1000;
+
+let toasts: ToastType[] = [];
+
+const useToast = () => {
   const showToast = ({ title, description, variant, duration, action }: ToastProps) => {
     // Map our custom variants to sonner's options
     const options: any = {
@@ -19,19 +29,19 @@ function useToast() {
     };
 
     if (variant === "destructive") {
-      return toast.error(title, {
+      return sonnerToast.error(title, {
         description,
         action,
         ...options,
       });
     } else if (variant === "warning") {
-      return toast.warning(title, {
+      return sonnerToast.warning(title, {
         description,
         action,
         ...options,
       });
     } else {
-      return toast(title, {
+      return sonnerToast(title, {
         description,
         action,
         ...options,
@@ -41,8 +51,39 @@ function useToast() {
 
   return {
     toast: showToast,
+    // Add a getter for toasts to support the Toaster component
+    get toasts() {
+      return toasts;
+    },
   };
-}
+};
+
+// Export the toast function directly for convenience
+export const toast = ({ title, description, variant, duration, action }: ToastProps) => {
+  const options: any = {
+    duration: duration || 3000,
+  };
+
+  if (variant === "destructive") {
+    return sonnerToast.error(title, {
+      description,
+      action,
+      ...options,
+    });
+  } else if (variant === "warning") {
+    return sonnerToast.warning(title, {
+      description,
+      action,
+      ...options,
+    });
+  } else {
+    return sonnerToast(title, {
+      description,
+      action,
+      ...options,
+    });
+  }
+};
 
 export { useToast };
-export type { ToastProps };
+export type { ToastType };
