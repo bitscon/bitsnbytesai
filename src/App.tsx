@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Route,
@@ -41,36 +42,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Admin route component
-function AdminRouteComponent({ children }: { children: React.ReactNode }) {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('is-admin');
-
-        if (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false); // Default to false in case of error
-        } else {
-          setIsAdmin(data.isAdmin);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, []);
-
-  if (isLoading) {
-    return <div>Loading...</div>; // Or a loading spinner
-  }
-
-  return isAdmin ? children : <Navigate to="/" replace />;
-}
+// We're removing the duplicate AdminRouteComponent defined here
+// and using the imported AdminRoute component instead
 
 function App() {
   return (
