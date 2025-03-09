@@ -13,176 +13,173 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { sessionId, userId, customerId } = await req.json();
-
+    
     if (!sessionId || !userId) {
       return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        JSON.stringify({ 
+          success: false, 
+          message: "Missing required parameters" 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
     }
-
+    
     console.log(`Verifying subscription for session: ${sessionId}, user: ${userId}`);
     
-    // Get Stripe secret key from database
+    // Get Stripe API key
     const stripeSecretKey = await getApiSetting("STRIPE_SECRET_KEY");
     
     if (!stripeSecretKey) {
-      console.error("Stripe secret key not found in database or environment");
       return new Response(
-        JSON.stringify({ error: "Payment processing is not configured properly" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        JSON.stringify({ 
+          success: false, 
+          message: "Payment configuration is incomplete" 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
     }
     
-    // Initialize Stripe with the retrieved key
+    // Initialize Stripe
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
-
+    
     // Retrieve the checkout session
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-    if (session.status !== "complete") {
-      console.log(`Session not completed: ${sessionId}, status: ${session.status}`);
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['subscription', 'customer']
+    });
+    
+    if (!session) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Payment has not been completed" 
+          message: "Invalid session ID" 
         }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
     }
-
-    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
     
-    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-      console.log(`Subscription not active: ${subscription.id}, status: ${subscription.status}`);
+    if (session.status !== 'complete') {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Subscription is not active" 
+          message: "Payment not completed" 
         }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
     }
-
-    // Get subscription plan details
-    const planId = subscription.items.data[0].plan.id;
     
-    // Determine tier based on plan ID
-    let tier = 'pro'; // Default
+    // Get subscription details
+    const subscription = session.subscription as Stripe.Subscription;
+    const customer = session.customer as Stripe.Customer;
     
-    // Query subscription plans to get the tier from price ID
-    const { data: plans, error: plansError } = await supabaseAdmin
+    if (!subscription) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "No subscription found for this session" 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    // Determine the subscription tier based on price ID
+    const priceId = subscription.items.data[0].price.id;
+    
+    // Get the subscription plan associated with this price ID
+    const { data: planData, error: planError } = await supabaseAdmin
       .from('subscription_plans')
-      .select('tier')
-      .or(`stripe_price_id_monthly.eq.${planId},stripe_price_id_yearly.eq.${planId}`)
+      .select('tier, name')
+      .or(`stripe_price_id_monthly.eq.${priceId},stripe_price_id_yearly.eq.${priceId}`)
       .single();
     
-    if (plansError) {
-      console.error(`Error fetching subscription tier: ${plansError.message}`);
-    } else if (plans) {
-      tier = plans.tier;
+    if (planError || !planData) {
+      console.error("Error finding subscription plan:", planError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "Subscription plan not found" 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
-
-    // Check if we already have a subscription record for this user
-    const { data: existingSub, error: checkError } = await supabaseAdmin
+    
+    const tier = planData.tier;
+    const tierName = planData.name;
+    
+    // Save the subscription details in our database
+    const { error: updateError } = await supabaseAdmin
       .from('user_subscriptions')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error(`Error checking existing subscription: ${checkError.message}`);
+      .upsert({
+        user_id: userId,
+        tier: tier,
+        stripe_customer_id: customer.id,
+        stripe_subscription_id: subscription.id,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+    
+    if (updateError) {
+      console.error("Error updating user subscription:", updateError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "Failed to update subscription record" 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
-
-    const currentPeriodStart = new Date(subscription.current_period_start * 1000);
-    const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
-
-    if (existingSub) {
-      // Update existing subscription
-      const { error: updateError } = await supabaseAdmin
-        .from('user_subscriptions')
-        .update({
-          tier,
-          stripe_customer_id: customerId || session.customer as string,
-          stripe_subscription_id: subscription.id,
-          current_period_start,
-          current_period_end,
-          updated_at: new Date()
-        })
-        .eq('user_id', userId);
-
-      if (updateError) {
-        console.error(`Error updating subscription: ${updateError.message}`);
-        return new Response(
-          JSON.stringify({ error: "Failed to update subscription record" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-    } else {
-      // Create new subscription record
-      const { error: insertError } = await supabaseAdmin
-        .from('user_subscriptions')
-        .insert({
-          user_id: userId,
-          tier,
-          stripe_customer_id: customerId || session.customer as string,
-          stripe_subscription_id: subscription.id,
-          current_period_start,
-          current_period_end
-        });
-
-      if (insertError) {
-        console.error(`Error creating subscription record: ${insertError.message}`);
-        return new Response(
-          JSON.stringify({ error: "Failed to create subscription record" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-    }
-
-    console.log(`Subscription verified for user: ${userId}, tier: ${tier}`);
-
+    
     return new Response(
       JSON.stringify({ 
-        success: true,
-        tier,
-        subscription: {
-          id: subscription.id,
-          status: subscription.status,
-          current_period_end: currentPeriodEnd
-        }
+        success: true, 
+        tier: tierName, 
+        subscription_id: subscription.id,
+        customer_id: customer.id,
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
+    
   } catch (error) {
     console.error("Error verifying subscription:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        message: error.message || "An error occurred while verifying the subscription" 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
   }
 };
 

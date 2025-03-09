@@ -114,6 +114,26 @@ export async function createApiSettingIfNotExists(
   }
 }
 
+export async function ensureStripeSettings(): Promise<void> {
+  await createApiSettingIfNotExists(
+    "STRIPE_PUBLIC_KEY", 
+    "", 
+    "Your Stripe Publishable Key from the Stripe Dashboard"
+  );
+  
+  await createApiSettingIfNotExists(
+    "STRIPE_SECRET_KEY", 
+    "", 
+    "Your Stripe Secret Key from the Stripe Dashboard"
+  );
+  
+  await createApiSettingIfNotExists(
+    "STRIPE_WEBHOOK_SECRET", 
+    "", 
+    "Your Stripe Webhook Secret for validating webhook events"
+  );
+}
+
 export async function ensurePayPalSettings(): Promise<void> {
   await createApiSettingIfNotExists(
     "PAYPAL_CLIENT_ID", 
