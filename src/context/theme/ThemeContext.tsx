@@ -83,14 +83,28 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.body.classList.remove('dark');
     }
     
-    // Apply theme settings as a CSS filter on the root element
+    // Apply theme settings as CSS variables instead of filters
     if (activeTheme) {
       console.log('Applying theme settings to root:', activeTheme);
-      root.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
-      document.body.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
-    } else {
+      // Don't use filter property directly on the root element as it can cause rendering issues
+      const styleElement = document.getElementById('global-theme-style') as HTMLStyleElement;
+      if (styleElement) {
+        styleElement.textContent = `
+          :root {
+            --theme-brightness: ${activeTheme.brightness}%;
+            --theme-contrast: ${activeTheme.contrast}%;
+            --theme-saturation: ${activeTheme.saturation}%;
+          }
+        `;
+      }
+      // Remove direct filter application which could cause white screen
       root.style.filter = '';
       document.body.style.filter = '';
+    } else {
+      const styleElement = document.getElementById('global-theme-style') as HTMLStyleElement;
+      if (styleElement) {
+        styleElement.textContent = '';
+      }
     }
     
     return () => {
@@ -141,8 +155,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const themeStyle = React.useMemo(() => {
     if (!activeTheme) return {};
 
+    // Return the theme values as CSS variables instead of direct filter
     return {
-      filter: `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`,
+      filter: `brightness(var(--theme-brightness)) contrast(var(--theme-contrast)) saturate(var(--theme-saturation))`,
       transition: 'filter 0.3s ease'
     };
   }, [activeTheme]);

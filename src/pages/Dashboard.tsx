@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { PromptLibrary } from "@/components/prompts/PromptLibrary";
 import { motion } from "framer-motion";
+import { useTheme } from "@/context/theme/ThemeContext";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [hasPurchased, setHasPurchased] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { themeStyle } = useTheme();
 
   useEffect(() => {
     const checkPurchaseStatus = async () => {
@@ -43,7 +45,7 @@ export default function Dashboard() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={themeStyle}>
       <UserNavbar hasPurchased={hasPurchased} /> 
       <div className="container mx-auto px-4 pt-20 pb-16">
         <motion.div 
