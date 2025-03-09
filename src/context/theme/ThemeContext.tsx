@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -84,27 +83,20 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.body.classList.remove('dark');
     }
     
-    // Apply theme settings as a CSS filter on the content instead of the entire body
-    // This prevents overriding border styles and other critical UI elements
+    // Apply theme settings as a CSS filter on the root element
     if (activeTheme) {
       console.log('Applying theme settings to root:', activeTheme);
-      // Apply filter to a wrapper div instead of the entire root
-      const contentElements = document.querySelectorAll('.theme-content');
-      contentElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          el.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
-        }
-      });
+      root.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
+      document.body.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
+    } else {
+      root.style.filter = '';
+      document.body.style.filter = '';
     }
     
     return () => {
       // Cleanup filter styles when component unmounts
-      const contentElements = document.querySelectorAll('.theme-content');
-      contentElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          el.style.filter = '';
-        }
-      });
+      root.style.filter = '';
+      document.body.style.filter = '';
     };
   }, [isDarkMode, activeTheme]);
   
