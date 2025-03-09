@@ -1,0 +1,13 @@
+
+# Build artifacts
+dist/
+build/
+
+# Node modules
+node_modules/
+
+# Public assets
+public/
+
+# Generated files
+*.min.css
