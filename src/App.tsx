@@ -1,6 +1,6 @@
 
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -37,67 +37,65 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <Router>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/dashboard"
-                element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
-              />
-              <Route
-                path="/account"
-                element={<ProtectedRoute><Account /></ProtectedRoute>}
-              />
-              <Route
-                path="/saved-prompts"
-                element={<ProtectedRoute><SavedPrompts /></ProtectedRoute>}
-              />
-              <Route
-                path="/subscription"
-                element={<ProtectedRoute><Subscription /></ProtectedRoute>}
-              />
-              <Route
-                path="/subscription/success"
-                element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>}
-              />
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
+            />
+            <Route
+              path="/account"
+              element={<ProtectedRoute><Account /></ProtectedRoute>}
+            />
+            <Route
+              path="/saved-prompts"
+              element={<ProtectedRoute><SavedPrompts /></ProtectedRoute>}
+            />
+            <Route
+              path="/subscription"
+              element={<ProtectedRoute><Subscription /></ProtectedRoute>}
+            />
+            <Route
+              path="/subscription/success"
+              element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>}
+            />
 
-              {/* Admin Routes */}
-              <Route
-                path="/admin/dashboard"
-                element={<AdminRoute><AdminDashboard /></AdminRoute>}
-              />
-              <Route
-                path="/admin/prompts"
-                element={<AdminRoute><AdminPrompts /></AdminRoute>}
-              />
-              <Route
-                path="/admin/settings"
-                element={<AdminRoute><AdminApiSettings /></AdminRoute>}
-              />
-              <Route
-                path="/admin/theme"
-                element={<AdminRoute><AdminThemeSettings /></AdminRoute>}
-              />
-              <Route
-                path="/admin/users"
-                element={<AdminRoute><AdminUsers /></AdminRoute>}
-              />
-              <Route
-                path="/admin/subscription-analytics"
-                element={<AdminRoute><AdminSubscriptionAnalytics /></AdminRoute>}
-              />
+            {/* Admin Routes */}
+            <Route
+              path="/admin/dashboard"
+              element={<AdminRoute><AdminDashboard /></AdminRoute>}
+            />
+            <Route
+              path="/admin/prompts"
+              element={<AdminRoute><AdminPrompts /></AdminRoute>}
+            />
+            <Route
+              path="/admin/settings"
+              element={<AdminRoute><AdminApiSettings /></AdminRoute>}
+            />
+            <Route
+              path="/admin/theme"
+              element={<AdminRoute><AdminThemeSettings /></AdminRoute>}
+            />
+            <Route
+              path="/admin/users"
+              element={<AdminRoute><AdminUsers /></AdminRoute>}
+            />
+            <Route
+              path="/admin/subscription-analytics"
+              element={<AdminRoute><AdminSubscriptionAnalytics /></AdminRoute>}
+            />
 
-              {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
           <Toaster position="top-right" richColors />
         </AuthProvider>
       </ThemeProvider>
