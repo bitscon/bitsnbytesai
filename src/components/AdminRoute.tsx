@@ -6,7 +6,11 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { checkAdminStatus } from "@/context/auth/utils/adminUtils";
 
-export default function AdminRoute({ children }: { children: React.ReactNode }) {
+interface AdminRouteProps {
+  children: React.ReactNode;
+}
+
+export default function AdminRoute({ children }: AdminRouteProps) {
   const { user, isLoading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);

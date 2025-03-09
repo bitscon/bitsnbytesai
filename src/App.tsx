@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Route,
@@ -23,6 +22,7 @@ import SavedPrompts from './pages/SavedPrompts';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import AdminLayout from './components/AdminLayout';
 import NotFound from './pages/NotFound';
+import AdminRoute from './components/AdminRoute';
 
 const queryClient = new QueryClient();
 
@@ -42,7 +42,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Admin route component
-function AdminRoute({ children }: { children: React.ReactNode }) {
+function AdminRouteComponent({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
