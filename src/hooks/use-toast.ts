@@ -86,4 +86,3 @@ export const toast = ({ title, description, variant, duration, action }: ToastPr
 };
 
 export { useToast };
-// When using isolatedModules, type re-exports must use 'export type'
