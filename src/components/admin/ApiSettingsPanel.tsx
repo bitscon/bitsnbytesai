@@ -49,7 +49,7 @@ export function ApiSettingsPanel() {
       toast({
         title: `${expiringKeys.length} key(s) expiring soon`,
         description: expiringKeys.map(k => formatSettingName(k.key_name)).join(', '),
-        variant: "warning" as AlertVariant,
+        variant: "warning",
       });
     } else {
       toast({
