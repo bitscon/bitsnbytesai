@@ -19,10 +19,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu, ShieldAlert } from "lucide-react";
+import { Menu, ShieldAlert, CreditCard } from "lucide-react";
 import { UserMobileMenu } from "@/components/UserMobileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/context/theme/ThemeContext";
+import { useSubscription } from "@/hooks/use-subscription";
 
 interface UserNavbarProps {
   hasPurchased?: boolean;
@@ -33,6 +34,7 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { subscription } = useSubscription();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -73,6 +75,14 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
               Library
             </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/subscription")}
+              className="flex items-center gap-1"
+            >
+              <CreditCard className="h-4 w-4" />
+              {subscription && subscription.tier !== 'free' ? 'Subscription' : 'Upgrade'}
+            </Button>
             <Button variant="ghost" onClick={() => navigate("/account")}>
               Account
             </Button>
@@ -89,6 +99,9 @@ export function UserNavbar({ hasPurchased }: UserNavbarProps) {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuItem onClick={() => navigate("/account")}>
                     Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/subscription")}>
+                    Manage Subscription
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>
