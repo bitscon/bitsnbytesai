@@ -1,129 +1,131 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { PromptUsage } from '@/types/subscription';
 
-/**
- * Hook to track and limit prompt usage for free tier users
- */
 export function usePromptTracking() {
   const { user, isLoggedIn } = useAuth();
   const { toast } = useToast();
-  const [promptsRemaining, setPromptsRemaining] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [promptLimitReached, setPromptLimitReached] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [hasRemainingPrompts, setHasRemainingPrompts] = useState<boolean>(true);
+  const [usage, setUsage] = useState<PromptUsage | null>(null);
+  const [monthlyLimit, setMonthlyLimit] = useState<number>(50); // Default free tier limit
 
-  // Track prompt usage when a user views a prompt
-  const trackPromptUsage = async () => {
-    if (!isLoggedIn || !user) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // Call increment_prompt_usage RPC function to track usage
-      const { data, error } = await supabase.rpc('increment_prompt_usage', {
-        user_uuid: user.id
-      });
-      
-      if (error) {
-        console.error('Error tracking prompt usage:', error);
-        return;
-      }
-      
-      // Fetch the updated prompts remaining count
-      await fetchPromptsRemaining();
-    } catch (error) {
-      console.error('Error in prompt tracking:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch the number of prompts remaining for the current month (for free tier)
-  const fetchPromptsRemaining = async () => {
+  // Fetch the user's prompt usage for the current month
+  const fetchPromptUsage = useCallback(async () => {
     if (!isLoggedIn || !user) {
-      setPromptsRemaining(null);
+      setIsLoading(false);
       return;
     }
-    
+
     try {
       setIsLoading(true);
-      
-      // Get the current month and year
+
+      // Get current month and year
       const now = new Date();
-      const currentMonth = now.getMonth() + 1; // JavaScript months are 0-11
+      const currentMonth = now.getMonth() + 1; // JavaScript months are 0-indexed
       const currentYear = now.getFullYear();
-      
-      // Get user's subscription tier
-      const { data: subscriptionData } = await supabase
-        .from('user_subscriptions')
-        .select('tier')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      const tier = subscriptionData?.tier || 'free';
-      
-      // If user is not on free tier, they have unlimited access
-      if (tier !== 'free') {
-        setPromptsRemaining(null); // null indicates unlimited
-        setPromptLimitReached(false);
+
+      // Check if user has remaining prompts (using Supabase RPC call)
+      const { data: hasRemaining, error: remainingError } = await supabase
+        .rpc('has_remaining_prompts', { user_uuid: user.id });
+
+      if (remainingError) {
+        console.error('Error checking remaining prompts:', remainingError);
+        toast({
+          title: 'Error',
+          description: 'Failed to check prompt usage limits. Please try again later.',
+          variant: 'destructive',
+        });
         return;
       }
-      
-      // Get the user's prompt usage for the current month
-      const { data: usageData, error } = await supabase
+
+      setHasRemainingPrompts(!!hasRemaining);
+
+      // Get actual usage count
+      const { data: usageData, error: usageError } = await supabase
         .from('user_prompt_usage')
         .select('count')
         .eq('user_id', user.id)
         .eq('month', currentMonth)
         .eq('year', currentYear)
         .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching prompt usage:', error);
+
+      if (usageError) {
+        console.error('Error fetching prompt usage:', usageError);
         return;
       }
-      
-      const promptLimit = 50; // Default limit for free tier
-      const usedPrompts = usageData?.count || 0;
-      const remaining = promptLimit - usedPrompts;
-      
-      setPromptsRemaining(remaining > 0 ? remaining : 0);
-      setPromptLimitReached(remaining <= 0);
-      
-      // Show a warning if the user is approaching the limit
-      if (remaining <= 5 && remaining > 0) {
-        toast({
-          title: 'Prompt limit approaching',
-          description: `You have ${remaining} prompt${remaining === 1 ? '' : 's'} remaining this month. Consider upgrading for unlimited access.`,
-          variant: 'warning',
-        });
-      } else if (remaining <= 0) {
-        toast({
-          title: 'Prompt limit reached',
-          description: 'You have reached your free tier prompt limit for this month. Upgrade to continue accessing more prompts.',
-          variant: 'destructive',
-        });
-      }
+
+      const count = usageData?.count || 0;
+      const remaining = Math.max(0, monthlyLimit - count);
+
+      setUsage({
+        count,
+        limit: monthlyLimit,
+        remaining,
+        month: currentMonth,
+        year: currentYear
+      });
     } catch (error) {
-      console.error('Error fetching prompts remaining:', error);
+      console.error('Error in fetchPromptUsage:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoggedIn, user, toast, monthlyLimit]);
 
-  // Fetch prompts remaining when the component mounts
+  // Track prompt usage (increment the counter)
+  const trackPromptUsage = useCallback(async () => {
+    if (!isLoggedIn || !user) return;
+
+    try {
+      // First check if user has remaining prompts
+      const { data: hasRemaining, error: remainingError } = await supabase
+        .rpc('has_remaining_prompts', { user_uuid: user.id });
+
+      if (remainingError) {
+        console.error('Error checking remaining prompts:', remainingError);
+        return false;
+      }
+
+      if (!hasRemaining) {
+        toast({
+          title: 'Usage Limit Reached',
+          description: 'You have reached your monthly limit of free prompts. Upgrade your subscription to get unlimited access.',
+          variant: 'default', // Changed from 'warning' to 'default'
+        });
+        return false;
+      }
+
+      // Increment the usage counter
+      const { error: incrementError } = await supabase
+        .rpc('increment_prompt_usage', { user_uuid: user.id });
+
+      if (incrementError) {
+        console.error('Error incrementing prompt usage:', incrementError);
+        return false;
+      }
+
+      // Refresh the usage data
+      fetchPromptUsage();
+      return true;
+    } catch (error) {
+      console.error('Error in trackPromptUsage:', error);
+      return false;
+    }
+  }, [isLoggedIn, user, toast, fetchPromptUsage]);
+
+  // Fetch usage on component mount or when user changes
   useEffect(() => {
-    fetchPromptsRemaining();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoggedIn, user]);
+    fetchPromptUsage();
+  }, [fetchPromptUsage]);
 
   return {
-    trackPromptUsage,
-    fetchPromptsRemaining,
-    promptsRemaining,
     isLoading,
-    promptLimitReached
+    hasRemainingPrompts,
+    usage,
+    trackPromptUsage,
+    fetchPromptUsage
   };
 }

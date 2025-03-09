@@ -3,7 +3,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { SubscriptionPlan, UserSubscription, SubscriptionTier } from '@/types/subscription';
+import { SubscriptionPlan, UserSubscription, SubscriptionTier, PromptUsage } from '@/types/subscription';
+import { format } from 'date-fns';
+
+interface StripeSubscription {
+  id: string;
+  customer: string;
+  current_period_start: number;
+  current_period_end: number;
+  cancel_at_period_end: boolean;
+  plan: {
+    id: string;
+    interval: 'month' | 'year';
+  };
+}
+
+interface CurrentUsage {
+  count: number;
+  limit: number;
+  remaining: number;
+}
 
 export function useSubscription() {
   const { user, isLoggedIn } = useAuth();
@@ -12,8 +31,13 @@ export function useSubscription() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [stripePublicKey, setStripePublicKey] = useState<string>('');
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
+  const [stripeSubscription, setStripeSubscription] = useState<StripeSubscription | null>(null);
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
   const [isSubscriptionLoading, setIsSubscriptionLoading] = useState<boolean>(true);
   const [subscriptionStripeCustomerId, setSubscriptionStripeCustomerId] = useState<string | null>(null);
+  const [currentUsage, setCurrentUsage] = useState<CurrentUsage | null>(null);
+  const [isSubscribing, setIsSubscribing] = useState<boolean>(false);
+  const [isManagingSubscription, setIsManagingSubscription] = useState<boolean>(false);
 
   const fetchSubscriptionPlans = useCallback(async () => {
     try {
@@ -75,6 +99,47 @@ export function useSubscription() {
       if (subscriptionData) {
         setUserSubscription(subscriptionData);
         setSubscriptionStripeCustomerId(subscriptionData.stripe_customer_id || null);
+        
+        // If subscription is not free tier, fetch Stripe details
+        if (subscriptionData.tier !== 'free' && subscriptionData.stripe_subscription_id) {
+          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('get-user-subscription', {
+            body: {
+              subscriptionId: subscriptionData.stripe_subscription_id
+            }
+          });
+          
+          if (stripeError) {
+            console.error('Error fetching Stripe subscription details:', stripeError);
+          } else if (stripeData?.subscription) {
+            setStripeSubscription(stripeData.subscription);
+            setCancelAtPeriodEnd(stripeData.subscription.cancel_at_period_end);
+          }
+        }
+        
+        // Fetch current usage if on free tier
+        if (subscriptionData.tier === 'free') {
+          const now = new Date();
+          const currentMonth = now.getMonth() + 1;
+          const currentYear = now.getFullYear();
+          
+          const { data: usageData, error: usageError } = await supabase
+            .from('user_prompt_usage')
+            .select('count')
+            .eq('user_id', user.id)
+            .eq('month', currentMonth)
+            .eq('year', currentYear)
+            .maybeSingle();
+          
+          if (!usageError) {
+            const limit = 50; // Default free tier limit
+            const count = usageData?.count || 0;
+            setCurrentUsage({
+              count,
+              limit,
+              remaining: Math.max(0, limit - count)
+            });
+          }
+        }
       } else {
         // If no subscription record exists, create one with free tier
         const { error: createError } = await supabase
@@ -142,6 +207,153 @@ export function useSubscription() {
     return tierLevels[userSubscription.tier] >= tierLevels[requiredTier];
   }, [userSubscription]);
 
+  const subscribe = async (priceId: string, interval: 'month' | 'year') => {
+    if (!isLoggedIn || !user) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to purchase a subscription.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      setIsSubscribing(true);
+      
+      const successUrl = `${window.location.origin}/subscription/success`;
+      const cancelUrl = `${window.location.origin}/subscription`;
+      
+      const { data, error } = await createCheckoutSession(
+        priceId,
+        interval,
+        successUrl,
+        cancelUrl
+      );
+      
+      if (error || !data || !data.url) {
+        console.error('Error creating subscription checkout:', error || 'No checkout URL returned');
+        toast({
+          title: 'Error',
+          description: 'Failed to create subscription checkout. Please try again later.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (error) {
+      console.error('Error in subscribe function:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again later.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  const manageSubscription = async (action: 'portal' | 'cancel' | 'reactivate') => {
+    if (!isLoggedIn || !user || !userSubscription) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in and have a subscription to manage it.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      setIsManagingSubscription(true);
+      
+      const returnUrl = `${window.location.origin}/subscription`;
+      
+      if (action === 'portal') {
+        // Open Stripe Customer Portal
+        const { data, error } = await supabase.functions.invoke('manage-subscription', {
+          body: {
+            customerId: userSubscription.stripe_customer_id,
+            action: 'portal',
+            return_url: returnUrl
+          }
+        });
+        
+        if (error || !data || !data.url) {
+          console.error('Error opening customer portal:', error || 'No portal URL returned');
+          toast({
+            title: 'Error',
+            description: 'Failed to open subscription management. Please try again later.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        // Redirect to Stripe Customer Portal
+        window.location.href = data.url;
+      } else if (action === 'cancel' || action === 'reactivate') {
+        // Cancel or reactivate subscription
+        const { error } = await supabase.functions.invoke('manage-subscription', {
+          body: {
+            subscriptionId: userSubscription.stripe_subscription_id,
+            action: action,
+          }
+        });
+        
+        if (error) {
+          console.error(`Error ${action}ing subscription:`, error);
+          toast({
+            title: 'Error',
+            description: `Failed to ${action} subscription. Please try again later.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        setCancelAtPeriodEnd(action === 'cancel');
+        
+        toast({
+          title: action === 'cancel' ? 'Subscription Cancelled' : 'Subscription Reactivated',
+          description: action === 'cancel' 
+            ? 'Your subscription will end at the end of the current billing period.' 
+            : 'Your subscription has been reactivated and will renew automatically.',
+        });
+        
+        // Refresh subscription data
+        fetchUserSubscription();
+      }
+    } catch (error) {
+      console.error(`Error in manageSubscription (${action}):`, error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again later.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsManagingSubscription(false);
+    }
+  };
+
+  const getTierName = (tier: SubscriptionTier): string => {
+    switch (tier) {
+      case 'free':
+        return 'Free';
+      case 'pro':
+        return 'Pro';
+      case 'premium':
+        return 'Premium';
+      case 'enterprise':
+        return 'Enterprise';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return 'N/A';
+    return format(new Date(dateString), 'MMM d, yyyy');
+  };
+
   const createCheckoutSession = async (
     priceId: string, 
     interval: 'month' | 'year', 
@@ -154,7 +366,7 @@ export function useSubscription() {
         description: 'You must be logged in to purchase a subscription.',
         variant: 'destructive',
       });
-      return null;
+      return { error: 'User not logged in' };
     }
     
     try {
@@ -171,12 +383,7 @@ export function useSubscription() {
       
       if (error) {
         console.error('Error creating checkout session:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to create checkout session. Please try again later.',
-          variant: 'destructive',
-        });
-        return null;
+        return { error };
       }
       
       // Store customer ID in session storage for later use
@@ -184,15 +391,10 @@ export function useSubscription() {
         sessionStorage.setItem('stripe_customer_id', data.customerId);
       }
       
-      return data;
+      return { data };
     } catch (error) {
       console.error('Error in createCheckoutSession:', error);
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again later.',
-        variant: 'destructive',
-      });
-      return null;
+      return { error };
     }
   };
 
@@ -211,12 +413,22 @@ export function useSubscription() {
     plans,
     stripePublicKey,
     userSubscription,
+    subscription: userSubscription, // Alias for backward compatibility
+    stripeSubscription,
+    cancelAtPeriodEnd,
+    currentUsage,
+    isSubscribing,
+    isManagingSubscription,
     isSubscriptionLoading,
     fetchSubscriptionPlans,
     fetchUserSubscription,
     getCurrentPlan,
     isSubscriptionActive,
     hasAccess,
-    createCheckoutSession
+    createCheckoutSession,
+    subscribe,
+    manageSubscription,
+    getTierName,
+    formatDate
   };
 }
