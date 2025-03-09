@@ -49,23 +49,23 @@ function App() {
               {/* Protected Routes */}
               <Route
                 path="/dashboard"
-                element={<ProtectedRoute component={Dashboard} />}
+                element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
               />
               <Route
                 path="/account"
-                element={<ProtectedRoute component={Account} />}
+                element={<ProtectedRoute><Account /></ProtectedRoute>}
               />
               <Route
                 path="/saved-prompts"
-                element={<ProtectedRoute component={SavedPrompts} />}
+                element={<ProtectedRoute><SavedPrompts /></ProtectedRoute>}
               />
               <Route
                 path="/subscription"
-                element={<ProtectedRoute component={Subscription} />}
+                element={<ProtectedRoute><Subscription /></ProtectedRoute>}
               />
               <Route
                 path="/subscription/success"
-                element={<ProtectedRoute component={SubscriptionSuccess} />}
+                element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>}
               />
 
               {/* Admin Routes */}
