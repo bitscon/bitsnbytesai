@@ -104,9 +104,19 @@ export function useAdminUsers() {
       setError("");
       setSuccess("");
 
+      // Add auth header to the request
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("No active session found. Please log in again.");
+      }
+
       const { error } = await supabase.functions.invoke("create-admin-user", {
         method: "POST",
         body: { email: newUserEmail },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw new Error(error.message);
@@ -187,9 +197,19 @@ export function useAdminUsers() {
       setError("");
       setSuccess("");
       
+      // Add auth header to the request
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("No active session found. Please log in again.");
+      }
+      
       const { error } = await supabase.functions.invoke("create-admin-user", {
         method: "POST",
         body: { userId, email: userEmail },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
       
       if (error) throw new Error(error.message);

@@ -14,6 +14,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get auth token from request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error("Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         {
@@ -25,9 +26,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Verify token
     const token = authHeader.replace('Bearer ', '');
+    console.log("Got token from Authorization header, verifying...");
+    
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
+      console.error("Auth error or no user:", authError);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         {
@@ -37,12 +41,18 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log("User authenticated:", user.id, user.email);
+
     // Check if the user is already an admin or if this is the first user
-    const { data: adminCheck } = await supabaseAdmin
+    const { data: adminCheck, error: adminCheckError } = await supabaseAdmin
       .from('admin_users')
       .select('id')
       .eq('id', user.id)
       .single();
+
+    if (adminCheckError && adminCheckError.code !== 'PGRST116') {
+      console.error("Error checking admin status:", adminCheckError);
+    }
 
     // Check if any admin users exist
     const { count: adminCount, error: countError } = await supabaseAdmin
@@ -62,6 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // If the user is not an admin and there's at least one admin already, they can't create another admin
     if (!adminCheck && adminCount && adminCount > 0) {
+      console.error("Non-admin user attempted to create/promote admin:", user.id);
       return new Response(
         JSON.stringify({ error: "Unauthorized - Admin access required to create other admins" }),
         {
@@ -70,6 +81,8 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    console.log("Admin check passed, proceeding with operation");
 
     // Process request based on method
     if (req.method === "POST") {
@@ -104,6 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
           const { user: newUser, error: createError } = await createUserAccount(email, password);
           
           if (createError || !newUser) {
+            console.error("Error creating user account:", createError);
             return new Response(
               JSON.stringify({ error: createError?.message || "Failed to create user account" }),
               {
@@ -128,6 +142,8 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
       
+      console.log(`Making user ${targetUserId} an admin`);
+      
       // Make the user an admin
       const { error: adminError } = await supabaseAdmin
         .from('admin_users')
@@ -135,6 +151,7 @@ const handler = async (req: Request): Promise<Response> => {
         .select();
       
       if (adminError) {
+        console.error("Error making user an admin:", adminError);
         return new Response(
           JSON.stringify({ error: adminError.message }),
           {
@@ -143,6 +160,8 @@ const handler = async (req: Request): Promise<Response> => {
           }
         );
       }
+      
+      console.log(`Successfully made ${email} (${targetUserId}) an admin`);
       
       return new Response(
         JSON.stringify({ success: true, message: `User ${email} is now an admin` }),
