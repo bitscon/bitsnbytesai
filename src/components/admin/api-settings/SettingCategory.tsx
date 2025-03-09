@@ -2,7 +2,7 @@
 import React from 'react';
 import { ApiSetting } from './types';
 import { SettingField } from './SettingField';
-import { CreditCard, Settings } from 'lucide-react';
+import { CreditCard, Settings, Mail, Database, Globe } from 'lucide-react';
 
 interface SettingCategoryProps {
   category: string;
@@ -14,6 +14,8 @@ interface SettingCategoryProps {
   handleSaveSetting: (key: string) => void;
   handleToggleChange: (key: string, currentValue: string) => void;
   toggleShowSecret: (key: string) => void;
+  handleExpiryDateChange?: (key: string, date: Date | undefined) => void;
+  handleRenewKey?: (key: string) => void;
   formatSettingName: (name: string) => string;
 }
 
@@ -27,15 +29,24 @@ export function SettingCategory({
   handleSaveSetting,
   handleToggleChange,
   toggleShowSecret,
+  handleExpiryDateChange,
+  handleRenewKey,
   formatSettingName
 }: SettingCategoryProps) {
   // Get category icon
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'PayPal':
+    switch (category.toLowerCase()) {
+      case 'paypal':
         return <CreditCard className="h-5 w-5 text-blue-500" />;
-      case 'Stripe':
+      case 'stripe':
         return <CreditCard className="h-5 w-5 text-purple-500" />;
+      case 'email':
+      case 'resend':
+        return <Mail className="h-5 w-5 text-pink-500" />;
+      case 'database':
+        return <Database className="h-5 w-5 text-amber-500" />;
+      case 'api':
+        return <Globe className="h-5 w-5 text-green-500" />;
       default:
         return <Settings className="h-5 w-5 text-gray-500" />;
     }
@@ -67,6 +78,8 @@ export function SettingCategory({
               onSave={() => handleSaveSetting(setting.key_name)}
               onToggleChange={() => handleToggleChange(setting.key_name, setting.key_value)}
               onToggleShowSecret={() => toggleShowSecret(setting.key_name)}
+              onExpiryDateChange={handleExpiryDateChange}
+              onRenewKey={handleRenewKey}
               formatSettingName={formatSettingName}
             />
           </div>

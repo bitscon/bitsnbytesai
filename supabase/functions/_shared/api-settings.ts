@@ -5,6 +5,7 @@ interface ApiSetting {
   key_name: string;
   key_value: string;
   description?: string;
+  metadata?: Record<string, any>;
 }
 
 export async function getApiSetting(keyName: string): Promise<string> {
@@ -37,7 +38,7 @@ export async function getAllApiSettings(): Promise<ApiSetting[]> {
   try {
     const { data, error } = await supabaseAdmin
       .from('api_settings')
-      .select('key_name, key_value, description')
+      .select('*')
       .order('key_name');
     
     if (error) {
@@ -74,7 +75,8 @@ export async function updateApiSetting(keyName: string, keyValue: string): Promi
 export async function createApiSettingIfNotExists(
   keyName: string, 
   defaultValue: string = "", 
-  description: string = ""
+  description: string = "",
+  metadata: Record<string, any> = {}
 ): Promise<boolean> {
   try {
     // Check if setting already exists
@@ -96,7 +98,8 @@ export async function createApiSettingIfNotExists(
         .insert({
           key_name: keyName,
           key_value: defaultValue,
-          description: description
+          description: description,
+          metadata: metadata
         });
       
       if (insertError) {
@@ -118,19 +121,32 @@ export async function ensureStripeSettings(): Promise<void> {
   await createApiSettingIfNotExists(
     "STRIPE_PUBLIC_KEY", 
     "", 
-    "Your Stripe Publishable Key from the Stripe Dashboard"
+    "Your Stripe Publishable Key from the Stripe Dashboard",
+    { 
+      expires_at: null,
+      environment: "test"
+    }
   );
   
   await createApiSettingIfNotExists(
     "STRIPE_SECRET_KEY", 
     "", 
-    "Your Stripe Secret Key from the Stripe Dashboard"
+    "Your Stripe Secret Key from the Stripe Dashboard",
+    { 
+      expires_at: null,
+      environment: "test",
+      last_renewed_at: null
+    }
   );
   
   await createApiSettingIfNotExists(
     "STRIPE_WEBHOOK_SECRET", 
     "", 
-    "Your Stripe Webhook Secret for validating webhook events"
+    "Your Stripe Webhook Secret for validating webhook events",
+    { 
+      expires_at: null,
+      environment: "test"
+    }
   );
 }
 
@@ -138,18 +154,48 @@ export async function ensurePayPalSettings(): Promise<void> {
   await createApiSettingIfNotExists(
     "PAYPAL_CLIENT_ID", 
     "", 
-    "Your PayPal Client ID from the PayPal Developer Dashboard"
+    "Your PayPal Client ID from the PayPal Developer Dashboard",
+    { 
+      expires_at: null,
+      environment: "sandbox"
+    }
   );
   
   await createApiSettingIfNotExists(
     "PAYPAL_CLIENT_SECRET", 
     "", 
-    "Your PayPal Client Secret from the PayPal Developer Dashboard"
+    "Your PayPal Client Secret from the PayPal Developer Dashboard",
+    { 
+      expires_at: null,
+      environment: "sandbox",
+      last_renewed_at: null
+    }
   );
   
   await createApiSettingIfNotExists(
     "PAYPAL_BASE_URL", 
     "https://api-m.sandbox.paypal.com", 
-    "PayPal API base URL (sandbox or live)"
+    "PayPal API base URL (sandbox or live)",
+    { 
+      environment: "sandbox"
+    }
   );
+}
+
+export async function ensureResendSettings(): Promise<void> {
+  await createApiSettingIfNotExists(
+    "RESEND_API_KEY", 
+    "", 
+    "Your Resend API Key for sending emails",
+    { 
+      expires_at: null,
+      last_renewed_at: null
+    }
+  );
+}
+
+export async function ensureAllApiSettings(): Promise<void> {
+  await ensureStripeSettings();
+  await ensurePayPalSettings();
+  await ensureResendSettings();
 }
