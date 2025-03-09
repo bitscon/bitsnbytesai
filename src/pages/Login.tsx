@@ -172,10 +172,15 @@ export default function Login() {
             <div className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
               <a
-                onClick={() => navigate("/register")}
+                onClick={() => {
+                  navigate("/#pricing");
+                  setTimeout(() => {
+                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }}
                 className="text-primary hover:underline cursor-pointer"
               >
-                Sign up
+                View our pricing
               </a>
             </div>
           </CardFooter>
