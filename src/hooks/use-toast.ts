@@ -12,7 +12,7 @@ export type ToastProps = {
 };
 
 // Create a toast array for the toaster component
-type ToastType = ToastProps & {
+export type ToastType = ToastProps & {
   id: string;
 };
 
@@ -86,4 +86,4 @@ export const toast = ({ title, description, variant, duration, action }: ToastPr
 };
 
 export { useToast };
-export type { ToastType };
+// Fixed: When using isolatedModules, type re-exports must use 'export type'
