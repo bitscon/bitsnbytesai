@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { fetchSession, setupAuthListener } from './utils/sessionUtils';
-import { handleSignUp } from './utils/signUpUtils';
 import { handleSignIn } from './utils/signInUtils';
 import { handleSignOut } from './utils/signOutUtils';
 import { handleResetPassword, handleUpdatePassword } from './utils/passwordUtils';
@@ -45,10 +44,6 @@ export function useAuthProvider() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    return handleSignUp(email, password, fullName, setIsLoading, toast);
-  };
-
   const signIn = async (email: string, password: string) => {
     return handleSignIn(
       email, 
@@ -82,7 +77,6 @@ export function useAuthProvider() {
     user,
     session,
     isLoading,
-    signUp,
     signIn,
     signOut,
     resetPassword,

@@ -73,7 +73,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Process request based on method
     if (req.method === "POST") {
-      const { email } = await req.json();
+      const requestData = await req.json();
+      const { email, userId } = requestData;
       
       if (!email) {
         return new Response(
@@ -85,38 +86,52 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
       
-      // Check if the user already exists
-      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+      let targetUserId: string;
       
-      let userId: string;
-      
-      // Create user if they don't exist
-      if (!existingUser) {
-        const password = generateRandomPassword();
-        const { user: newUser, error: createError } = await createUserAccount(email, password);
+      // If userId is provided, we're promoting an existing user
+      if (userId) {
+        console.log(`Promoting existing user with ID ${userId} to admin`);
+        targetUserId = userId;
         
-        if (createError || !newUser) {
-          return new Response(
-            JSON.stringify({ error: createError?.message || "Failed to create user account" }),
-            {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
-        }
-        
-        userId = newUser.id;
-        
-        // Send welcome email
-        await sendWelcomeEmail(email, password);
+        // Log the promotion action
+        console.log(`Admin ${user.email} (${user.id}) promoted user with ID ${targetUserId} to admin`);
       } else {
-        userId = existingUser.user.id;
+        // Check if the user already exists
+        const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+        
+        if (!existingUser) {
+          const password = generateRandomPassword();
+          const { user: newUser, error: createError } = await createUserAccount(email, password);
+          
+          if (createError || !newUser) {
+            return new Response(
+              JSON.stringify({ error: createError?.message || "Failed to create user account" }),
+              {
+                status: 500,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+          
+          targetUserId = newUser.id;
+          
+          // Send welcome email
+          await sendWelcomeEmail(email, password);
+          
+          // Log the creation action
+          console.log(`Admin ${user.email} (${user.id}) created new admin user ${email} (${targetUserId})`);
+        } else {
+          targetUserId = existingUser.user.id;
+          
+          // Log the promotion action for existing user found by email
+          console.log(`Admin ${user.email} (${user.id}) promoted existing user ${email} (${targetUserId}) to admin`);
+        }
       }
       
       // Make the user an admin
       const { error: adminError } = await supabaseAdmin
         .from('admin_users')
-        .upsert({ id: userId })
+        .upsert({ id: targetUserId })
         .select();
       
       if (adminError) {

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
@@ -62,16 +62,9 @@ export function AuthButtons({ user, signOut, closeMobileMenu, isMobile = false, 
     <>
       <Button 
         onClick={() => handleNavigation("/login")}
-        variant="outline"
-        className={isMobile ? "w-full" : "ml-2"}
-      >
-        Sign In
-      </Button>
-      <Button 
-        onClick={() => handleNavigation("/register")}
         className={isMobile ? "w-full bg-brand-blue hover:bg-brand-blue/90" : "ml-2 bg-brand-blue hover:bg-brand-blue/90"}
       >
-        Get Started
+        Sign In
       </Button>
     </>
   );
