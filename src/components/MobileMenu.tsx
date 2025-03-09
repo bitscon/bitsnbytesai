@@ -9,9 +9,10 @@ interface MobileMenuProps {
   user: User | null;
   signOut: () => Promise<{ error: any | null }>;
   closeMobileMenu: () => void;
+  isAdmin?: boolean; // Added isAdmin prop
 }
 
-export function MobileMenu({ isOpen, user, signOut, closeMobileMenu }: MobileMenuProps) {
+export function MobileMenu({ isOpen, user, signOut, closeMobileMenu, isAdmin = false }: MobileMenuProps) {
   if (!isOpen) return null;
 
   return (
@@ -43,7 +44,8 @@ export function MobileMenu({ isOpen, user, signOut, closeMobileMenu }: MobileMen
             user={user} 
             signOut={signOut} 
             closeMobileMenu={closeMobileMenu} 
-            isMobile={true} 
+            isMobile={true}
+            isAdmin={isAdmin}
           />
         </div>
       </div>

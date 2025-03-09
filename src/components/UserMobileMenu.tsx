@@ -3,16 +3,17 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
-import { HelpCircle, LayoutDashboard, User as UserIcon } from "lucide-react";
+import { HelpCircle, LayoutDashboard, ShieldAlert, User as UserIcon } from "lucide-react";
 
 interface UserMobileMenuProps {
   isOpen: boolean;
   user: User | null;
   signOut: () => Promise<{ error: any | null }>;
   closeMobileMenu: () => void;
+  isAdmin?: boolean; // Added isAdmin prop
 }
 
-export function UserMobileMenu({ isOpen, user, signOut, closeMobileMenu }: UserMobileMenuProps) {
+export function UserMobileMenu({ isOpen, user, signOut, closeMobileMenu, isAdmin = false }: UserMobileMenuProps) {
   const navigate = useNavigate();
   
   if (!isOpen) return null;
@@ -29,6 +30,16 @@ export function UserMobileMenu({ isOpen, user, signOut, closeMobileMenu }: UserM
           <span className="text-lg font-bold text-brand-blue">bits & bytes</span>
           <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue">AI</span>
         </div>
+        {isAdmin && (
+          <Button 
+            onClick={() => handleNavLinkClick("/admin/dashboard")}
+            variant="outline"
+            className="w-full justify-start text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+          >
+            <ShieldAlert className="mr-2 h-4 w-4" />
+            Admin Dashboard
+          </Button>
+        )}
         <Button 
           onClick={() => handleNavLinkClick("/dashboard")}
           variant="ghost"
