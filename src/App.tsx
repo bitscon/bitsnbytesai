@@ -6,7 +6,6 @@ import {
   Routes,
   Navigate,
 } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './context/auth';
 import { Toaster } from '@/components/ui/toaster';
@@ -76,69 +75,67 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Toaster />
-        <QueryClientProvider client={queryClient}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/subscription"
-              element={
-                <ProtectedRoute>
-                  <Subscription />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/subscription/success"
-              element={
-                <ProtectedRoute>
-                  <SubscriptionSuccess />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/account"
-              element={
-                <ProtectedRoute>
-                  <Account />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/saved-prompts"
-              element={
-                <ProtectedRoute>
-                  <SavedPrompts />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
-            <Route
-              path="/admin/*"
-              element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </QueryClientProvider>
-      </div>
-    </Router>
+    <div className="App">
+      <Toaster />
+      <QueryClientProvider client={queryClient}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute>
+                <Subscription />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription/success"
+            element={
+              <ProtectedRoute>
+                <SubscriptionSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved-prompts"
+            element={
+              <ProtectedRoute>
+                <SavedPrompts />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route
+            path="/admin/*"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </QueryClientProvider>
+    </div>
   );
 }
 
