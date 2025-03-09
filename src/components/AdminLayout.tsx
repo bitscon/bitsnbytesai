@@ -10,7 +10,8 @@ import {
   KeyRound,
   MessageSquare,
   Users,
-  Palette
+  Palette,
+  BarChart
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -142,6 +143,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Users className="mr-2 h-4 w-4" />
                 Users
+              </Button>
+            </li>
+            <li>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start"
+                onClick={() => navigate("/admin/subscription-analytics")}
+              >
+                <BarChart className="mr-2 h-4 w-4" />
+                Subscription Analytics
               </Button>
             </li>
           </ul>
