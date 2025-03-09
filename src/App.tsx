@@ -1,73 +1,109 @@
 
-import React, { lazy, Suspense } from "react";
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { AuthProvider } from "@/context/auth";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/context/theme/ThemeContext";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import "@/App.css";
+
+// Page imports
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import Dashboard from "@/pages/Dashboard";
+import SavedPrompts from "@/pages/SavedPrompts";
+import Account from "@/pages/Account";
+import Subscription from "@/pages/Subscription";
+import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
+import CheckoutSuccess from "@/pages/CheckoutSuccess";
+import NotFound from "@/pages/NotFound";
+
+// Admin pages
+import AdminDashboard from "@/pages/AdminDashboard";
+import AdminPrompts from "@/pages/AdminPrompts";
+import AdminUsers from "@/pages/AdminUsers";
+import AdminApiSettings from "@/pages/AdminApiSettings";
+import AdminThemeSettings from "@/pages/AdminThemeSettings";
+
+// Layout and routes
+import AdminLayout from "@/components/AdminLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
-import AdminLayout from "@/components/AdminLayout";
 
-// Lazy loaded components
-const Index = lazy(() => import("@/pages/Index"));
-const Login = lazy(() => import("@/pages/Login"));
-const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const SavedPrompts = lazy(() => import("@/pages/SavedPrompts"));
-const Account = lazy(() => import("@/pages/Account"));
-const CheckoutSuccess = lazy(() => import("@/pages/CheckoutSuccess"));
-const Subscription = lazy(() => import("@/pages/Subscription"));
-const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
-const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
-const AdminPrompts = lazy(() => import("@/pages/AdminPrompts"));
-const AdminApiSettings = lazy(() => import("@/pages/AdminApiSettings"));
-const AdminThemeSettings = lazy(() => import("@/pages/AdminThemeSettings"));
-const AdminUsers = lazy(() => import("@/pages/AdminUsers"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
+// Context providers
+import { AuthProvider } from "@/context/auth";
+import { ThemeProvider } from "@/context/theme/ThemeContext";
 
-function App() {
+export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
-            
-            {/* Protected routes */}
-            <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/saved-prompts" element={<SavedPrompts />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/subscription" element={<Subscription />} />
-              <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-            </Route>
-            
-            {/* Admin routes */}
-            <Route element={<AdminRoute><Outlet /></AdminRoute>}>
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="prompts" element={<AdminPrompts />} />
-                <Route path="api-settings" element={<AdminApiSettings />} />
-                <Route path="theme-settings" element={<AdminThemeSettings />} />
-                <Route path="users" element={<AdminUsers />} />
-              </Route>
-            </Route>
-            
-            {/* 404 route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
+
+          {/* Protected routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved"
+            element={
+              <ProtectedRoute>
+                <SavedPrompts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute>
+                <Subscription />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription/success"
+            element={
+              <ProtectedRoute>
+                <SubscriptionSuccess />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes */}
+          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="prompts" element={<AdminPrompts />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="api-settings" element={<AdminApiSettings />} />
+            <Route path="theme-settings" element={<AdminThemeSettings />} />
+          </Route>
+
+          {/* Catch-all route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+
         <Toaster />
+        <Sonner />
       </AuthProvider>
     </ThemeProvider>
   );
 }
-
-export default App;
