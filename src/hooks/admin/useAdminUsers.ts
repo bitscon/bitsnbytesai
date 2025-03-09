@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SubscriptionTier } from "@/types/subscription";
 
 interface AdminUser {
   id: string;
@@ -16,6 +17,16 @@ interface RegularUser {
   full_name: string;
   created_at: string;
   is_admin?: boolean;
+  subscription_tier?: SubscriptionTier;
+  is_manual_subscription?: boolean;
+}
+
+interface CreateUserData {
+  email: string;
+  name: string;
+  password: string;
+  subscriptionTier?: SubscriptionTier;
+  isManualSubscription?: boolean;
 }
 
 export function useAdminUsers() {
@@ -62,7 +73,7 @@ export function useAdminUsers() {
       console.log("Admin users response:", adminResponse);
       setAdminUsers(adminResponse?.admin_users || []);
       
-      // Fetch all profiles (users)
+      // Fetch all profiles (users) with their subscription info
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, email, full_name, created_at");
@@ -72,12 +83,35 @@ export function useAdminUsers() {
         throw new Error(profilesError.message);
       }
       
+      // Get subscription information for all users
+      const { data: subscriptionsData, error: subscriptionsError } = await supabase
+        .from("user_subscriptions")
+        .select("user_id, tier, is_manually_created");
+        
+      if (subscriptionsError) {
+        console.error("Error fetching subscriptions:", subscriptionsError);
+      }
+      
+      // Create a map of user_id to subscription info
+      const subscriptionMap = new Map();
+      subscriptionsData?.forEach(sub => {
+        subscriptionMap.set(sub.user_id, {
+          tier: sub.tier,
+          is_manually_created: sub.is_manually_created
+        });
+      });
+      
       // Filter out admin users to get regular users, but mark those who are admins
       const adminIds = new Set((adminResponse?.admin_users || []).map(admin => admin.id));
-      const regularUsersData = (profilesData || []).map(user => ({
-        ...user,
-        is_admin: adminIds.has(user.id)
-      }));
+      const regularUsersData = (profilesData || []).map(user => {
+        const subInfo = subscriptionMap.get(user.id);
+        return {
+          ...user,
+          is_admin: adminIds.has(user.id),
+          subscription_tier: subInfo?.tier || "free",
+          is_manual_subscription: subInfo?.is_manually_created || false
+        };
+      });
       
       setRegularUsers(regularUsersData);
     } catch (error) {
@@ -114,7 +148,10 @@ export function useAdminUsers() {
 
       const { error } = await supabase.functions.invoke("create-admin-user", {
         method: "POST",
-        body: { email: newUserEmail },
+        body: { 
+          email: newUserEmail,
+          makeAdmin: true
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
@@ -145,8 +182,8 @@ export function useAdminUsers() {
     }
   };
   
-  const createRegularUser = async () => {
-    if (!newUserEmail || !newUserPassword || !newUserName) {
+  const createRegularUser = async (userData: CreateUserData) => {
+    if (!userData.email || !userData.password || !userData.name) {
       setError("Please fill all required fields.");
       return;
     }
@@ -156,24 +193,51 @@ export function useAdminUsers() {
       setError("");
       setSuccess("");
       
-      // Create user with Supabase auth
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: newUserEmail,
-        password: newUserPassword,
-        email_confirm: true,
-        user_metadata: { full_name: newUserName }
-      });
+      // Get session for auth
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (error) throw new Error(error.message);
+      if (!session) {
+        throw new Error("No active session found. Please log in again.");
+      }
       
-      setSuccess(`User ${newUserEmail} has been created successfully.`);
+      // If manual subscription is selected, use the create-admin-user function which now supports subscription assignment
+      if (userData.isManualSubscription && userData.subscriptionTier) {
+        const { error } = await supabase.functions.invoke("create-admin-user", {
+          method: "POST",
+          body: { 
+            email: userData.email,
+            fullName: userData.name,
+            password: userData.password,
+            subscriptionTier: userData.subscriptionTier,
+            isManualSubscription: true,
+            makeAdmin: false
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
+        
+        if (error) throw new Error(error.message);
+      } else {
+        // Create user with Supabase auth
+        const { error } = await supabase.auth.admin.createUser({
+          email: userData.email,
+          password: userData.password,
+          email_confirm: true,
+          user_metadata: { full_name: userData.name }
+        });
+        
+        if (error) throw new Error(error.message);
+      }
+      
+      setSuccess(`User ${userData.email} has been created successfully.`);
       setNewUserEmail("");
       setNewUserName("");
       setNewUserPassword("");
       
       toast({
         title: "Success",
-        description: `User ${newUserEmail} has been created successfully.`,
+        description: `User ${userData.email} has been created successfully.`,
       });
       
       // Refresh users list
@@ -207,7 +271,11 @@ export function useAdminUsers() {
       
       const { error } = await supabase.functions.invoke("create-admin-user", {
         method: "POST",
-        body: { userId, email: userEmail },
+        body: { 
+          userId, 
+          email: userEmail,
+          makeAdmin: true 
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }

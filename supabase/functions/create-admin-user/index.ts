@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
-import { createUserAccount, generateRandomPassword, sendWelcomeEmail } from "../_shared/create-user.ts";
+import { createUserAccount, generateRandomPassword, sendWelcomeEmail, createOrUpdateSubscription } from "../_shared/create-user.ts";
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -87,7 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Process request based on method
     if (req.method === "POST") {
       const requestData = await req.json();
-      const { email, userId } = requestData;
+      const { email, userId, fullName, subscriptionTier, isManualSubscription } = requestData;
       
       if (!email) {
         return new Response(
@@ -114,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
         
         if (!existingUser) {
           const password = generateRandomPassword();
-          const { user: newUser, error: createError } = await createUserAccount(email, password);
+          const { user: newUser, error: createError } = await createUserAccount(email, password, { fullName });
           
           if (createError || !newUser) {
             console.error("Error creating user account:", createError);
@@ -129,42 +129,61 @@ const handler = async (req: Request): Promise<Response> => {
           
           targetUserId = newUser.id;
           
+          // Set subscription tier if provided
+          if (subscriptionTier) {
+            console.log(`Setting subscription tier ${subscriptionTier} for new user ${targetUserId}`);
+            await createOrUpdateSubscription(targetUserId, subscriptionTier, isManualSubscription);
+          }
+          
           // Send welcome email
           await sendWelcomeEmail(email, password);
           
           // Log the creation action
-          console.log(`Admin ${user.email} (${user.id}) created new admin user ${email} (${targetUserId})`);
+          console.log(`Admin ${user.email} (${user.id}) created new user ${email} (${targetUserId}) with subscription tier ${subscriptionTier || 'free'}`);
         } else {
           targetUserId = existingUser.user.id;
           
-          // Log the promotion action for existing user found by email
-          console.log(`Admin ${user.email} (${user.id}) promoted existing user ${email} (${targetUserId}) to admin`);
+          // Update subscription tier if provided
+          if (subscriptionTier) {
+            console.log(`Updating subscription tier to ${subscriptionTier} for existing user ${targetUserId}`);
+            await createOrUpdateSubscription(targetUserId, subscriptionTier, isManualSubscription);
+          }
+          
+          // Log the action
+          console.log(`Admin ${user.email} (${user.id}) updated existing user ${email} (${targetUserId}) with subscription tier ${subscriptionTier || 'free'}`);
         }
       }
       
-      console.log(`Making user ${targetUserId} an admin`);
-      
-      // Make the user an admin
-      const { error: adminError } = await supabaseAdmin
-        .from('admin_users')
-        .upsert({ id: targetUserId })
-        .select();
-      
-      if (adminError) {
-        console.error("Error making user an admin:", adminError);
-        return new Response(
-          JSON.stringify({ error: adminError.message }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+      // If request includes making the user an admin
+      if (requestData.makeAdmin) {
+        console.log(`Making user ${targetUserId} an admin`);
+        
+        // Make the user an admin
+        const { error: adminError } = await supabaseAdmin
+          .from('admin_users')
+          .upsert({ id: targetUserId })
+          .select();
+        
+        if (adminError) {
+          console.error("Error making user an admin:", adminError);
+          return new Response(
+            JSON.stringify({ error: adminError.message }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        
+        console.log(`Successfully made ${email} (${targetUserId}) an admin`);
       }
       
-      console.log(`Successfully made ${email} (${targetUserId}) an admin`);
-      
       return new Response(
-        JSON.stringify({ success: true, message: `User ${email} is now an admin` }),
+        JSON.stringify({ 
+          success: true, 
+          message: `User ${email} operation completed successfully`,
+          userId: targetUserId 
+        }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
