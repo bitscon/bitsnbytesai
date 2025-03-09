@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -81,7 +82,8 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
+    /* Change border color to a blue shade in dark mode */
+    --border: 210 100% 50%;
     --input: 217.2 32.6% 17.5%;
     --ring: 237 86% 58%;
   }
@@ -152,6 +154,18 @@
 
   .tooltip {
     @apply z-[var(--z-tooltip)];
+  }
+
+  /* Add dark mode specific card styling with blue border */
+  .dark .card, 
+  .dark [class*="rounded-lg border"] {
+    @apply border-blue-500 transition-colors duration-200 hover:border-blue-400;
+  }
+
+  /* Add hover effect for cards and box elements in dark mode */
+  .dark .card:hover,
+  .dark [class*="rounded-lg border"]:hover {
+    @apply border-blue-300 bg-blue-900/10;
   }
 
   @keyframes fadeIn {
