@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +22,7 @@ import { Label } from "@/components/ui/label";
 interface AdminUser {
   id: string;
   email: string;
+  full_name?: string | null;
   created_at: string;
 }
 
@@ -60,52 +60,21 @@ export default function AdminUsers() {
       setIsLoading(true);
       setError(""); // Clear any previous errors
       
-      // Fetch admin users
-      const { data: adminData, error: adminError } = await supabase
-        .from("admin_users")
-        .select("id, created_at");
+      // Fetch admin users using the edge function
+      const { data: adminResponse, error: adminError } = await supabase.functions.invoke(
+        "check-admin-status",
+        {
+          method: "GET",
+          query: { action: "list_admins" }
+        }
+      );
 
       if (adminError) {
         console.error("Error fetching admin users:", adminError);
         throw new Error(adminError.message);
       }
 
-      // For each admin ID, get the user's email
-      const adminUsersWithDetails = await Promise.all(
-        (adminData || []).map(async (admin) => {
-          try {
-            const { data: profileData, error: profileError } = await supabase
-              .from("profiles")
-              .select("email")
-              .eq("id", admin.id)
-              .single();
-
-            if (profileError) {
-              console.warn(`Could not fetch profile for admin ${admin.id}:`, profileError);
-              return {
-                id: admin.id,
-                email: "Unknown",
-                created_at: admin.created_at,
-              };
-            }
-
-            return {
-              id: admin.id,
-              email: profileData?.email || "Unknown",
-              created_at: admin.created_at,
-            };
-          } catch (err) {
-            console.error(`Error processing admin ${admin.id}:`, err);
-            return {
-              id: admin.id,
-              email: "Error",
-              created_at: admin.created_at,
-            };
-          }
-        })
-      );
-
-      setAdminUsers(adminUsersWithDetails);
+      setAdminUsers(adminResponse?.admin_users || []);
       
       // Fetch all profiles (users)
       const { data: profilesData, error: profilesError } = await supabase
@@ -118,7 +87,7 @@ export default function AdminUsers() {
       }
       
       // Filter out admin users to get regular users
-      const adminIds = adminUsersWithDetails.map(admin => admin.id);
+      const adminIds = (adminResponse?.admin_users || []).map(admin => admin.id);
       const regularUsersData = (profilesData || []).filter(
         user => !adminIds.includes(user.id)
       );

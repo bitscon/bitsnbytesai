@@ -6,17 +6,19 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
   if (!user) return false;
   
   try {
-    console.log("Checking admin status for user ID:", user.id);
+    console.log("Checking admin status for user:", user.id);
     
-    // Use a direct SQL query to bypass RLS policies
-    const { data, error } = await supabase.rpc('is_admin_user');
+    // Use the edge function to check admin status
+    const { data, error } = await supabase.functions.invoke('check-admin-status', {
+      method: 'GET',
+    });
     
     if (error) {
       console.error("Error checking admin status:", error);
       return false;
     }
     
-    const isAdmin = !!data;
+    const isAdmin = data?.is_admin || false;
     console.log("Admin check result:", isAdmin);
     
     // For audit purposes, log admin access attempts
