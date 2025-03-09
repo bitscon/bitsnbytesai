@@ -90,16 +90,19 @@ export function useAdminUsers() {
         
       if (subscriptionsError) {
         console.error("Error fetching subscriptions:", subscriptionsError);
+        throw new Error(subscriptionsError.message);
       }
       
       // Create a map of user_id to subscription info
       const subscriptionMap = new Map();
-      subscriptionsData?.forEach(sub => {
-        subscriptionMap.set(sub.user_id, {
-          tier: sub.tier,
-          is_manually_created: sub.is_manually_created
+      if (subscriptionsData) {
+        subscriptionsData.forEach(sub => {
+          subscriptionMap.set(sub.user_id, {
+            tier: sub.tier,
+            is_manually_created: sub.is_manually_created
+          });
         });
-      });
+      }
       
       // Filter out admin users to get regular users, but mark those who are admins
       const adminIds = new Set((adminResponse?.admin_users || []).map(admin => admin.id));
