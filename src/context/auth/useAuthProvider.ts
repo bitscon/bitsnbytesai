@@ -9,6 +9,7 @@ import { handleSignIn } from './utils/signInUtils';
 import { handleSignOut } from './utils/signOutUtils';
 import { handleResetPassword, handleUpdatePassword } from './utils/passwordUtils';
 import { checkAdminStatus as checkUserAdminStatus } from './utils/adminUtils';
+import { handleSignUp } from './utils/signUpUtils';
 
 export function useAuthProvider() {
   const [user, setUser] = useState<User | null>(null);
@@ -71,6 +72,10 @@ export function useAuthProvider() {
     return checkUserAdminStatus(user);
   };
 
+  const signUp = async (email: string, password: string, fullName: string) => {
+    return handleSignUp(email, password, fullName, setIsLoading, toast);
+  };
+
   const isLoggedIn = !!user && !!session;
 
   return {
@@ -83,5 +88,6 @@ export function useAuthProvider() {
     updatePassword,
     checkAdminStatus,
     isLoggedIn,
+    signUp,
   };
 }

@@ -11,4 +11,5 @@ export interface AuthContextType {
   updatePassword: (newPassword: string) => Promise<{ error: any | null }>;
   checkAdminStatus: () => Promise<boolean>;
   isLoggedIn: boolean;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
 }
