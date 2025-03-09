@@ -1,4 +1,19 @@
 
+/**
+ * Layout Utilities
+ * 
+ * This file contains:
+ * 1. Common layout utilities (glass effect, stacking contexts)
+ * 2. Z-index implementation with CSS variables
+ * 3. Modal and overlay styling
+ * 4. Fixes for common layout issues
+ * 
+ * Usage:
+ * - Use the 'glass' utility for frosted glass effects
+ * - Modal components should use modal-overlay and modal-content classes
+ * - Create proper stacking contexts with create-stacking-context
+ */
+
 @layer utilities {
   .glass {
     @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg;
@@ -40,3 +55,4 @@
     @apply pt-16;
   }
 }
+

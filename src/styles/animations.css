@@ -1,4 +1,17 @@
 
+/**
+ * Animation Utilities
+ * 
+ * This file contains:
+ * 1. Reusable animation utility classes
+ * 2. Keyframe definitions for common animations
+ * 
+ * Usage:
+ * - Add animation classes directly to elements: <div class="animate-hover-scale">
+ * - Classes follow the pattern: "animate-[animation-name]"
+ * - Customize duration/timing in component styles when needed
+ */
+
 @layer utilities {
   .animate-hover-scale {
     @apply transition-transform duration-200 hover:scale-105 active:scale-95;
@@ -31,3 +44,4 @@
     to { transform: translateX(0); opacity: 1; }
   }
 }
+

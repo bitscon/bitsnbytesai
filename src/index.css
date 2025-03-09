@@ -1,4 +1,25 @@
 
+/**
+ * Main CSS Entry Point
+ * 
+ * This file imports:
+ * 1. Tailwind's base, components, and utilities layers
+ * 2. All modular CSS files organized by purpose
+ * 
+ * Organization:
+ * - base.css: Theme variables and base styles
+ * - animations.css: Animation utilities and keyframes
+ * - dark-mode.css: Dark theme specific styles
+ * - layout.css: Layout utilities and z-index system
+ * - typography.css: Text styles and utilities
+ * - spacing.css: Consistent spacing utilities
+ * 
+ * To add new global styles:
+ * 1. Choose the appropriate existing file based on purpose
+ * 2. Or create a new file for a new category of styles
+ * 3. Import new files here
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,3 +33,4 @@
 @import './styles/layout.css';
 @import './styles/typography.css';
 @import './styles/spacing.css';
+

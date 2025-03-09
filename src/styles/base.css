@@ -1,3 +1,17 @@
+/**
+ * Base Styles & CSS Variables
+ * 
+ * This file contains:
+ * 1. CSS variables for the theme (colors, spacing, radius)
+ * 2. Z-index system for consistent layer management
+ * 3. Spacing system variables
+ * 4. Base element styles
+ * 
+ * Usage:
+ * - Use CSS variables with `var(--variable-name)` in your styles
+ * - Colors follow the pattern `hsl(var(--color-name))` for consistency
+ * - The z-index system ensures proper stacking of UI elements
+ */
 
 @layer base {
   :root {

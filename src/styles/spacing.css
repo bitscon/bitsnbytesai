@@ -1,4 +1,17 @@
 
+/**
+ * Spacing System
+ * 
+ * This file contains:
+ * 1. Consistent spacing utilities for padding and margins
+ * 2. Size variants from extra small to large
+ * 
+ * Usage:
+ * - Apply consistent spacing with classes like space-xs, space-sm, space-md, space-lg
+ * - Each class applies both padding and margin of the same size
+ * - Use these for UI elements that need consistent spacing throughout the app
+ */
+
 @layer utilities {
   /* Consistent spacing utilities */
   .space-xs {
@@ -17,3 +30,4 @@
     @apply p-6 m-6;
   }
 }
+
