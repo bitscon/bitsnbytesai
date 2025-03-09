@@ -1,6 +1,6 @@
 
 import React, { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/context/auth";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/context/theme/ThemeContext";
@@ -40,7 +40,7 @@ function App() {
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
             
             {/* Protected routes */}
-            <Route element={<ProtectedRoute />}>
+            <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/saved-prompts" element={<SavedPrompts />} />
               <Route path="/account" element={<Account />} />
@@ -49,7 +49,7 @@ function App() {
             </Route>
             
             {/* Admin routes */}
-            <Route element={<AdminRoute />}>
+            <Route element={<AdminRoute><Outlet /></AdminRoute>}>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
