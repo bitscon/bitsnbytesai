@@ -1,0 +1,39 @@
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Consistent typography helpers */
+  .heading-xl {
+    @apply text-4xl font-bold tracking-tight;
+  }
+  
+  .heading-lg {
+    @apply text-3xl font-bold tracking-tight;
+  }
+  
+  .heading-md {
+    @apply text-2xl font-semibold;
+  }
+  
+  .heading-sm {
+    @apply text-xl font-semibold;
+  }
+  
+  .body-lg {
+    @apply text-lg leading-relaxed;
+  }
+  
+  .body {
+    @apply text-base leading-relaxed;
+  }
+  
+  .body-sm {
+    @apply text-sm leading-relaxed;
+  }
+  
+  .caption {
+    @apply text-xs text-muted-foreground;
+  }
+}

@@ -1,0 +1,42 @@
+
+@layer utilities {
+  .glass {
+    @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg;
+  }
+  
+  .dark .glass {
+    @apply bg-black/30 border-white/10;
+  }
+
+  /* Create new utility class for proper layering */
+  .create-stacking-context {
+    isolation: isolate;
+    z-index: 0;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm z-[var(--z-overlay)];
+  }
+
+  .modal-content {
+    @apply z-[var(--z-modal)] bg-background border rounded-lg shadow-lg;
+  }
+
+  .dropdown {
+    @apply z-[var(--z-dropdown)] relative;
+  }
+
+  .tooltip {
+    @apply z-[var(--z-tooltip)];
+  }
+  
+  /* Fix for edge cases with overflow */
+  .overflow-fix {
+    @apply overflow-hidden;
+  }
+  
+  /* Fix for content disappearing behind fixed elements */
+  .content-padding {
+    @apply pt-16;
+  }
+}

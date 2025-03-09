@@ -1,0 +1,19 @@
+
+@layer utilities {
+  /* Consistent spacing utilities */
+  .space-xs {
+    @apply p-1 m-1;
+  }
+  
+  .space-sm {
+    @apply p-2 m-2;
+  }
+  
+  .space-md {
+    @apply p-4 m-4;
+  }
+  
+  .space-lg {
+    @apply p-6 m-6;
+  }
+}

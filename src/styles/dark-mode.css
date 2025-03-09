@@ -1,0 +1,19 @@
+
+@layer utilities {
+  /* Dark mode specific card styling with blue border */
+  .dark .card, 
+  .dark [class*="rounded-lg border"] {
+    @apply border-blue-500 transition-colors duration-200 hover:border-blue-400;
+  }
+
+  /* Hover effect for cards and box elements in dark mode */
+  .dark .card:hover,
+  .dark [class*="rounded-lg border"]:hover {
+    @apply border-blue-300 bg-blue-900/10;
+  }
+
+  /* Improve contrast for better readability */
+  .dark .text-muted-foreground {
+    @apply text-gray-300;
+  }
+}
