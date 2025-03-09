@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/auth"; // Fixed import path
+import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 
@@ -32,15 +32,12 @@ export function HeroSection() {
                 Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             ) : (
-              <Button size="lg" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90">
-                Sign In <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => {
+                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+              }}>
+                View Pricing <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             )}
-            <Button size="lg" variant="outline" onClick={() => {
-              document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-            }}>
-              View Pricing
-            </Button>
           </div>
           
           <div className="mt-10 text-sm text-muted-foreground">
