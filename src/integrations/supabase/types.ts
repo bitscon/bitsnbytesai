@@ -51,6 +51,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_failures: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          metadata: Json | null
+          payment_intent_id: string | null
+          reason: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          reason?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          reason?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -180,6 +222,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_tier: string | null
+          old_tier: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_tier?: string | null
+          old_tier?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_tier?: string | null
+          old_tier?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       subscription_plans: {
         Row: {

@@ -1,6 +1,5 @@
-
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Router } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -22,6 +21,7 @@ import AdminApiSettings from "./pages/AdminApiSettings";
 import AdminThemeSettings from "./pages/AdminThemeSettings";
 import AdminUsers from "./pages/AdminUsers";
 import AdminSubscriptionAnalytics from "./pages/AdminSubscriptionAnalytics";
+import AdminSubscriptionPlans from "./pages/AdminSubscriptionPlans";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -37,66 +37,72 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Router>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
 
-            {/* Protected Routes */}
-            <Route
-              path="/dashboard"
-              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
-            />
-            <Route
-              path="/account"
-              element={<ProtectedRoute><Account /></ProtectedRoute>}
-            />
-            <Route
-              path="/saved-prompts"
-              element={<ProtectedRoute><SavedPrompts /></ProtectedRoute>}
-            />
-            <Route
-              path="/subscription"
-              element={<ProtectedRoute><Subscription /></ProtectedRoute>}
-            />
-            <Route
-              path="/subscription/success"
-              element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>}
-            />
+              {/* Protected Routes */}
+              <Route
+                path="/dashboard"
+                element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
+              />
+              <Route
+                path="/account"
+                element={<ProtectedRoute><Account /></ProtectedRoute>}
+              />
+              <Route
+                path="/saved-prompts"
+                element={<ProtectedRoute><SavedPrompts /></ProtectedRoute>}
+              />
+              <Route
+                path="/subscription"
+                element={<ProtectedRoute><Subscription /></ProtectedRoute>}
+              />
+              <Route
+                path="/subscription/success"
+                element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>}
+              />
 
-            {/* Admin Routes */}
-            <Route
-              path="/admin/dashboard"
-              element={<AdminRoute><AdminDashboard /></AdminRoute>}
-            />
-            <Route
-              path="/admin/prompts"
-              element={<AdminRoute><AdminPrompts /></AdminRoute>}
-            />
-            <Route
-              path="/admin/settings"
-              element={<AdminRoute><AdminApiSettings /></AdminRoute>}
-            />
-            <Route
-              path="/admin/theme"
-              element={<AdminRoute><AdminThemeSettings /></AdminRoute>}
-            />
-            <Route
-              path="/admin/users"
-              element={<AdminRoute><AdminUsers /></AdminRoute>}
-            />
-            <Route
-              path="/admin/subscription-analytics"
-              element={<AdminRoute><AdminSubscriptionAnalytics /></AdminRoute>}
-            />
+              {/* Admin Routes */}
+              <Route
+                path="/admin/dashboard"
+                element={<AdminRoute><AdminDashboard /></AdminRoute>}
+              />
+              <Route
+                path="/admin/settings"
+                element={<AdminRoute><AdminApiSettings /></AdminRoute>}
+              />
+              <Route
+                path="/admin/theme"
+                element={<AdminRoute><AdminThemeSettings /></AdminRoute>}
+              />
+              <Route
+                path="/admin/prompts"
+                element={<AdminRoute><AdminPrompts /></AdminRoute>}
+              />
+              <Route
+                path="/admin/users"
+                element={<AdminRoute><AdminUsers /></AdminRoute>}
+              />
+              <Route
+                path="/admin/subscription-analytics"
+                element={<AdminRoute><AdminSubscriptionAnalytics /></AdminRoute>}
+              />
+              <Route
+                path="/admin/subscription-plans"
+                element={<AdminRoute><React.lazy(() => import('./pages/AdminSubscriptionPlans')) /></AdminRoute>}
+              />
 
-            {/* 404 Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster position="top-right" richColors />
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster position="top-right" richColors />
+          </Router>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

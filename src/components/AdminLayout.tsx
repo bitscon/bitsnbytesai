@@ -11,7 +11,8 @@ import {
   MessageSquare,
   Users,
   Palette,
-  BarChart
+  BarChart,
+  CreditCard
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -143,6 +144,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Users className="mr-2 h-4 w-4" />
                 Users
+              </Button>
+            </li>
+            <li>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start"
+                onClick={() => navigate("/admin/subscription-plans")}
+              >
+                <CreditCard className="mr-2 h-4 w-4" />
+                Subscription Plans
               </Button>
             </li>
             <li>
