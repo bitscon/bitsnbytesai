@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { SubscriptionTier } from '@/types/subscription';
@@ -24,7 +23,7 @@ export function useSubscription() {
     isSubscribing,
     isManagingSubscription,
     loadSubscriptionPlans,
-    loadUserSubscription, // Make sure this is included here
+    loadUserSubscription,
     setSubscribingStatus,
     setManagingStatus,
     updateCancelAtPeriodEnd
@@ -91,11 +90,12 @@ export function useSubscription() {
     isChangingSubscription,
     changeSubscriptionError,
     changeSubscriptionSuccess,
+    fetchError,
     
     // Actions and calculations
     fetchSubscriptionPlans: loadSubscriptionPlans,
     fetchUserSubscription: loadUserSubscription,
-    loadUserSubscription, // Add this line to expose the loadUserSubscription function
+    loadUserSubscription,
     getCurrentPlan,
     isSubscriptionActive,
     hasAccess,
