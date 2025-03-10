@@ -16,6 +16,7 @@ export interface SubscriptionPlan {
   stripe_price_id_yearly?: string;
   stripe_product_id?: string;
   features: any; // Kept as any to allow for various formats from the database
+  is_visible?: boolean; // Added this property to fix the type error
   created_at?: string;
   updated_at?: string;
 }
