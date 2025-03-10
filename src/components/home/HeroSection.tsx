@@ -9,6 +9,14 @@ export function HeroSection() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const handleButtonClick = () => {
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="pt-24 pb-16 md:pt-32 md:pb-24 bg-gradient-to-b from-background to-muted/20">
       <div className="container px-4 mx-auto">
@@ -27,17 +35,9 @@ export function HeroSection() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {user ? (
-              <Button size="lg" onClick={() => navigate("/dashboard")} className="bg-primary hover:bg-primary/90">
-                Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            ) : (
-              <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => {
-                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-              }}>
-                View Pricing <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            )}
+            <Button size="lg" onClick={handleButtonClick} className="bg-primary hover:bg-primary/90">
+              {user ? 'Go to Dashboard' : 'View Pricing'} <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
           </div>
           
           <div className="mt-10 text-sm text-muted-foreground">
