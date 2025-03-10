@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Shield, Star } from "lucide-react";
 
 export function HeroSection() {
   const { user } = useAuth();
@@ -40,14 +40,26 @@ export function HeroSection() {
             </Button>
           </div>
           
-          <div className="mt-10 text-sm text-muted-foreground">
-            <p>Used by professionals at companies like</p>
-            <div className="mt-2 flex flex-wrap justify-center gap-x-8 gap-y-4">
-              <span className="font-semibold">Google</span>
-              <span className="font-semibold">Microsoft</span>
-              <span className="font-semibold">Adobe</span>
-              <span className="font-semibold">Shopify</span>
-              <span className="font-semibold">Canva</span>
+          <div className="mt-10 pt-8 border-t border-muted">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Shield className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium">Trusted by professionals across industries</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 items-center">
+              <div className="flex items-center">
+                <Star className="h-3 w-3 text-amber-400" />
+                <Star className="h-3 w-3 text-amber-400" />
+                <Star className="h-3 w-3 text-amber-400" />
+                <Star className="h-3 w-3 text-amber-400" />
+                <Star className="h-3 w-3 text-amber-400" />
+                <span className="ml-2 text-sm font-medium">4.9/5 average rating</span>
+              </div>
+              <div className="text-sm">
+                <span className="font-medium text-primary">1,000+</span> active users
+              </div>
+              <div className="text-sm">
+                <span className="font-medium text-primary">10,000+</span> prompts used
+              </div>
             </div>
           </div>
         </div>
