@@ -1,22 +1,41 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { calculateYearlySavings } from '@/utils/subscription/subscriptionUtils';
 
 interface BillingIntervalSelectorProps {
   billingInterval: 'month' | 'year';
   setBillingInterval: (interval: 'month' | 'year') => void;
   yearlyDiscount?: number;
+  showSavings?: boolean;
+  monthlyPrice?: number;
+  yearlyPrice?: number;
 }
 
 export function BillingIntervalSelector({
   billingInterval,
   setBillingInterval,
-  yearlyDiscount = 0
+  yearlyDiscount = 0,
+  showSavings = true,
+  monthlyPrice,
+  yearlyPrice
 }: BillingIntervalSelectorProps) {
   // Animation state for the selector
   const [animationDirection, setAnimationDirection] = useState<'left' | 'right'>(
     billingInterval === 'month' ? 'left' : 'right'
   );
+  
+  // Calculate savings from prices if provided
+  const [calculatedDiscount, setCalculatedDiscount] = useState<number>(yearlyDiscount);
+  
+  useEffect(() => {
+    if (monthlyPrice && yearlyPrice && monthlyPrice > 0 && yearlyPrice > 0) {
+      const savings = calculateYearlySavings(monthlyPrice, yearlyPrice);
+      setCalculatedDiscount(savings > 0 ? savings : yearlyDiscount);
+    } else {
+      setCalculatedDiscount(yearlyDiscount);
+    }
+  }, [monthlyPrice, yearlyPrice, yearlyDiscount]);
 
   // Update animation direction when billing interval changes
   useEffect(() => {
@@ -61,9 +80,9 @@ export function BillingIntervalSelector({
           }`}
         >
           Yearly
-          {yearlyDiscount > 0 && (
+          {showSavings && calculatedDiscount > 0 && (
             <span className="ml-1.5 text-xs py-0.5 px-1.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-full">
-              Save {yearlyDiscount}%
+              Save {calculatedDiscount}%
             </span>
           )}
         </Button>

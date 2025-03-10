@@ -258,6 +258,7 @@ export type Database = {
           created_at: string
           features: Json
           id: string
+          is_visible: boolean
           name: string
           price_monthly: number
           price_yearly: number
@@ -270,6 +271,7 @@ export type Database = {
           created_at?: string
           features: Json
           id?: string
+          is_visible?: boolean
           name: string
           price_monthly: number
           price_yearly: number
@@ -282,6 +284,7 @@ export type Database = {
           created_at?: string
           features?: Json
           id?: string
+          is_visible?: boolean
           name?: string
           price_monthly?: number
           price_yearly?: number

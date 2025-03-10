@@ -30,6 +30,15 @@ export default function Subscription() {
     formatDate
   } = useSubscription();
 
+  // Calculate average prices for the billing selector
+  const visiblePlans = plans.filter(plan => plan.is_visible !== false);
+  const avgMonthlyPrice = visiblePlans.length 
+    ? visiblePlans.reduce((sum, plan) => sum + plan.price_monthly, 0) / visiblePlans.length 
+    : 0;
+  const avgYearlyPrice = visiblePlans.length 
+    ? visiblePlans.reduce((sum, plan) => sum + plan.price_yearly, 0) / visiblePlans.length 
+    : 0;
+
   const handleSubscribe = async (planId: string) => {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
@@ -76,10 +85,12 @@ export default function Subscription() {
           <BillingIntervalSelector 
             billingInterval={billingInterval}
             setBillingInterval={setBillingInterval}
+            monthlyPrice={avgMonthlyPrice}
+            yearlyPrice={avgYearlyPrice}
           />
           
           <PlansList
-            plans={plans}
+            plans={visiblePlans}
             billingInterval={billingInterval}
             currentTier={subscription?.tier}
             isSubscribing={isSubscribing}
