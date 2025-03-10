@@ -1,5 +1,6 @@
-import React from "react";
-import { Routes, Route, Router } from "react-router-dom";
+
+import React, { Suspense } from "react";
+import { Routes, Route, BrowserRouter as Router } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -95,7 +96,7 @@ function App() {
               />
               <Route
                 path="/admin/subscription-plans"
-                element={<AdminRoute><React.lazy(() => import('./pages/AdminSubscriptionPlans')) /></AdminRoute>}
+                element={<AdminRoute><AdminSubscriptionPlans /></AdminRoute>}
               />
 
               {/* 404 Route */}
