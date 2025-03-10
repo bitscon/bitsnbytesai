@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { SubscriptionPlan, UserSubscription, SubscriptionTier } from '@/types/subscription';
-import { checkTierAccess } from '@/utils/subscription/subscriptionUtils';
+import { hasTierAccess } from '@/utils/subscription/subscriptionUtils';
 
 interface UseSubscriptionCalculationsProps {
   userSubscription: UserSubscription | null;
@@ -45,7 +45,7 @@ export function useSubscriptionCalculations({
    */
   const hasAccess = useCallback((requiredTier: SubscriptionTier): boolean => {
     if (!userSubscription) return false;
-    return checkTierAccess(userSubscription.tier, requiredTier);
+    return hasTierAccess(userSubscription.tier, requiredTier);
   }, [userSubscription]);
 
   return {
