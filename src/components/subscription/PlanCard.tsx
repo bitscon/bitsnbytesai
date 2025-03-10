@@ -43,6 +43,73 @@ export function PlanCard({
     return `Upgrade to ${plan.name}`;
   };
 
+  const renderFeatures = () => {
+    if (!plan.features) return null;
+    
+    let featuresList: JSX.Element[] = [];
+    
+    // Handle description separately
+    let description = '';
+    if (typeof plan.features === 'object') {
+      if ('description' in plan.features) {
+        description = plan.features.description as string;
+      }
+    }
+    
+    // Process the features
+    if (typeof plan.features === 'object') {
+      // First, collect and sort all feature entries
+      const entries = Object.entries(plan.features)
+        .filter(([key]) => key !== 'description') // Skip description
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
+      
+      // Then process each feature
+      featuresList = entries.map(([key, value], index) => {
+        // Handle different feature formats
+        let featureEnabled = false;
+        let featureLabel = '';
+        
+        if (typeof value === 'boolean') {
+          featureEnabled = value;
+          featureLabel = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        } else if (typeof value === 'number') {
+          featureEnabled = value > 0;
+          featureLabel = `${value} ${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+        } else if (typeof value === 'object' && value !== null) {
+          // For complex objects with description and value properties
+          if ('description' in value && 'value' in value) {
+            featureEnabled = Boolean(value.value);
+            featureLabel = value.description as string;
+          } else if ('description' in value) {
+            // For objects with just a description
+            featureEnabled = true;
+            featureLabel = value.description as string;
+          }
+        } else if (typeof value === 'string') {
+          featureEnabled = true;
+          featureLabel = value;
+        }
+        
+        return (
+          <li key={index} className="flex items-center">
+            {featureEnabled ? (
+              <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+            ) : (
+              <XCircle className="h-4 w-4 text-gray-300 mr-2 flex-shrink-0" />
+            )}
+            <span className={featureEnabled ? '' : 'text-muted-foreground'}>
+              {featureLabel}
+            </span>
+          </li>
+        );
+      });
+    }
+    
+    return { description, featuresList };
+  };
+
+  const { description, featuresList } = renderFeatures() || { description: '', featuresList: [] };
+
   return (
     <Card 
       className={`flex flex-col h-full ${isActive ? 'border-primary' : ''}`}
@@ -55,7 +122,7 @@ export function PlanCard({
           )}
         </CardTitle>
         <CardDescription>
-          {plan.features.description}
+          {description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 flex-grow">
@@ -75,28 +142,7 @@ export function PlanCard({
         )}
         
         <ul className="space-y-2">
-          {Object.entries(plan.features)
-            .filter(([key]) => key !== 'description')
-            .map(([key, value]) => {
-              if (typeof value !== 'boolean' && typeof value !== 'number') return null;
-              
-              const featureName = key
-                .replace(/_/g, ' ')
-                .replace(/\b\w/g, l => l.toUpperCase());
-              
-              return (
-                <li key={key} className="flex items-center">
-                  {value ? (
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-gray-300 mr-2 flex-shrink-0" />
-                  )}
-                  <span className={value ? '' : 'text-muted-foreground'}>
-                    {typeof value === 'number' ? `${value} ${featureName}` : featureName}
-                  </span>
-                </li>
-              );
-            })}
+          {featuresList}
         </ul>
       </CardContent>
       <CardFooter>

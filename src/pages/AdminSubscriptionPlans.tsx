@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { SubscriptionPlan } from '@/types/subscription';
 import SubscriptionPlansList from '@/components/admin/subscription/SubscriptionPlansList';
 import SubscriptionPlanDialog from '@/components/admin/subscription/SubscriptionPlanDialog';
+import { toast } from 'sonner';
 
 export default function AdminSubscriptionPlans() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -30,7 +31,16 @@ export default function AdminSubscriptionPlans() {
         .order('price_monthly', { ascending: true });
       
       if (error) throw new Error(error.message);
-      return data as unknown as SubscriptionPlan[]; // Use type assertion to fix the error
+      
+      // Transform features if they're stored as string
+      const transformedData = data?.map(plan => ({
+        ...plan,
+        features: typeof plan.features === 'string' 
+          ? JSON.parse(plan.features) 
+          : plan.features
+      }));
+      
+      return transformedData as unknown as SubscriptionPlan[]; 
     }
   });
   
@@ -46,19 +56,31 @@ export default function AdminSubscriptionPlans() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
+      toast.success('Subscription plan deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete subscription plan: ' + (error as Error).message);
     }
   });
   
   // Function to sync plans with Stripe
   const syncWithStripe = async () => {
-    const { error } = await supabase.functions.invoke('sync-subscription-plans-with-stripe');
-    
-    if (error) {
-      console.error('Error syncing plans with Stripe:', error);
-      return;
+    try {
+      toast.info('Syncing plans with Stripe...');
+      const { error } = await supabase.functions.invoke('sync-subscription-plans-with-stripe');
+      
+      if (error) {
+        console.error('Error syncing plans with Stripe:', error);
+        toast.error('Failed to sync plans with Stripe');
+        return;
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
+      toast.success('Plans synced with Stripe successfully');
+    } catch (error) {
+      console.error('Error in syncWithStripe:', error);
+      toast.error('An error occurred while syncing plans');
     }
-    
-    queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
   };
   
   const openCreateDialog = () => {
@@ -74,6 +96,12 @@ export default function AdminSubscriptionPlans() {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setSelectedPlan(null);
+  };
+  
+  const handlePlanCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
+    closeDialog();
+    toast.success('Subscription plan saved successfully');
   };
   
   return (
@@ -107,7 +135,13 @@ export default function AdminSubscriptionPlans() {
           <SubscriptionPlansList 
             plans={plans || []}
             onEdit={openEditDialog}
-            onDelete={(plan) => deletePlanMutation.mutate(plan.id)}
+            onDelete={(plan) => {
+              if (plan.tier === 'free') {
+                toast.error("Cannot delete the Free plan");
+                return;
+              }
+              deletePlanMutation.mutate(plan.id);
+            }}
             isDeleting={deletePlanMutation.isPending}
           />
         )}
@@ -118,6 +152,7 @@ export default function AdminSubscriptionPlans() {
         onOpenChange={setIsDialogOpen}
         plan={selectedPlan}
         onClose={closeDialog}
+        onSuccess={handlePlanCreated}
       />
     </AdminLayout>
   );

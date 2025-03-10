@@ -1,6 +1,11 @@
 
 export type SubscriptionTier = 'free' | 'pro' | 'premium' | 'enterprise';
 
+export interface SubscriptionFeature {
+  description: string;
+  [key: string]: any;
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -10,7 +15,7 @@ export interface SubscriptionPlan {
   stripe_price_id_monthly?: string;
   stripe_price_id_yearly?: string;
   stripe_product_id?: string;
-  features: any; // Changed from the specific shape to allow for Json from database
+  features: any; // Kept as any to allow for various formats from the database
   created_at?: string;
   updated_at?: string;
 }
@@ -30,3 +35,29 @@ export interface PromptUsage {
   month: number;
   year: number;
 }
+
+// Helper functions for subscription management
+export const getTierLevel = (tier: SubscriptionTier): number => {
+  const tierLevels: Record<SubscriptionTier, number> = {
+    'free': 0,
+    'pro': 1,
+    'premium': 2,
+    'enterprise': 3
+  };
+  
+  return tierLevels[tier] || 0;
+};
+
+export const isUpgrade = (currentTier: SubscriptionTier, newTier: SubscriptionTier): boolean => {
+  return getTierLevel(newTier) > getTierLevel(currentTier);
+};
+
+export const isDowngrade = (currentTier: SubscriptionTier, newTier: SubscriptionTier): boolean => {
+  return getTierLevel(newTier) < getTierLevel(currentTier);
+};
+
+export const getChangeType = (currentTier: SubscriptionTier, newTier: SubscriptionTier): 'upgrade' | 'downgrade' | 'same' => {
+  if (isUpgrade(currentTier, newTier)) return 'upgrade';
+  if (isDowngrade(currentTier, newTier)) return 'downgrade';
+  return 'same';
+};
