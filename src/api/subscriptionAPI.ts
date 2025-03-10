@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -61,13 +62,17 @@ export const fetchSubscriptionPlans = async () => {
     
     if (error) {
       console.error('Error fetching subscription plans:', error);
-      return { error, plans: [], stripePublicKey: '' };
+      return { 
+        error, 
+        plans: data?.plans || [], 
+        stripePublicKey: data?.stripePublicKey || '' 
+      };
     }
     
     return { 
-      plans: data.plans || [], 
-      stripePublicKey: data.stripePublicKey || '',
-      error: null
+      plans: data?.plans || [], 
+      stripePublicKey: data?.stripePublicKey || '',
+      error: data?.error || null
     };
   } catch (error) {
     console.error('Error in fetchSubscriptionPlans:', error);
