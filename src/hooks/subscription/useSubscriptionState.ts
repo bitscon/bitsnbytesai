@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionPlan, UserSubscription, PromptUsage } from '@/types/subscription';
 import { fetchSubscriptionPlans, fetchStripeSubscription } from '@/api/subscriptionAPI';
+import { useToast } from '@/hooks/use-toast';
 
 interface StripeSubscription {
   id: string;
@@ -29,6 +30,7 @@ interface UseSubscriptionStateProps {
 }
 
 export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubscriptionStateProps) {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [stripePublicKey, setStripePublicKey] = useState<string>('');
@@ -80,6 +82,11 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
       
       if (subscriptionError) {
         console.error('Error fetching user subscription:', subscriptionError);
+        toast({
+          title: "Subscription error",
+          description: "Could not fetch your subscription details. Please try again later.",
+          variant: "destructive"
+        });
         return;
       }
       
@@ -111,10 +118,15 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
       }
     } catch (error) {
       console.error('Error in loadUserSubscription:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem loading your subscription. Please try again later.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubscriptionLoading(false);
     }
-  }, [isLoggedIn, userId]);
+  }, [isLoggedIn, userId, toast]);
 
   const loadFreeUsage = async (userId: string) => {
     const now = new Date();
@@ -129,38 +141,56 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
       .eq('year', currentYear)
       .maybeSingle();
     
-    if (!usageError) {
-      const limit = 50; // Default free tier limit
-      const count = usageData?.count || 0;
-      setCurrentUsage({
-        count,
-        limit,
-        remaining: Math.max(0, limit - count)
-      });
+    if (usageError) {
+      console.error('Error fetching user prompt usage:', usageError);
+      return;
     }
+    
+    const limit = 50; // Default free tier limit
+    const count = usageData?.count || 0;
+    setCurrentUsage({
+      count,
+      limit,
+      remaining: Math.max(0, limit - count)
+    });
   };
 
   const createFreeSubscription = async (userId: string) => {
-    const { error: createError } = await supabase
-      .from('user_subscriptions')
-      .insert({
-        user_id: userId,
-        tier: 'free'
-      });
-    
-    if (createError) {
-      console.error('Error creating user subscription record:', createError);
-    } else {
-      // Fetch the newly created subscription
-      const { data: newSubscription } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+    try {
+      console.log('Creating free subscription for user:', userId);
       
-      if (newSubscription) {
-        setUserSubscription(newSubscription);
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: userId,
+          tier: 'free'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating user subscription record:', error);
+        toast({
+          title: "Subscription Error",
+          description: "Unable to create your free subscription. Please try again later.",
+          variant: "destructive"
+        });
+        return;
       }
+      
+      console.log('Free subscription created successfully:', data);
+      setUserSubscription(data as UserSubscription);
+      
+      // Load usage for the new free subscription
+      await loadFreeUsage(userId);
+      
+    } catch (err) {
+      console.error('Exception in createFreeSubscription:', err);
+      toast({
+        title: "Error",
+        description: "Failed to initialize your subscription. Please refresh and try again.",
+        variant: "destructive"
+      });
     }
   };
 
