@@ -4,19 +4,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
 interface BillingIntervalSelectorProps {
-  billingInterval: 'month' | 'year';
-  setBillingInterval: (value: 'month' | 'year') => void;
+  billingInterval?: 'month' | 'year';
+  setBillingInterval?: (value: 'month' | 'year') => void;
+  onChange?: (value: 'month' | 'year') => void;
 }
 
 export function BillingIntervalSelector({ 
-  billingInterval, 
-  setBillingInterval 
+  billingInterval = 'month', 
+  setBillingInterval,
+  onChange
 }: BillingIntervalSelectorProps) {
+  // Handle either style of prop passing
+  const handleValueChange = (value: string) => {
+    const interval = value as 'month' | 'year';
+    if (setBillingInterval) {
+      setBillingInterval(interval);
+    }
+    if (onChange) {
+      onChange(interval);
+    }
+  };
+
   return (
     <div className="mb-6 flex justify-center">
       <Tabs 
         value={billingInterval}
-        onValueChange={(value) => setBillingInterval(value as 'month' | 'year')}
+        onValueChange={handleValueChange}
         className="w-full max-w-md"
       >
         <TabsList className="grid w-full grid-cols-2">

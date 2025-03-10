@@ -74,7 +74,8 @@ export default function Subscription() {
           )}
           
           <BillingIntervalSelector 
-            onChange={(value) => setBillingInterval(value)} 
+            billingInterval={billingInterval}
+            setBillingInterval={setBillingInterval}
           />
           
           <PlansList

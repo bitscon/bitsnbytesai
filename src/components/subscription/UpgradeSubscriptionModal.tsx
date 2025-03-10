@@ -111,7 +111,8 @@ export function UpgradeSubscriptionModal({
         {!showConfirmation ? (
           <>
             <BillingIntervalSelector 
-              onChange={(value) => setBillingInterval(value)} 
+              billingInterval={billingInterval}
+              setBillingInterval={setBillingInterval}
             />
             
             <div className="py-4">
