@@ -24,7 +24,7 @@ export function useSubscription() {
     isSubscribing,
     isManagingSubscription,
     loadSubscriptionPlans,
-    loadUserSubscription,
+    loadUserSubscription, // Make sure this is included here
     setSubscribingStatus,
     setManagingStatus,
     updateCancelAtPeriodEnd
@@ -95,6 +95,7 @@ export function useSubscription() {
     // Actions and calculations
     fetchSubscriptionPlans: loadSubscriptionPlans,
     fetchUserSubscription: loadUserSubscription,
+    loadUserSubscription, // Add this line to expose the loadUserSubscription function
     getCurrentPlan,
     isSubscriptionActive,
     hasAccess,
