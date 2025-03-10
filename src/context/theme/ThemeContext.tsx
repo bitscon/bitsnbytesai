@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -54,17 +55,21 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         .select("*")
         .eq("is_dark", dark)
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching theme:', error);
         setActiveTheme(null);
-      } else {
+      } else if (data) {
         console.log('Active theme fetched:', data);
         setActiveTheme(data);
+      } else {
+        console.log('No active theme found, using default');
+        setActiveTheme(null);
       }
     } catch (error) {
       console.error('Error:', error);
+      setActiveTheme(null);
     } finally {
       setLoadingTheme(false);
     }
@@ -83,35 +88,39 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.body.classList.remove('dark');
     }
     
-    // Apply theme settings as CSS variables instead of filters
-    if (activeTheme) {
-      console.log('Applying theme settings to root:', activeTheme);
-      // Don't use filter property directly on the root element as it can cause rendering issues
-      const styleElement = document.getElementById('global-theme-style') as HTMLStyleElement;
-      if (styleElement) {
-        styleElement.textContent = `
-          :root {
-            --theme-brightness: ${activeTheme.brightness}%;
-            --theme-contrast: ${activeTheme.contrast}%;
-            --theme-saturation: ${activeTheme.saturation}%;
-          }
-        `;
-      }
-      // Remove direct filter application which could cause white screen
-      root.style.filter = '';
-      document.body.style.filter = '';
-    } else {
-      const styleElement = document.getElementById('global-theme-style') as HTMLStyleElement;
-      if (styleElement) {
-        styleElement.textContent = '';
-      }
+    // Create a style element for theme variables if it doesn't exist
+    let styleElement = document.getElementById('global-theme-style') as HTMLStyleElement;
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'global-theme-style';
+      document.head.appendChild(styleElement);
     }
     
-    return () => {
-      // Cleanup filter styles when component unmounts
-      root.style.filter = '';
-      document.body.style.filter = '';
-    };
+    // Apply theme settings as CSS variables
+    if (activeTheme) {
+      console.log('Applying theme settings to root:', activeTheme);
+      
+      styleElement.textContent = `
+        :root {
+          --theme-brightness: ${activeTheme.brightness}%;
+          --theme-contrast: ${activeTheme.contrast}%;
+          --theme-saturation: ${activeTheme.saturation}%;
+        }
+      `;
+    } else {
+      // Default values if no theme is active
+      styleElement.textContent = `
+        :root {
+          --theme-brightness: 100%;
+          --theme-contrast: 100%;
+          --theme-saturation: 100%;
+        }
+      `;
+    }
+    
+    // Clean up direct filter application
+    root.style.filter = '';
+    document.body.style.filter = '';
   }, [isDarkMode, activeTheme]);
   
   // Fetch active theme on initial load and subscribe to changes
@@ -151,13 +160,14 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [isDarkMode]);
 
-  // Generate CSS custom properties for the active theme
+  // Generate theme style for components that need to apply the filter directly
   const themeStyle = React.useMemo(() => {
-    if (!activeTheme) return {};
+    if (!activeTheme) {
+      return {};
+    }
 
-    // Return the theme values as CSS variables instead of direct filter
     return {
-      filter: `brightness(var(--theme-brightness)) contrast(var(--theme-contrast)) saturate(var(--theme-saturation))`,
+      filter: `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`,
       transition: 'filter 0.3s ease'
     };
   }, [activeTheme]);

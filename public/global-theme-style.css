@@ -1,0 +1,11 @@
+
+:root {
+  --theme-brightness: 100%;
+  --theme-contrast: 100%;
+  --theme-saturation: 100%;
+}
+
+.theme-filtered {
+  filter: brightness(var(--theme-brightness)) contrast(var(--theme-contrast)) saturate(var(--theme-saturation));
+  transition: filter 0.3s ease;
+}
