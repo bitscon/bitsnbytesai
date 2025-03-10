@@ -2,8 +2,12 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SubscriptionPlan } from '@/types/subscription';
-import { createCheckoutSession, manageSubscriptionAPI, updateSubscription } from '@/api/subscriptionAPI';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  createStripeCheckout,
+  manageStripeSubscription,
+  changeStripeSubscription
+} from '@/utils/subscription/stripeUtils';
 
 interface UseSubscriptionActionsProps {
   userEmail?: string;
@@ -49,31 +53,21 @@ export function useSubscriptionActions({
     try {
       setSubscribingStatus(true);
       
-      const successUrl = `${window.location.origin}/subscription/success`;
-      const cancelUrl = `${window.location.origin}/subscription`;
-      
-      const { data, error } = await createCheckoutSession(
+      const result = await createStripeCheckout(
         priceId,
         interval,
-        successUrl,
-        cancelUrl,
-        userEmail,
-        subscriptionStripeCustomerId,
-        userId
+        userId,
+        subscriptionStripeCustomerId
       );
       
-      if (error || !data || !data.url) {
-        console.error('Error creating subscription checkout:', error || 'No checkout URL returned');
+      if (!result.success) {
         toast({
           title: 'Error',
-          description: 'Failed to create subscription checkout. Please try again later.',
+          description: result.message || 'Failed to create subscription checkout.',
           variant: 'destructive',
         });
-        return;
       }
       
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
     } catch (error) {
       console.error('Error in subscribe function:', error);
       toast({
@@ -117,16 +111,16 @@ export function useSubscriptionActions({
       }
       
       // Call the API to update the subscription
-      const { data, error } = await updateSubscription(
+      const result = await changeStripeSubscription(
         stripeSubscriptionId,
         userId,
         priceId,
         interval
       );
       
-      if (error) {
-        console.error('Error updating subscription:', error);
-        setChangeSubscriptionError('Failed to update subscription. Please try again.');
+      if (!result.success) {
+        console.error('Error updating subscription:', result.message);
+        setChangeSubscriptionError(result.message || 'Failed to update subscription. Please try again.');
         return;
       }
       
@@ -140,7 +134,7 @@ export function useSubscriptionActions({
       // Refresh subscription data
       await loadUserSubscription();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in changeSubscription:', error);
       setChangeSubscriptionError('An unexpected error occurred. Please try again.');
     } finally {
@@ -178,7 +172,7 @@ export function useSubscriptionActions({
    * Manages subscription (cancel, reactivate, or open portal)
    */
   const manageSubscription = useCallback(async (action: 'portal' | 'cancel' | 'reactivate') => {
-    if (!userEmail) {
+    if (!userId) {
       toast({
         title: 'Error',
         description: 'You must be logged in and have a subscription to manage it.',
@@ -190,42 +184,40 @@ export function useSubscriptionActions({
     try {
       setManagingStatus(true);
       
-      const returnUrl = `${window.location.origin}/subscription`;
-      
       if (action === 'portal') {
         // Open Stripe Customer Portal
-        const { data, error } = await manageSubscriptionAPI(
+        const result = await manageStripeSubscription(
           'portal',
-          stripeCustomerId,
-          undefined,
-          returnUrl
+          userId,
+          stripeCustomerId
         );
         
-        if (error || !data || !data.url) {
-          console.error('Error opening customer portal:', error || 'No portal URL returned');
+        if (!result.success) {
           toast({
             title: 'Error',
-            description: 'Failed to open subscription management. Please try again later.',
+            description: result.message || 'Failed to open subscription management.',
             variant: 'destructive',
           });
           return;
         }
         
         // Redirect to Stripe Customer Portal
-        window.location.href = data.url;
+        if (result.url) {
+          window.location.href = result.url;
+        }
       } else if (action === 'cancel' || action === 'reactivate') {
         // Cancel or reactivate subscription
-        const { error } = await manageSubscriptionAPI(
+        const result = await manageStripeSubscription(
           action,
+          userId,
           undefined,
           stripeSubscriptionId
         );
         
-        if (error) {
-          console.error(`Error ${action}ing subscription:`, error);
+        if (!result.success) {
           toast({
             title: 'Error',
-            description: `Failed to ${action} subscription. Please try again later.`,
+            description: result.message || `Failed to ${action} subscription.`,
             variant: 'destructive',
           });
           return;
@@ -235,15 +227,15 @@ export function useSubscriptionActions({
         
         toast({
           title: action === 'cancel' ? 'Subscription Cancelled' : 'Subscription Reactivated',
-          description: action === 'cancel' 
+          description: result.message || (action === 'cancel' 
             ? 'Your subscription will end at the end of the current billing period.' 
-            : 'Your subscription has been reactivated and will renew automatically.',
+            : 'Your subscription has been reactivated and will renew automatically.'),
         });
         
         // Refresh subscription data
         loadUserSubscription();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error in manageSubscription (${action}):`, error);
       toast({
         title: 'Error',
@@ -254,7 +246,7 @@ export function useSubscriptionActions({
       setManagingStatus(false);
     }
   }, [
-    userEmail, 
+    userId, 
     stripeCustomerId,
     stripeSubscriptionId,
     toast,

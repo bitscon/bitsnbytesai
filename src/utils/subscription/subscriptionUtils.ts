@@ -1,40 +1,10 @@
 
-import { format, isValid } from 'date-fns';
 import { SubscriptionTier } from '@/types/subscription';
 
 /**
- * Formats a date string for display
+ * Checks if a user tier has access to a required tier
  */
-export const formatDate = (dateString?: string): string => {
-  if (!dateString) return 'N/A';
-  
-  const date = new Date(dateString);
-  
-  if (!isValid(date)) {
-    return 'Invalid date';
-  }
-  
-  return format(date, 'MMM d, yyyy');
-};
-
-/**
- * Gets a human-readable name for a subscription tier
- */
-export const getTierName = (tier: SubscriptionTier): string => {
-  const tierNames: Record<SubscriptionTier, string> = {
-    'free': 'Free',
-    'pro': 'Pro',
-    'premium': 'Premium',
-    'enterprise': 'Enterprise'
-  };
-  
-  return tierNames[tier] || tier;
-};
-
-/**
- * Checks if the user has sufficient tier access for a required tier
- */
-export const hasTierAccess = (userTier: SubscriptionTier, requiredTier: SubscriptionTier): boolean => {
+export function hasTierAccess(userTier: SubscriptionTier, requiredTier: SubscriptionTier): boolean {
   const tierLevels: Record<SubscriptionTier, number> = {
     'free': 0,
     'pro': 1,
@@ -43,33 +13,92 @@ export const hasTierAccess = (userTier: SubscriptionTier, requiredTier: Subscrip
   };
   
   return tierLevels[userTier] >= tierLevels[requiredTier];
-};
+}
 
 /**
- * Calculate discount percentage between monthly and yearly pricing
+ * Gets a user-friendly name for a subscription tier
  */
-export const calculateYearlyDiscount = (monthlyPrice: number, yearlyPrice: number): number => {
+export function getTierName(tier: SubscriptionTier): string {
+  const tierNames: Record<SubscriptionTier, string> = {
+    'free': 'Free',
+    'pro': 'Pro',
+    'premium': 'Premium',
+    'enterprise': 'Enterprise'
+  };
+  
+  return tierNames[tier] || 'Unknown';
+}
+
+/**
+ * Formats a date string in a user-friendly format
+ */
+export function formatDate(date?: string): string {
+  if (!date) return 'N/A';
+  
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid Date';
+  }
+}
+
+/**
+ * Calculates the percentage saved with yearly billing
+ */
+export function calculateYearlySavings(monthlyPrice: number, yearlyPrice: number): number {
   if (monthlyPrice <= 0 || yearlyPrice <= 0) return 0;
   
-  const monthlyTotal = monthlyPrice * 12;
-  const yearlyTotal = yearlyPrice;
+  const monthlyCostPerYear = monthlyPrice * 12;
+  const savings = monthlyCostPerYear - yearlyPrice;
   
-  if (yearlyTotal >= monthlyTotal) return 0;
-  
-  const savings = monthlyTotal - yearlyTotal;
-  const discountPercentage = (savings / monthlyTotal) * 100;
-  
-  return Math.round(discountPercentage);
-};
+  return Math.round((savings / monthlyCostPerYear) * 100);
+}
 
 /**
- * Format a currency value
+ * Checks if a tier change is an upgrade, downgrade, or the same
  */
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
-};
+export function getTierChangeType(
+  currentTier: SubscriptionTier, 
+  newTier: SubscriptionTier
+): 'upgrade' | 'downgrade' | 'same' {
+  const tierLevels: Record<SubscriptionTier, number> = {
+    'free': 0,
+    'pro': 1,
+    'premium': 2,
+    'enterprise': 3
+  };
+  
+  if (tierLevels[newTier] > tierLevels[currentTier]) {
+    return 'upgrade';
+  } else if (tierLevels[newTier] < tierLevels[currentTier]) {
+    return 'downgrade';
+  } else {
+    return 'same';
+  }
+}
+
+/**
+ * Gets the appropriate text for a tier change button
+ */
+export function getTierActionText(
+  newTier: SubscriptionTier, 
+  currentTier: SubscriptionTier | undefined
+): string {
+  if (!currentTier) return `Subscribe to ${getTierName(newTier)}`;
+  
+  const changeType = getTierChangeType(currentTier, newTier);
+  
+  switch (changeType) {
+    case 'upgrade':
+      return `Upgrade to ${getTierName(newTier)}`;
+    case 'downgrade':
+      return `Downgrade to ${getTierName(newTier)}`;
+    case 'same':
+      return `Change to ${getTierName(newTier)}`;
+  }
+}
