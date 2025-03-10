@@ -1,4 +1,3 @@
-
 import { supabaseAdmin } from "./supabase-admin.ts";
 
 // Helper function to determine if the old tier is higher than the new tier
@@ -47,6 +46,11 @@ export const getPlanById = async (planId: string) => {
     if (error) {
       console.error('Error fetching plan by ID:', error);
       return null;
+    }
+    
+    // Transform features if needed
+    if (data && typeof data.features === 'string') {
+      data.features = JSON.parse(data.features);
     }
     
     return data;

@@ -1,3 +1,4 @@
+
 import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SubscriptionPlan } from '@/types/subscription';
@@ -156,7 +157,17 @@ export function useSubscriptionActions({
         .eq('id', planId)
         .single();
         
-      return data;
+      if (!data) return null;
+      
+      // Transform the features from Json to the expected SubscriptionPlan format
+      const transformedPlan: SubscriptionPlan = {
+        ...data,
+        features: typeof data.features === 'string' 
+          ? JSON.parse(data.features) 
+          : data.features as { [key: string]: any; description: string; }
+      };
+      
+      return transformedPlan;
     } catch (error) {
       console.error('Error fetching plan details:', error);
       return null;

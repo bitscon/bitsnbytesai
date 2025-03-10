@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -130,6 +129,37 @@ export const manageSubscriptionAPI = async (
     return { data, error: null };
   } catch (error) {
     console.error(`Error in manageSubscriptionAPI (${action}):`, error);
+    return { error };
+  }
+};
+
+/**
+ * Updates an existing subscription to a new plan
+ */
+export const updateSubscription = async (
+  subscriptionId: string,
+  userId: string,
+  priceId: string,
+  interval: 'month' | 'year'
+) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('update-subscription', {
+      body: {
+        subscriptionId,
+        userId,
+        priceId,
+        interval
+      }
+    });
+    
+    if (error) {
+      console.error('Error updating subscription:', error);
+      return { error };
+    }
+    
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in updateSubscription:', error);
     return { error };
   }
 };
