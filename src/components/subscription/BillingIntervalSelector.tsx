@@ -4,15 +4,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
 interface BillingIntervalSelectorProps {
-  onChange: (value: 'month' | 'year') => void;
+  billingInterval: 'month' | 'year';
+  setBillingInterval: (value: 'month' | 'year') => void;
 }
 
-export function BillingIntervalSelector({ onChange }: BillingIntervalSelectorProps) {
+export function BillingIntervalSelector({ 
+  billingInterval, 
+  setBillingInterval 
+}: BillingIntervalSelectorProps) {
   return (
     <div className="mb-6 flex justify-center">
       <Tabs 
-        defaultValue="month" 
-        onValueChange={(value) => onChange(value as 'month' | 'year')}
+        value={billingInterval}
+        onValueChange={(value) => setBillingInterval(value as 'month' | 'year')}
         className="w-full max-w-md"
       >
         <TabsList className="grid w-full grid-cols-2">
