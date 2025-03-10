@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { SubscriptionTier } from '@/types/subscription';
@@ -26,7 +27,8 @@ export function useSubscription() {
     loadUserSubscription,
     setSubscribingStatus,
     setManagingStatus,
-    updateCancelAtPeriodEnd
+    updateCancelAtPeriodEnd,
+    fetchError
   } = useSubscriptionState({
     userId: user?.id,
     userEmail: user?.email,
