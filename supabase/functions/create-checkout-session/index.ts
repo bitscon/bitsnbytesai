@@ -12,9 +12,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { price_id, email, success_url, cancel_url } = await req.json();
+    const { priceId, interval, email, success_url, cancel_url, customerId, userId } = await req.json();
 
-    if (!price_id || !email || !success_url || !cancel_url) {
+    if (!priceId || !email || !success_url || !cancel_url || !interval) {
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         {
@@ -24,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Creating checkout session for email: ${email}`);
+    console.log(`Creating subscription for email: ${email}, price: ${priceId}, interval: ${interval}`);
     
     // Get Stripe secret key from database
     const stripeSecretKey = await getApiSetting("STRIPE_SECRET_KEY");
@@ -45,32 +45,115 @@ const handler = async (req: Request): Promise<Response> => {
       apiVersion: "2023-10-16",
     });
 
-    // Create a checkout session
+    let customer;
+
+    if (customerId) {
+      // Use existing customer if provided
+      customer = await stripe.customers.retrieve(customerId);
+      console.log(`Using existing customer: ${customerId}`);
+    } else {
+      // Create a new customer
+      customer = await stripe.customers.create({
+        email: email,
+        metadata: {
+          email: email,
+          user_id: userId, // Store user ID in metadata if provided
+        },
+      });
+      console.log(`Created new customer: ${customer.id}`);
+    }
+
+    // Check if the user already has an active subscription that we should update instead
+    if (userId) {
+      const { data: existingSub } = await supabaseAdmin
+        .from('user_subscriptions')
+        .select('stripe_subscription_id')
+        .eq('user_id', userId)
+        .not('stripe_subscription_id', 'is', null)
+        .maybeSingle();
+
+      if (existingSub?.stripe_subscription_id) {
+        try {
+          // Try to retrieve the subscription to see if it's active
+          const subscription = await stripe.subscriptions.retrieve(existingSub.stripe_subscription_id);
+          
+          if (subscription.status === 'active' || subscription.status === 'trialing') {
+            console.log(`User ${userId} has active subscription ${subscription.id}. Creating checkout session for update.`);
+            
+            // Create a checkout session for updating the subscription
+            const session = await stripe.checkout.sessions.create({
+              mode: "subscription",
+              payment_method_types: ["card"],
+              customer: customer.id,
+              line_items: [
+                {
+                  price: priceId,
+                  quantity: 1,
+                },
+              ],
+              success_url: `${success_url}?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: cancel_url,
+              subscription_data: {
+                metadata: {
+                  email: email,
+                  user_id: userId,
+                },
+              },
+              metadata: {
+                email: email,
+                interval: interval,
+                user_id: userId,
+                existing_subscription_id: subscription.id,
+              },
+            });
+
+            return new Response(JSON.stringify({ url: session.url, customerId: customer.id }), {
+              status: 200,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        } catch (err) {
+          console.log(`Error retrieving existing subscription, will create new one: ${err.message}`);
+          // Fall through to create a new subscription if retrieval fails
+        }
+      }
+    }
+
+    // Create a checkout session for the subscription
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
-          price: price_id,
+          price: priceId,
           quantity: 1,
         },
       ],
-      mode: "payment",
+      mode: "subscription",
       success_url: `${success_url}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancel_url,
-      customer_email: email,
+      customer: customer.id,
+      customer_email: customerId ? undefined : email, // Only set if not using existing customer
+      subscription_data: {
+        metadata: {
+          email: email,
+          user_id: userId, // Store user ID in metadata if provided
+        },
+      },
       metadata: {
         email: email,
+        interval: interval, // 'month' or 'year'
+        user_id: userId, // Store user ID in metadata if provided
       },
     });
 
-    console.log(`Checkout session created: ${session.id}`);
+    console.log(`Subscription checkout session created: ${session.id}`);
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ url: session.url, customerId: customer.id }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
+    console.error("Error creating subscription:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

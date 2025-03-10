@@ -10,6 +10,7 @@ interface PlansListProps {
   currentTier?: SubscriptionTier;
   isSubscribing: boolean;
   onSubscribe: (planId: string) => void;
+  mode?: 'new' | 'change';
 }
 
 export function PlansList({
@@ -17,7 +18,8 @@ export function PlansList({
   billingInterval,
   currentTier,
   isSubscribing,
-  onSubscribe
+  onSubscribe,
+  mode = 'new'
 }: PlansListProps) {
   const isPlanActive = (tier: string) => {
     return currentTier === tier;
@@ -38,6 +40,7 @@ export function PlansList({
           isActive={isPlanActive(plan.tier)}
           isSubscribing={isSubscribing}
           onSubscribe={onSubscribe}
+          mode={mode}
         />
       ))}
     </motion.div>

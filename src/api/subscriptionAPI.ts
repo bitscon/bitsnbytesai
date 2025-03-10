@@ -11,7 +11,8 @@ export const createCheckoutSession = async (
   successUrl: string,
   cancelUrl: string,
   userEmail?: string,
-  customerId?: string | null
+  customerId?: string | null,
+  userId?: string
 ) => {
   if (!userEmail) {
     toast({
@@ -30,7 +31,8 @@ export const createCheckoutSession = async (
         email: userEmail,
         success_url: successUrl,
         cancel_url: cancelUrl,
-        customerId
+        customerId,
+        userId
       }
     });
     

@@ -20,8 +20,12 @@ export default function Subscription() {
     currentUsage,
     isSubscribing,
     isManagingSubscription,
+    isChangingSubscription,
+    changeSubscriptionError,
+    changeSubscriptionSuccess,
     subscribe,
     manageSubscription,
+    changeSubscription,
     getTierName,
     formatDate
   } = useSubscription();
@@ -58,9 +62,14 @@ export default function Subscription() {
               cancelAtPeriodEnd={cancelAtPeriodEnd}
               currentUsage={currentUsage}
               isManagingSubscription={isManagingSubscription}
+              isChangingSubscription={isChangingSubscription}
               manageSubscription={manageSubscription}
+              changeSubscription={(planId, interval) => changeSubscription(planId, interval)}
               getTierName={getTierName}
               formatDate={formatDate}
+              plans={plans}
+              changeSubscriptionError={changeSubscriptionError}
+              changeSubscriptionSuccess={changeSubscriptionSuccess}
             />
           )}
           
@@ -74,6 +83,7 @@ export default function Subscription() {
             currentTier={subscription?.tier}
             isSubscribing={isSubscribing}
             onSubscribe={handleSubscribe}
+            mode="new"
           />
         </>
       )}

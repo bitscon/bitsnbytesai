@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.131.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@12.5.0?target=deno'
 import { upsertSubscription } from '../_shared/supabase.ts'
@@ -68,16 +67,14 @@ const handler = async (req: Request): Promise<Response> => {
         status: 200,
       });
     } catch (error: any) {
-      // Enhanced error handling for event processing
       console.error(`Error processing webhook event ${event.type}:`, error);
-      // Still return 200 to Stripe to prevent retries, but log the error
       return new Response(JSON.stringify({ 
         received: true, 
         warning: "Event received but processing encountered an error",
         error: error.message
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200, // Still return 200 to acknowledge receipt
+        status: 200,
       });
     }
   } catch (error: any) {
@@ -107,6 +104,10 @@ const handleEvent = async (event: any) => {
   
   try {
     switch (type) {
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(data.object, userId);
+        break;
+        
       case 'customer.subscription.created':
         await handleSubscriptionCreated(data.object, userId);
         break;
@@ -134,6 +135,61 @@ const handleEvent = async (event: any) => {
   } catch (error) {
     console.error(`Error handling webhook event ${type}:`, error);
     // Re-throw to be handled by the main try/catch
+    throw error;
+  }
+};
+
+const handleCheckoutSessionCompleted = async (session: any, userId: string | null) => {
+  try {
+    console.log(`Processing checkout session ${session.id}`);
+    
+    // Check if this was a subscription update by looking at metadata
+    if (session.mode === "subscription" && session.metadata?.existing_subscription_id) {
+      const existingSubId = session.metadata.existing_subscription_id;
+      console.log(`This appears to be an update to existing subscription ${existingSubId}`);
+      
+      // Get the new subscription ID
+      let newSubscriptionId: string | null = null;
+      
+      if (session.subscription) {
+        newSubscriptionId = session.subscription;
+      }
+      
+      // If we have both IDs and they don't match, this might be a replacement subscription
+      if (newSubscriptionId && newSubscriptionId !== existingSubId) {
+        console.log(`New subscription ID ${newSubscriptionId} differs from existing ID ${existingSubId}`);
+        
+        // Get the user ID if not already provided
+        if (!userId && session.metadata?.user_id) {
+          userId = session.metadata.user_id;
+        }
+        
+        if (!userId) {
+          console.warn(`No user ID found for checkout session ${session.id}, cannot update database`);
+          return;
+        }
+        
+        // Update our database with the new subscription ID
+        const { error: updateError } = await supabaseAdmin
+          .from('user_subscriptions')
+          .update({
+            stripe_subscription_id: newSubscriptionId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId)
+          .eq('stripe_subscription_id', existingSubId);
+          
+        if (updateError) {
+          console.error(`Error updating subscription ID for user ${userId}:`, updateError);
+        } else {
+          console.log(`Successfully updated subscription ID from ${existingSubId} to ${newSubscriptionId} for user ${userId}`);
+        }
+      }
+    }
+    
+    // Other checkout session processing can happen here
+  } catch (error) {
+    console.error(`Error in handleCheckoutSessionCompleted for session ${session?.id}:`, error);
     throw error;
   }
 };
@@ -211,7 +267,6 @@ const handleSubscriptionCreated = async (subscription: any, userId: string | nul
   }
 }
 
-// Enhanced version that logs the change to subscription_events
 const handleSubscriptionUpdated = async (subscription: any, userId: string | null) => {
   if (!userId) {
     console.log('No user found for subscription update');
@@ -333,7 +388,6 @@ const handleSubscriptionUpdated = async (subscription: any, userId: string | nul
   }
 };
 
-// Enhanced version that logs the deletion to subscription_events
 const handleSubscriptionDeleted = async (subscription: any, userId: string | null) => {
   if (!userId) {
     console.log('No user found for subscription deletion');
@@ -413,7 +467,6 @@ const handleSubscriptionDeleted = async (subscription: any, userId: string | nul
   }
 };
 
-// Enhanced version that logs payment failures with better error handling
 const handlePaymentFailed = async (invoice: any, userId: string | null) => {
   try {
     console.log(`Payment failed for invoice ${invoice.id}`);
@@ -502,7 +555,6 @@ const handlePaymentFailed = async (invoice: any, userId: string | null) => {
   }
 };
 
-// Enhanced version of the handler for payment_intent.payment_failed events
 const handlePaymentIntentFailed = async (paymentIntent: any, userId: string | null) => {
   try {
     console.log(`Payment intent failed: ${paymentIntent.id}`);
@@ -598,7 +650,6 @@ const handlePaymentIntentFailed = async (paymentIntent: any, userId: string | nu
   }
 };
 
-// Helper function to determine tier from Stripe Price ID
 const tierLevels: Record<string, number> = {
   'free': 0,
   'pro': 1,

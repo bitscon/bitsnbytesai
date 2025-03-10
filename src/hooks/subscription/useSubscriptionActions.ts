@@ -1,11 +1,12 @@
-
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SubscriptionPlan } from '@/types/subscription';
-import { createCheckoutSession, manageSubscriptionAPI } from '@/api/subscriptionAPI';
+import { createCheckoutSession, manageSubscriptionAPI, updateSubscription } from '@/api/subscriptionAPI';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseSubscriptionActionsProps {
   userEmail?: string;
+  userId?: string;
   subscriptionStripeCustomerId: string | null;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
@@ -17,6 +18,7 @@ interface UseSubscriptionActionsProps {
 
 export function useSubscriptionActions({
   userEmail,
+  userId,
   subscriptionStripeCustomerId,
   stripeCustomerId,
   stripeSubscriptionId,
@@ -26,6 +28,9 @@ export function useSubscriptionActions({
   updateCancelAtPeriodEnd
 }: UseSubscriptionActionsProps) {
   const { toast } = useToast();
+  const [isChangingSubscription, setIsChangingSubscription] = useState(false);
+  const [changeSubscriptionError, setChangeSubscriptionError] = useState('');
+  const [changeSubscriptionSuccess, setChangeSubscriptionSuccess] = useState('');
 
   /**
    * Initiates subscription checkout process
@@ -52,7 +57,8 @@ export function useSubscriptionActions({
         successUrl,
         cancelUrl,
         userEmail,
-        subscriptionStripeCustomerId
+        subscriptionStripeCustomerId,
+        userId
       );
       
       if (error || !data || !data.url) {
@@ -77,7 +83,85 @@ export function useSubscriptionActions({
     } finally {
       setSubscribingStatus(false);
     }
-  }, [userEmail, subscriptionStripeCustomerId, toast, setSubscribingStatus]);
+  }, [userEmail, userId, subscriptionStripeCustomerId, toast, setSubscribingStatus]);
+
+  /**
+   * Changes an existing subscription to a new plan
+   */
+  const changeSubscription = useCallback(async (planId: string, interval: 'month' | 'year') => {
+    if (!userId || !stripeSubscriptionId) {
+      setChangeSubscriptionError('You must have an active subscription to change plans.');
+      return;
+    }
+    
+    try {
+      setIsChangingSubscription(true);
+      setChangeSubscriptionError('');
+      setChangeSubscriptionSuccess('');
+      
+      // Find the plan and get the price ID
+      const plan = await getPlanById(planId);
+      if (!plan) {
+        setChangeSubscriptionError('Selected plan not found.');
+        return;
+      }
+      
+      const priceId = interval === 'month' 
+        ? plan.stripe_price_id_monthly 
+        : plan.stripe_price_id_yearly;
+        
+      if (!priceId) {
+        setChangeSubscriptionError(`No ${interval}ly price available for selected plan.`);
+        return;
+      }
+      
+      // Call the API to update the subscription
+      const { data, error } = await updateSubscription(
+        stripeSubscriptionId,
+        userId,
+        priceId,
+        interval
+      );
+      
+      if (error) {
+        console.error('Error updating subscription:', error);
+        setChangeSubscriptionError('Failed to update subscription. Please try again.');
+        return;
+      }
+      
+      // Update successful
+      setChangeSubscriptionSuccess(`Your subscription has been updated to the ${plan.name} plan.`);
+      toast({
+        title: 'Subscription Updated',
+        description: `Your subscription has been changed to the ${plan.name} plan.`,
+      });
+      
+      // Refresh subscription data
+      await loadUserSubscription();
+      
+    } catch (error) {
+      console.error('Error in changeSubscription:', error);
+      setChangeSubscriptionError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsChangingSubscription(false);
+    }
+  }, [userId, stripeSubscriptionId, toast, loadUserSubscription]);
+
+  // Helper function to get plan by ID
+  const getPlanById = async (planId: string): Promise<SubscriptionPlan | null> => {
+    try {
+      const { data } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+        
+      return data;
+    } catch (error) {
+      console.error('Error fetching plan details:', error);
+      return null;
+    }
+  };
 
   /**
    * Manages subscription (cancel, reactivate, or open portal)
@@ -170,6 +254,10 @@ export function useSubscriptionActions({
 
   return {
     subscribe,
-    manageSubscription
+    manageSubscription,
+    changeSubscription,
+    isChangingSubscription,
+    changeSubscriptionError,
+    changeSubscriptionSuccess
   };
 }

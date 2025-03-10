@@ -37,9 +37,14 @@ export function useSubscription() {
   // Initialize subscription actions
   const {
     subscribe,
-    manageSubscription
+    manageSubscription,
+    changeSubscription,
+    isChangingSubscription,
+    changeSubscriptionError,
+    changeSubscriptionSuccess
   } = useSubscriptionActions({
     userEmail: user?.email,
+    userId: user?.id,
     subscriptionStripeCustomerId,
     stripeCustomerId: userSubscription?.stripe_customer_id,
     stripeSubscriptionId: userSubscription?.stripe_subscription_id,
@@ -83,6 +88,9 @@ export function useSubscription() {
     isSubscribing,
     isManagingSubscription,
     isSubscriptionLoading,
+    isChangingSubscription,
+    changeSubscriptionError,
+    changeSubscriptionSuccess,
     
     // Actions and calculations
     fetchSubscriptionPlans: loadSubscriptionPlans,
@@ -92,6 +100,7 @@ export function useSubscription() {
     hasAccess,
     subscribe,
     manageSubscription,
+    changeSubscription,
     
     // Utility functions
     getTierName,

@@ -12,6 +12,7 @@ interface PlanCardProps {
   isActive: boolean;
   isSubscribing: boolean;
   onSubscribe: (planId: string) => void;
+  mode?: 'new' | 'change';
 }
 
 export function PlanCard({
@@ -19,8 +20,29 @@ export function PlanCard({
   billingInterval,
   isActive,
   isSubscribing,
-  onSubscribe
+  onSubscribe,
+  mode = 'new'
 }: PlanCardProps) {
+  const getTierButtonText = (tier: string, isActive: boolean) => {
+    if (isActive) return "Current Plan";
+    if (tier === 'free') return "Free Plan";
+    
+    if (mode === 'change') {
+      const tierLevels: Record<string, number> = {
+        'free': 0,
+        'pro': 1,
+        'premium': 2,
+        'enterprise': 3
+      };
+      
+      // We need to determine if this is an upgrade, downgrade, or just a change
+      // But we don't have the current tier here, so we'll just say "Select"
+      return `Select ${plan.name}`;
+    }
+    
+    return `Upgrade to ${plan.name}`;
+  };
+
   return (
     <Card 
       className={`flex flex-col h-full ${isActive ? 'border-primary' : ''}`}
@@ -96,7 +118,7 @@ export function PlanCard({
             onClick={() => onSubscribe(plan.id)}
             disabled={
               isSubscribing || 
-              (plan.tier === 'free') || 
+              (plan.tier === 'free' && mode === 'new') || 
               (billingInterval === 'month' && !plan.stripe_price_id_monthly) ||
               (billingInterval === 'year' && !plan.stripe_price_id_yearly)
             }
@@ -104,7 +126,7 @@ export function PlanCard({
             {isSubscribing ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            {plan.tier === 'free' ? 'Free Plan' : `Upgrade to ${plan.name}`}
+            {getTierButtonText(plan.tier, isActive)}
           </Button>
         )}
       </CardFooter>
