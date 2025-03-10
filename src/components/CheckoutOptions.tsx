@@ -28,18 +28,21 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
   const [emailError, setEmailError] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [stripePriceId, setStripePriceId] = useState("");
+  const [lastPaymentMethod, setLastPaymentMethod] = useState<"stripe" | "paypal" | null>(null);
 
   useEffect(() => {
     const initializeCheckout = async () => {
       try {
         setIsInitializing(true);
+        setPaymentError("");
         const priceId = await fetchStripePriceId();
         setStripePriceId(priceId);
       } catch (error) {
         console.error("Failed to initialize checkout:", error);
+        setPaymentError("Unable to initialize the checkout process. Please refresh the page or try again later.");
         toast({
-          title: "Error",
-          description: "Unable to initialize checkout. Please try again later.",
+          title: "Checkout Error",
+          description: "There was a problem initializing the checkout. Please try again later.",
           variant: "destructive",
         });
       } finally {
@@ -56,6 +59,7 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
     }
 
     setPaymentError("");
+    setLastPaymentMethod("stripe");
     setIsLoadingStripe(true);
     await initiateStripeCheckout(email, stripePriceId, setIsLoadingStripe, setPaymentError);
   };
@@ -66,8 +70,18 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
     }
 
     setPaymentError("");
+    setLastPaymentMethod("paypal");
     setIsLoadingPayPal(true);
     await initiatePayPalCheckout(email, price, setIsLoadingPayPal, setPaymentError);
+  };
+
+  const handleRetry = () => {
+    setPaymentError("");
+    if (lastPaymentMethod === "stripe") {
+      handleStripeCheckout();
+    } else if (lastPaymentMethod === "paypal") {
+      handlePayPalCheckout();
+    }
   };
 
   if (isInitializing) {
@@ -76,7 +90,11 @@ export function CheckoutOptions({ price, productName }: CheckoutOptionsProps) {
 
   return (
     <div className="space-y-4">
-      <PaymentError error={paymentError} />
+      <PaymentError 
+        error={paymentError} 
+        onRetry={paymentError ? handleRetry : undefined}
+      />
+      
       <EmailInput 
         email={email} 
         setEmail={setEmail} 

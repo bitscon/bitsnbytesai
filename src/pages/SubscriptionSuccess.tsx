@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle, ArrowRight, AlertCircle, RefreshCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function SubscriptionSuccess() {
   const { user } = useAuth();
@@ -20,90 +21,82 @@ export default function SubscriptionSuccess() {
   const [isProcessing, setIsProcessing] = useState(true);
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isRetrying, setIsRetrying] = useState(false);
+  
+  const verifySubscription = async () => {
+    try {
+      setIsRetrying(true);
+      setIsProcessing(true);
+      setErrorMessage('');
+      
+      const queryParams = new URLSearchParams(location.search);
+      const sessionId = queryParams.get('session_id');
+      
+      if (!sessionId) {
+        setErrorMessage("No subscription information found. The checkout session ID is missing.");
+        setIsSuccessful(false);
+        return;
+      }
+      
+      if (!user) {
+        setErrorMessage("You must be logged in to verify your subscription.");
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+      
+      const customerId = sessionStorage.getItem('stripe_customer_id');
+      
+      // Verify the subscription with the session ID
+      const { data, error } = await supabase.functions.invoke('verify-subscription', {
+        body: { 
+          sessionId,
+          userId: user.id,
+          customerId
+        }
+      });
+      
+      if (error) {
+        console.error('Error verifying subscription:', error);
+        setErrorMessage(`Verification failed: ${error.message || "Unknown error"}`);
+        setIsSuccessful(false);
+        return;
+      }
+      
+      if (!data || !data.success) {
+        console.error('Subscription verification failed:', data);
+        setErrorMessage(data?.message || "Subscription verification failed. Please contact support.");
+        setIsSuccessful(false);
+        return;
+      }
+      
+      // Update subscription data
+      await fetchUserSubscription();
+      
+      setSubscriptionTier(data.tier || 'Pro');
+      setIsSuccessful(true);
+      
+      toast({
+        title: "Success!",
+        description: `Your ${data.tier || 'Pro'} subscription is now active.`,
+      });
+    } catch (error: any) {
+      console.error('Error in subscription verification:', error);
+      setErrorMessage(`Verification error: ${error.message || "An unexpected error occurred"}`);
+      setIsSuccessful(false);
+      
+      toast({
+        title: "Verification Error",
+        description: "There was a problem verifying your subscription. Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      setIsRetrying(false);
+    }
+  };
   
   useEffect(() => {
-    const verifySubscription = async () => {
-      try {
-        const queryParams = new URLSearchParams(location.search);
-        const sessionId = queryParams.get('session_id');
-        
-        if (!sessionId) {
-          toast({
-            title: "Error",
-            description: "No subscription information found.",
-            variant: "destructive",
-          });
-          setTimeout(() => navigate('/subscription'), 2000);
-          return;
-        }
-        
-        if (!user) {
-          toast({
-            title: "Error",
-            description: "You must be logged in to verify your subscription.",
-            variant: "destructive",
-          });
-          setTimeout(() => navigate('/login'), 2000);
-          return;
-        }
-        
-        const customerId = sessionStorage.getItem('stripe_customer_id');
-        sessionStorage.removeItem('stripe_customer_id');
-        
-        // Verify the subscription with the session ID
-        const { data, error } = await supabase.functions.invoke('verify-subscription', {
-          body: { 
-            sessionId,
-            userId: user.id,
-            customerId
-          }
-        });
-        
-        if (error) {
-          console.error('Error verifying subscription:', error);
-          toast({
-            title: "Error",
-            description: "Failed to verify subscription. Please contact support.",
-            variant: "destructive",
-          });
-          setIsSuccessful(false);
-          return;
-        }
-        
-        if (!data.success) {
-          console.error('Subscription verification failed:', data);
-          toast({
-            title: "Error",
-            description: data.message || "Subscription verification failed.",
-            variant: "destructive",
-          });
-          setIsSuccessful(false);
-          return;
-        }
-        
-        // Update subscription data
-        await fetchUserSubscription();
-        
-        setSubscriptionTier(data.tier || 'Pro');
-        setIsSuccessful(true);
-        
-        toast({
-          title: "Success!",
-          description: `Your ${data.tier || 'Pro'} subscription is now active.`,
-        });
-      } catch (error) {
-        console.error('Error in subscription verification:', error);
-        toast({
-          title: "Error",
-          description: "An unexpected error occurred. Please contact support.",
-          variant: "destructive",
-        });
-        setIsSuccessful(false);
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-    
     verifySubscription();
   }, [location.search, user, navigate, toast, fetchUserSubscription]);
   
@@ -151,14 +144,40 @@ export default function SubscriptionSuccess() {
               ) : (
                 <>
                   <div className="mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6">
-                    <svg className="h-8 w-8 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                    <AlertCircle className="h-8 w-8 text-amber-600" />
                   </div>
                   <h1 className="text-2xl font-bold mb-2">Verification Issue</h1>
+                  
+                  {errorMessage && (
+                    <Alert variant="destructive" className="mb-4 text-left">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Error</AlertTitle>
+                      <AlertDescription>{errorMessage}</AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <p className="text-muted-foreground mb-4">
-                    We couldn't verify your subscription. If you believe this is an error, please contact our support team.
+                    We couldn't verify your subscription. You can try again or contact our support team for assistance.
                   </p>
+                  
+                  <Button 
+                    onClick={verifySubscription} 
+                    variant="outline" 
+                    disabled={isRetrying}
+                    className="mb-4"
+                  >
+                    {isRetrying ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Retrying...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Try Again
+                      </>
+                    )}
+                  </Button>
                 </>
               )}
             </CardContent>
