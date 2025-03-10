@@ -30,7 +30,7 @@ export default function AdminSubscriptionPlans() {
         .order('price_monthly', { ascending: true });
       
       if (error) throw new Error(error.message);
-      return data as SubscriptionPlan[];
+      return data as unknown as SubscriptionPlan[]; // Use type assertion to fix the error
     }
   });
   

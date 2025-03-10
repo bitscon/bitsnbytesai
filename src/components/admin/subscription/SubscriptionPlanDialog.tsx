@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -52,18 +51,22 @@ export default function SubscriptionPlanDialog({
     if (!plan?.features) return [{ description: '' }];
     
     if (Array.isArray(plan.features)) {
-      return plan.features;
+      return plan.features.map(f => typeof f === 'object' && f.description ? f : { description: String(f) });
     }
     
-    return Object.values(plan.features).map(feature => {
-      if (typeof feature === 'string') {
-        return { description: feature };
-      }
-      if (typeof feature === 'object' && feature.description) {
-        return { description: feature.description };
-      }
-      return { description: '' };
-    });
+    if (typeof plan.features === 'object' && !Array.isArray(plan.features)) {
+      return Object.entries(plan.features).map(([_, value]) => {
+        if (typeof value === 'string') {
+          return { description: value };
+        }
+        if (typeof value === 'object' && value && 'description' in value) {
+          return { description: String(value.description) };
+        }
+        return { description: '' };
+      });
+    }
+    
+    return [{ description: '' }];
   };
   
   const form = useForm<PlanFormValues>({
@@ -79,7 +82,6 @@ export default function SubscriptionPlanDialog({
     }
   });
   
-  // Reset form when plan changes
   useEffect(() => {
     if (open) {
       form.reset({
@@ -96,19 +98,22 @@ export default function SubscriptionPlanDialog({
   
   const savePlanMutation = useMutation({
     mutationFn: async (values: PlanFormValues) => {
-      // Convert features array to object
       const featuresObject: Record<string, { description: string }> = {};
       values.features.forEach((feature, index) => {
         featuresObject[`feature${index + 1}`] = { description: feature.description };
       });
       
       const planData = {
-        ...values,
-        features: featuresObject
+        name: values.name,
+        tier: values.tier,
+        price_monthly: values.price_monthly,
+        price_yearly: values.price_yearly,
+        features: featuresObject,
+        stripe_price_id_monthly: values.stripe_price_id_monthly || null,
+        stripe_price_id_yearly: values.stripe_price_id_yearly || null
       };
       
       if (isEditMode && plan) {
-        // Update existing plan
         const { error } = await supabase
           .from('subscription_plans')
           .update(planData)
@@ -117,7 +122,6 @@ export default function SubscriptionPlanDialog({
         if (error) throw new Error(error.message);
         return 'updated';
       } else {
-        // Create new plan
         const { error } = await supabase
           .from('subscription_plans')
           .insert([planData]);

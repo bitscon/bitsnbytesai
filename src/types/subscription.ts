@@ -9,10 +9,10 @@ export interface SubscriptionPlan {
   price_yearly: number;
   stripe_price_id_monthly?: string;
   stripe_price_id_yearly?: string;
-  features: {
-    [key: string]: any;
-    description: string;
-  };
+  stripe_product_id?: string;
+  features: any; // Changed from the specific shape to allow for Json from database
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserSubscription {
