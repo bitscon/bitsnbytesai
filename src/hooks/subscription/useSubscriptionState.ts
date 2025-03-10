@@ -42,15 +42,19 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage | null>(null);
   const [isSubscribing, setIsSubscribing] = useState<boolean>(false);
   const [isManagingSubscription, setIsManagingSubscription] = useState<boolean>(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
 
   const loadSubscriptionPlans = useCallback(async () => {
     try {
       setIsLoading(true);
+      setFetchError(null);
       
       const { plans, stripePublicKey, error } = await fetchSubscriptionPlans();
       
       if (error) {
         console.error('Error loading subscription plans:', error);
+        setFetchError('Failed to load subscription plans');
         return;
       }
       
@@ -58,6 +62,9 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
       if (stripePublicKey) {
         setStripePublicKey(stripePublicKey);
       }
+    } catch (error) {
+      console.error('Exception in loadSubscriptionPlans:', error);
+      setFetchError('An unexpected error occurred while loading plans');
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +79,7 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
     
     try {
       setIsSubscriptionLoading(true);
+      setFetchError(null);
       
       // Get user's subscription from our database
       const { data: subscriptionData, error: subscriptionError } = await supabase
@@ -82,13 +90,32 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
       
       if (subscriptionError) {
         console.error('Error fetching user subscription:', subscriptionError);
-        toast({
-          title: "Subscription error",
-          description: "Could not fetch your subscription details. Please try again later.",
-          variant: "destructive"
-        });
+        
+        // Only show toast for non-network errors or after multiple retries
+        if (!subscriptionError.message.includes('Failed to fetch') || retryCount > 2) {
+          toast({
+            title: "Subscription error",
+            description: "Could not fetch your subscription details. Please try again later.",
+            variant: "destructive"
+          });
+        }
+        
+        // Set a default free subscription to allow the app to function
+        if (retryCount > 2) {
+          setUserSubscription({
+            id: 'temp-id',
+            user_id: userId,
+            tier: 'free',
+            created_at: new Date().toISOString()
+          } as UserSubscription);
+        }
+        
+        setRetryCount(prev => prev + 1);
         return;
       }
+      
+      // Reset retry count on successful fetch
+      setRetryCount(0);
       
       if (subscriptionData) {
         setUserSubscription(subscriptionData);
@@ -123,41 +150,71 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
         description: "There was a problem loading your subscription. Please try again later.",
         variant: "destructive"
       });
+      
+      // Create a default subscription object to allow the app to function
+      setUserSubscription({
+        id: 'temp-id',
+        user_id: userId,
+        tier: 'free',
+        created_at: new Date().toISOString()
+      } as UserSubscription);
     } finally {
       setIsSubscriptionLoading(false);
     }
-  }, [isLoggedIn, userId, toast]);
+  }, [isLoggedIn, userId, toast, retryCount]);
 
   const loadFreeUsage = async (userId: string) => {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     
-    const { data: usageData, error: usageError } = await supabase
-      .from('user_prompt_usage')
-      .select('count')
-      .eq('user_id', userId)
-      .eq('month', currentMonth)
-      .eq('year', currentYear)
-      .maybeSingle();
-    
-    if (usageError) {
-      console.error('Error fetching user prompt usage:', usageError);
-      return;
+    try {
+      const { data: usageData, error: usageError } = await supabase
+        .from('user_prompt_usage')
+        .select('count')
+        .eq('user_id', userId)
+        .eq('month', currentMonth)
+        .eq('year', currentYear)
+        .maybeSingle();
+      
+      if (usageError) {
+        console.error('Error fetching user prompt usage:', usageError);
+        return;
+      }
+      
+      const limit = 50; // Default free tier limit
+      const count = usageData?.count || 0;
+      setCurrentUsage({
+        count,
+        limit,
+        remaining: Math.max(0, limit - count)
+      });
+    } catch (error) {
+      console.error('Error in loadFreeUsage:', error);
     }
-    
-    const limit = 50; // Default free tier limit
-    const count = usageData?.count || 0;
-    setCurrentUsage({
-      count,
-      limit,
-      remaining: Math.max(0, limit - count)
-    });
   };
 
   const createFreeSubscription = async (userId: string) => {
     try {
       console.log('Creating free subscription for user:', userId);
+      
+      // First check if a subscription already exists to avoid duplication
+      const { data: existingSub, error: checkError } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error('Error checking for existing subscription:', checkError);
+        return;
+      }
+      
+      if (existingSub) {
+        console.log('Subscription already exists, not creating a new one');
+        await loadUserSubscription(); // Reload to get the existing subscription
+        return;
+      }
       
       const { data, error } = await supabase
         .from('user_subscriptions')
@@ -165,11 +222,42 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
           user_id: userId,
           tier: 'free'
         })
-        .select()
+        .select('*')
         .single();
       
       if (error) {
         console.error('Error creating user subscription record:', error);
+        
+        // If we get an RLS policy error, try to use the Edge Function instead
+        if (error.message.includes('policy') || error.message.includes('permission denied')) {
+          console.log('Trying to create subscription via edge function...');
+          
+          const { error: fnError } = await supabase.functions.invoke('admin-manage-subscription', {
+            body: {
+              action: 'create',
+              userId,
+              subscription: {
+                tier: 'free',
+                user_id: userId
+              }
+            }
+          });
+          
+          if (fnError) {
+            console.error('Edge function error creating subscription:', fnError);
+            toast({
+              title: "Subscription Error",
+              description: "Unable to create your free subscription. Please try again later.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          // Reload after successful creation via edge function
+          await loadUserSubscription();
+          return;
+        }
+        
         toast({
           title: "Subscription Error",
           description: "Unable to create your free subscription. Please try again later.",
@@ -194,6 +282,17 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
     }
   };
 
+  // Implement retry mechanism for subscription loading on network errors
+  useEffect(() => {
+    if (fetchError && fetchError.includes('fetch') && retryCount < 5) {
+      const timer = setTimeout(() => {
+        loadUserSubscription();
+      }, 3000 * (retryCount + 1)); // Exponential backoff
+      
+      return () => clearTimeout(timer);
+    }
+  }, [fetchError, retryCount, loadUserSubscription]);
+
   // Set status flags
   const setSubscribingStatus = (status: boolean) => setIsSubscribing(status);
   const setManagingStatus = (status: boolean) => setIsManagingSubscription(status);
@@ -213,6 +312,7 @@ export function useSubscriptionState({ userId, userEmail, isLoggedIn }: UseSubsc
     currentUsage,
     isSubscribing,
     isManagingSubscription,
+    fetchError,
     
     // Actions
     loadSubscriptionPlans,

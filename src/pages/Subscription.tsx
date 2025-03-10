@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSubscription } from '@/hooks/use-subscription';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { SubscriptionHeader } from '@/components/subscription/SubscriptionHeader';
 import { SubscriptionDetails } from '@/components/subscription/SubscriptionDetails';
 import { BillingIntervalSelector } from '@/components/subscription/BillingIntervalSelector';
@@ -10,9 +10,11 @@ import { SubscriptionPageWrapper } from '@/components/subscription/SubscriptionP
 import { useAuth } from '@/context/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Subscription() {
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+  const [retryCount, setRetryCount] = useState<number>(0);
   const { isLoggedIn, user } = useAuth();
   const { toast } = useToast();
   
@@ -30,6 +32,7 @@ export default function Subscription() {
     changeSubscriptionError,
     changeSubscriptionSuccess,
     loadUserSubscription,
+    fetchError,
     subscribe,
     manageSubscription,
     changeSubscription,
@@ -39,13 +42,13 @@ export default function Subscription() {
 
   // Ensure subscription data is loaded properly
   useEffect(() => {
-    if (isLoggedIn && user && !subscription) {
+    if (isLoggedIn && user) {
       loadUserSubscription();
     }
-  }, [isLoggedIn, user, subscription, loadUserSubscription]);
+  }, [isLoggedIn, user, loadUserSubscription]);
 
   // Calculate average prices for the billing selector
-  const visiblePlans = plans.filter(plan => plan.is_visible !== false);
+  const visiblePlans = plans?.filter(plan => plan.is_visible !== false) || [];
   const avgMonthlyPrice = visiblePlans.length 
     ? visiblePlans.reduce((sum, plan) => sum + plan.price_monthly, 0) / visiblePlans.length 
     : 0;
@@ -82,6 +85,83 @@ export default function Subscription() {
     await subscribe(priceId, billingInterval);
   };
 
+  const handleRetryLoad = () => {
+    setRetryCount(prev => prev + 1);
+    loadUserSubscription();
+    toast({
+      title: "Retrying",
+      description: "Attempting to reload subscription data..."
+    });
+  };
+
+  const renderContent = () => {
+    if (isLoading || isSubscriptionLoading) {
+      return (
+        <div className="flex justify-center my-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (fetchError) {
+      return (
+        <Alert variant="destructive" className="my-8">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error loading subscription data</AlertTitle>
+          <AlertDescription className="space-y-4">
+            <p>There was a problem loading your subscription information. This might be due to network issues or server problems.</p>
+            <Button 
+              variant="outline" 
+              onClick={handleRetryLoad} 
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <>
+        {subscription && (
+          <SubscriptionDetails
+            subscription={subscription}
+            stripeSubscription={stripeSubscription}
+            cancelAtPeriodEnd={cancelAtPeriodEnd}
+            currentUsage={currentUsage}
+            isManagingSubscription={isManagingSubscription}
+            isChangingSubscription={isChangingSubscription}
+            manageSubscription={manageSubscription}
+            changeSubscription={(planId, interval) => changeSubscription(planId, interval)}
+            getTierName={getTierName}
+            formatDate={formatDate}
+            plans={plans}
+            changeSubscriptionError={changeSubscriptionError}
+            changeSubscriptionSuccess={changeSubscriptionSuccess}
+          />
+        )}
+        
+        <BillingIntervalSelector 
+          billingInterval={billingInterval}
+          setBillingInterval={setBillingInterval}
+          monthlyPrice={avgMonthlyPrice}
+          yearlyPrice={avgYearlyPrice}
+        />
+        
+        <PlansList
+          plans={visiblePlans}
+          billingInterval={billingInterval}
+          currentTier={subscription?.tier}
+          isSubscribing={isSubscribing}
+          onSubscribe={handleSubscribe}
+          mode="new"
+        />
+      </>
+    );
+  };
+
   return (
     <SubscriptionPageWrapper>
       <SubscriptionHeader />
@@ -96,47 +176,7 @@ export default function Subscription() {
         </div>
       )}
 
-      {isLoggedIn && (isLoading || isSubscriptionLoading) ? (
-        <div className="flex justify-center my-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <>
-          {subscription && (
-            <SubscriptionDetails
-              subscription={subscription}
-              stripeSubscription={stripeSubscription}
-              cancelAtPeriodEnd={cancelAtPeriodEnd}
-              currentUsage={currentUsage}
-              isManagingSubscription={isManagingSubscription}
-              isChangingSubscription={isChangingSubscription}
-              manageSubscription={manageSubscription}
-              changeSubscription={(planId, interval) => changeSubscription(planId, interval)}
-              getTierName={getTierName}
-              formatDate={formatDate}
-              plans={plans}
-              changeSubscriptionError={changeSubscriptionError}
-              changeSubscriptionSuccess={changeSubscriptionSuccess}
-            />
-          )}
-          
-          <BillingIntervalSelector 
-            billingInterval={billingInterval}
-            setBillingInterval={setBillingInterval}
-            monthlyPrice={avgMonthlyPrice}
-            yearlyPrice={avgYearlyPrice}
-          />
-          
-          <PlansList
-            plans={visiblePlans}
-            billingInterval={billingInterval}
-            currentTier={subscription?.tier}
-            isSubscribing={isSubscribing}
-            onSubscribe={handleSubscribe}
-            mode="new"
-          />
-        </>
-      )}
+      {isLoggedIn && renderContent()}
     </SubscriptionPageWrapper>
   );
 }

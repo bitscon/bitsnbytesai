@@ -12,11 +12,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { userId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { userId, subscriptionId } = body;
 
-    if (!userId) {
+    if (!userId && !subscriptionId) {
       return new Response(
-        JSON.stringify({ error: "User ID is required" }),
+        JSON.stringify({ error: "Either User ID or Subscription ID is required" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -24,17 +25,22 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log(`Fetching subscription for ${userId ? `user: ${userId}` : `subscription: ${subscriptionId}`}`);
+    
+    // Query condition based on what we have
+    const queryCondition = userId ? { user_id: userId } : { stripe_subscription_id: subscriptionId };
+
     // Get the user's subscription
     const { data: subscription, error: subscriptionError } = await supabaseAdmin
       .from('user_subscriptions')
       .select('*')
-      .eq('user_id', userId)
+      .eq(userId ? 'user_id' : 'stripe_subscription_id', userId || subscriptionId)
       .maybeSingle();
 
     if (subscriptionError) {
       console.error(`Error retrieving subscription: ${subscriptionError.message}`);
       return new Response(
-        JSON.stringify({ error: "Failed to retrieve subscription details" }),
+        JSON.stringify({ error: "Failed to retrieve subscription details", details: subscriptionError.message }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -44,6 +50,34 @@ const handler = async (req: Request): Promise<Response> => {
 
     let stripeSubscription = null;
     let cancelAtPeriodEnd = false;
+    let fallbackSubscription = null;
+
+    // If no subscription found, provide a default free tier one for the user
+    if (!subscription && userId) {
+      console.log(`No subscription found for user ${userId}, creating a default free one`);
+      fallbackSubscription = {
+        tier: 'free',
+        user_id: userId,
+      };
+      
+      // Try to create the subscription in the database
+      try {
+        const { data: newSub, error: createError } = await supabaseAdmin
+          .from('user_subscriptions')
+          .insert(fallbackSubscription)
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error(`Error creating default subscription: ${createError.message}`);
+        } else if (newSub) {
+          console.log(`Created default subscription for user ${userId}`);
+          fallbackSubscription = newSub;
+        }
+      } catch (e) {
+        console.error(`Exception creating default subscription: ${e.message}`);
+      }
+    }
 
     // If user has a Stripe subscription, get additional details
     if (subscription?.stripe_subscription_id) {
@@ -83,37 +117,43 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Get current usage for free tier users
     let currentUsage = null;
-    if (!subscription || subscription.tier === 'free') {
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
-      const currentYear = currentDate.getFullYear();
+    if ((!subscription && fallbackSubscription) || (subscription?.tier === 'free')) {
+      const userIdToUse = userId || subscription?.user_id;
+      
+      if (userIdToUse) {
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
+        const currentYear = currentDate.getFullYear();
 
-      const { data: usage, error: usageError } = await supabaseAdmin
-        .from('user_prompt_usage')
-        .select('count')
-        .eq('user_id', userId)
-        .eq('month', currentMonth)
-        .eq('year', currentYear)
-        .maybeSingle();
+        const { data: usage, error: usageError } = await supabaseAdmin
+          .from('user_prompt_usage')
+          .select('count')
+          .eq('user_id', userIdToUse)
+          .eq('month', currentMonth)
+          .eq('year', currentYear)
+          .maybeSingle();
 
-      if (usageError) {
-        console.error(`Error retrieving usage: ${usageError.message}`);
-      } else {
-        currentUsage = {
-          count: usage?.count || 0,
-          limit: 50, // Free tier limit
-          remaining: 50 - (usage?.count || 0)
-        };
+        if (usageError) {
+          console.error(`Error retrieving usage: ${usageError.message}`);
+        } else {
+          currentUsage = {
+            count: usage?.count || 0,
+            limit: 50, // Free tier limit
+            remaining: 50 - (usage?.count || 0)
+          };
+        }
       }
     }
 
     // Get the user's plan details
     let planDetails = null;
-    if (subscription) {
+    const tierToUse = subscription?.tier || fallbackSubscription?.tier;
+    
+    if (tierToUse) {
       const { data: plan, error: planError } = await supabaseAdmin
         .from('subscription_plans')
         .select('*')
-        .eq('tier', subscription.tier)
+        .eq('tier', tierToUse)
         .single();
 
       if (planError) {
@@ -125,7 +165,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(
       JSON.stringify({
-        subscription: subscription || { tier: 'free' },
+        subscription: subscription || fallbackSubscription || { tier: 'free' },
         stripeSubscription,
         cancelAtPeriodEnd,
         currentUsage,
