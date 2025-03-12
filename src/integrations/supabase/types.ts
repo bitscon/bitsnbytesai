@@ -223,6 +223,39 @@ export type Database = {
           },
         ]
       }
+      stripe_events: {
+        Row: {
+          created_at: string | null
+          data: Json
+          error: string | null
+          id: string
+          last_error: string | null
+          processed_at: string | null
+          retry_count: number | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          error?: string | null
+          id: string
+          last_error?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          error?: string | null
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
       subscription_events: {
         Row: {
           created_at: string | null
@@ -259,11 +292,13 @@ export type Database = {
           features: Json
           id: string
           is_visible: boolean
+          metadata: Json | null
           name: string
           price_monthly: number
           price_yearly: number
           stripe_price_id_monthly: string | null
           stripe_price_id_yearly: string | null
+          stripe_product_id: string | null
           tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
         }
@@ -272,11 +307,13 @@ export type Database = {
           features: Json
           id?: string
           is_visible?: boolean
+          metadata?: Json | null
           name: string
           price_monthly: number
           price_yearly: number
           stripe_price_id_monthly?: string | null
           stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
           tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
@@ -285,11 +322,13 @@ export type Database = {
           features?: Json
           id?: string
           is_visible?: boolean
+          metadata?: Json | null
           name?: string
           price_monthly?: number
           price_yearly?: number
           stripe_price_id_monthly?: string | null
           stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
           tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
@@ -396,38 +435,56 @@ export type Database = {
       }
       user_subscriptions: {
         Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
+          ended_at: string | null
           id: string
           is_manually_created: boolean | null
+          status: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           tier: Database["public"]["Enums"]["subscription_tier"]
+          trial_end: string | null
+          trial_start: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          ended_at?: string | null
           id?: string
           is_manually_created?: boolean | null
+          status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          ended_at?: string | null
           id?: string
           is_manually_created?: boolean | null
+          status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -435,7 +492,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_subscriptions: {
+        Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          id: string | null
+          is_manually_created: boolean | null
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"] | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string | null
+          is_manually_created?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"] | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string | null
+          is_manually_created?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"] | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_active_theme: {
@@ -453,6 +566,15 @@ export type Database = {
           saturation: number
           updated_at: string
         }[]
+      }
+      get_subscription_status: {
+        Args: {
+          period_end: string
+          cancel_at_period_end: boolean
+          ended_at: string
+          status: string
+        }
+        Returns: string
       }
       get_user_subscription_tier: {
         Args: {
@@ -490,6 +612,12 @@ export type Database = {
       is_manual_subscription: {
         Args: {
           user_uuid: string
+        }
+        Returns: boolean
+      }
+      is_subscription_active: {
+        Args: {
+          subscription_record: unknown
         }
         Returns: boolean
       }
