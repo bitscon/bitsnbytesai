@@ -11,7 +11,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
     // Fetch current subscription tier distribution
     const { data: tierDistribution, error: tierError } = await supabaseAdmin
       .from('user_subscriptions')
-      .select('tier, count')
+      .select('tier, count(*)')
       .groupBy('tier');
     
     if (tierError) {
