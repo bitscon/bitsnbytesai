@@ -63,7 +63,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const customerEmail = session.customer_email || session.metadata?.email;
+    // Check for pending user details in metadata
+    const pendingEmail = session.metadata?.pendingUserEmail;
+    const pendingFullName = session.metadata?.pendingUserFullName;
+    const pendingPassword = session.metadata?.pendingUserPassword;
+    
+    // Fallback to customer email if pending data not found
+    const customerEmail = pendingEmail || session.customer_email || session.metadata?.email;
 
     if (!customerEmail) {
       console.error("Customer email not found in session");
@@ -90,8 +96,14 @@ const handler = async (req: Request): Promise<Response> => {
     } else {
       // Create a new user account
       console.log(`Creating new user for email: ${customerEmail}`);
-      const password = generateRandomPassword();
-      const { user, error: userError } = await createUserAccount(customerEmail, password);
+      
+      // Use provided credentials if available, otherwise generate password
+      const password = pendingPassword || generateRandomPassword();
+      const fullName = pendingFullName || customerEmail.split('@')[0];
+      
+      const { user, error: userError } = await createUserAccount(customerEmail, password, { 
+        fullName: fullName 
+      });
       
       if (userError || !user) {
         console.error(`Failed to create user account: ${userError?.message}`);
@@ -101,9 +113,12 @@ const handler = async (req: Request): Promise<Response> => {
       userId = user.id;
       isNewUser = true;
 
-      // Send welcome email with login credentials
-      await sendWelcomeEmail(customerEmail, password);
-      console.log(`Welcome email sent to: ${customerEmail}`);
+      // Only send welcome email if we had to generate a password
+      // (meaning the user didn't provide one during checkout)
+      if (!pendingPassword) {
+        await sendWelcomeEmail(customerEmail, password);
+        console.log(`Welcome email sent to: ${customerEmail}`);
+      }
     }
 
     // Record the purchase in the database

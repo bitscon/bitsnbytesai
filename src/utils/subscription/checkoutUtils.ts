@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { invokeSupabaseFunction, storeSessionData, clearSessionData } from './paymentUtils';
+import { invokeSupabaseFunction, storeSessionData, clearSessionData, getSessionData } from './paymentUtils';
 
 /**
  * Creates and redirects to a Stripe checkout session
@@ -10,7 +10,12 @@ export async function createStripeCheckout(
   priceId: string, 
   interval: 'month' | 'year',
   userId?: string,
-  customerId?: string | null
+  customerId?: string | null,
+  pendingUserData?: {
+    email: string;
+    fullName: string;
+    password: string;
+  }
 ): Promise<{ success: boolean; message?: string }> {
   if (!priceId) {
     return { success: false, message: 'No price ID provided' };
@@ -21,29 +26,46 @@ export async function createStripeCheckout(
     const successUrl = `${window.location.origin}/subscription/success`;
     const cancelUrl = `${window.location.origin}/subscription`;
     
-    // Get user email from Supabase
-    const { data: { user } } = await supabase.auth.getUser();
-    const userEmail = user?.email;
+    // For new user flow, use the pending user data
+    // For existing user flow, get user email from Supabase
+    let userEmail: string | undefined;
     
-    if (!userEmail) {
-      toast({
-        title: 'Error',
-        description: 'Please log in to subscribe',
-        variant: 'destructive',
-      });
-      return { success: false, message: 'User not logged in' };
+    if (pendingUserData) {
+      userEmail = pendingUserData.email;
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      userEmail = user?.email;
+      
+      if (!userEmail) {
+        toast({
+          title: 'Error',
+          description: 'Please log in to subscribe',
+          variant: 'destructive',
+        });
+        return { success: false, message: 'User not logged in' };
+      }
     }
     
-    // Call the Supabase Edge Function to create a checkout session
-    const result = await invokeSupabaseFunction('create-checkout-session', {
+    // Prepare the request body
+    const requestBody: any = {
       priceId,
       interval,
       email: userEmail,
       success_url: successUrl,
       cancel_url: cancelUrl,
       customerId,
-      userId: userId || user?.id
-    });
+      userId: userId || "pending" // Will be updated after user creation
+    };
+    
+    // Add pending user data if provided
+    if (pendingUserData) {
+      requestBody.pendingUserEmail = pendingUserData.email;
+      requestBody.pendingUserFullName = pendingUserData.fullName;
+      requestBody.pendingUserPassword = pendingUserData.password;
+    }
+    
+    // Call the Supabase Edge Function to create a checkout session
+    const result = await invokeSupabaseFunction('create-checkout-session', requestBody);
     
     if (!result.success) {
       toast({
@@ -95,10 +117,10 @@ export async function createStripeCheckout(
  */
 export async function verifySubscription(
   sessionId: string,
-  userId: string
+  userId?: string
 ): Promise<{ success: boolean; message?: string; data?: any }> {
   try {
-    const customerId = sessionStorage.getItem('stripe_customer_id');
+    const customerId = getSessionData('stripe_customer_id');
     
     const result = await invokeSupabaseFunction('verify-subscription', {
       sessionId,
@@ -113,6 +135,9 @@ export async function verifySubscription(
     // Clear session storage after successful verification
     clearSessionData('stripe_customer_id');
     clearSessionData('checkout_session_id');
+    clearSessionData('pending_user_email');
+    clearSessionData('pending_user_fullname');
+    clearSessionData('pending_user_password');
     
     return { success: true, data: result.data };
     
@@ -128,4 +153,19 @@ export async function verifySubscription(
 export function getCheckoutSessionIdFromUrl(): string | null {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get('session_id');
+}
+
+/**
+ * Gets pending user data from session storage
+ */
+export function getPendingUserData(): { email: string; fullName: string; password: string } | null {
+  const email = getSessionData('pending_user_email');
+  const fullName = getSessionData('pending_user_fullname');
+  const password = getSessionData('pending_user_password');
+  
+  if (email && fullName && password) {
+    return { email, fullName, password };
+  }
+  
+  return null;
 }

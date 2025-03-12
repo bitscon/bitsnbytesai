@@ -45,18 +45,31 @@ export function PricingSection() {
     loadPlans();
   }, []);
 
-  const handlePlanSelection = () => {
+  const handlePlanSelection = (planId: string) => {
+    const selectedPlan = plans.find(plan => plan.id === planId);
+    if (!selectedPlan) return;
+    
+    const planPrice = billingInterval === 'month' 
+      ? selectedPlan.price_monthly 
+      : selectedPlan.price_yearly;
+      
+    const priceId = billingInterval === 'month' 
+      ? selectedPlan.stripe_price_id_monthly 
+      : selectedPlan.stripe_price_id_yearly;
+    
     if (user) {
       navigate("/subscription");
-      return;
+    } else {
+      navigate("/subscription-signup", { 
+        state: { 
+          planId,
+          planName: selectedPlan.name,
+          planPrice: planPrice,
+          priceId: priceId,
+          billingInterval
+        }
+      });
     }
-    
-    navigate("/signup", { 
-      state: { 
-        returnTo: "/subscription",
-        source: "pricing" 
-      }
-    });
   };
 
   const starterPlan = plans.find(plan => plan.tier === 'pro') || (plans.length > 1 ? plans[1] : plans[0]);
@@ -151,7 +164,7 @@ export function PricingSection() {
                 
                 <Button 
                   className="w-full" 
-                  onClick={handlePlanSelection}
+                  onClick={() => handlePlanSelection(starterPlan?.id || '')}
                 >
                   {user ? 'Choose Plan' : 'Get Started'}
                 </Button>

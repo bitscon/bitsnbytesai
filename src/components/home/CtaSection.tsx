@@ -13,8 +13,8 @@ export function CtaSection() {
     if (user) {
       navigate("/subscription");
     } else {
-      const pricingSection = document.getElementById('pricing');
-      pricingSection?.scrollIntoView({ behavior: 'smooth' });
+      // For demo purposes, go to subscription signup page with demo flag
+      navigate("/subscription-signup", { state: { demo: true } });
     }
   };
   

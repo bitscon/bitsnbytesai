@@ -1,3 +1,4 @@
+
 import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -14,6 +15,7 @@ import Account from "./pages/Account";
 import SavedPrompts from "./pages/SavedPrompts";
 import NotFound from "./pages/NotFound";
 import Subscription from "./pages/Subscription";
+import SubscriptionSignup from "./pages/SubscriptionSignup";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -43,6 +45,7 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/subscription-signup" element={<SubscriptionSignup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
@@ -66,7 +69,7 @@ function App() {
             />
             <Route
               path="/subscription/success"
-              element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>}
+              element={<SubscriptionSuccess />}
             />
 
             {/* Admin Routes */}
