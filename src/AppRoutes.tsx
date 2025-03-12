@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/context/theme/ThemeContext';
@@ -7,24 +8,21 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 import AppThemeWrapper from '@/components/AppThemeWrapper';
 
-// Pages
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import DashboardPage from '@/pages/DashboardPage';
-import SettingsPage from '@/pages/SettingsPage';
+// Pages - only importing existing pages
 import AdminDashboard from '@/pages/AdminDashboard';
-import AdminSettings from '@/pages/AdminSettings';
 import AdminPrompts from '@/pages/AdminPrompts';
 import AdminUsers from '@/pages/AdminUsers';
-import AdminTheme from '@/pages/AdminTheme';
 import AdminSubscriptionPlans from '@/pages/AdminSubscriptionPlans';
 import AdminSubscriptionAnalytics from '@/pages/AdminSubscriptionAnalytics';
-import SubscriptionPage from '@/pages/SubscriptionPage';
-import SubscriptionSuccessPage from '@/pages/SubscriptionSuccessPage';
-import SubscriptionCancelPage from '@/pages/SubscriptionCancelPage';
-import SubscriptionManagePage from '@/pages/SubscriptionManagePage';
-import NotFoundPage from '@/pages/NotFoundPage';
+import NotFoundPage from '@/pages/NotFound';
+import Index from '@/pages/Index';
+import Login from '@/pages/Login';
+import SignUp from '@/pages/SignUp';
+import Dashboard from '@/pages/Dashboard';
+import Subscription from '@/pages/Subscription';
+import SubscriptionSuccess from '@/pages/SubscriptionSuccess';
+import AdminThemeSettings from '@/pages/AdminThemeSettings';
+import AdminApiSettings from '@/pages/AdminApiSettings';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -45,26 +43,23 @@ export default function AppRoutes() {
             <AppThemeWrapper>
               <Routes>
                 {/* Public routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<SignUp />} />
                 
                 {/* User routes */}
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 
                 {/* Subscription routes */}
-                <Route path="/subscription" element={<SubscriptionPage />} />
-                <Route path="/subscription/success" element={<SubscriptionSuccessPage />} />
-                <Route path="/subscription/cancel" element={<SubscriptionCancelPage />} />
-                <Route path="/subscription/manage" element={<SubscriptionManagePage />} />
+                <Route path="/subscription" element={<Subscription />} />
+                <Route path="/subscription/success" element={<SubscriptionSuccess />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/settings" element={<AdminSettings />} />
+                <Route path="/admin/settings" element={<AdminApiSettings />} />
                 <Route path="/admin/prompts" element={<AdminPrompts />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/theme" element={<AdminTheme />} />
+                <Route path="/admin/theme" element={<AdminThemeSettings />} />
                 <Route path="/admin/subscription-plans" element={<AdminSubscriptionPlans />} />
                 <Route path="/admin/subscription-analytics" element={<AdminSubscriptionAnalytics />} />
                 
