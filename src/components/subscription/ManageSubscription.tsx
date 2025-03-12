@@ -1,50 +1,52 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useSubscriptionActions } from '@/hooks/subscription/useSubscriptionActions';
-import { appLogger } from '@/utils/logging';
+import { Loader2 } from 'lucide-react';
 
 interface ManageSubscriptionProps {
-  status: string;
-  subscriptionId: string;
+  cancelAtPeriodEnd: boolean;
+  isManagingSubscription: boolean;
+  manageSubscription: (action: 'portal' | 'cancel' | 'reactivate') => Promise<void>;
 }
 
-const ManageSubscription = ({ status, subscriptionId }: ManageSubscriptionProps) => {
-  const { cancelSubscription, reactivateSubscription } = useSubscriptionActions();
-  
-  const handleCancelSubscription = async () => {
-    try {
-      appLogger.info('Canceling subscription', { subscriptionId });
-      await cancelSubscription(subscriptionId);
-    } catch (error) {
-      appLogger.error('Failed to cancel subscription', error as Error, { subscriptionId });
-    }
-  };
-  
-  const handleReactivateSubscription = async () => {
-    try {
-      appLogger.info('Reactivating subscription', { subscriptionId });
-      await reactivateSubscription(subscriptionId);
-    } catch (error) {
-      appLogger.error('Failed to reactivate subscription', error as Error, { subscriptionId });
-    }
-  };
-  
-  if (status === 'active') {
-    return (
-      <Button variant="outline" onClick={handleCancelSubscription} className="mt-2">
-        Cancel Subscription
+export function ManageSubscription({ 
+  cancelAtPeriodEnd, 
+  isManagingSubscription, 
+  manageSubscription 
+}: ManageSubscriptionProps) {
+  return (
+    <div className="flex gap-2 mt-4">
+      {cancelAtPeriodEnd ? (
+        <Button
+          variant="outline"
+          onClick={() => manageSubscription('reactivate')}
+          disabled={isManagingSubscription}
+          className="flex items-center gap-2"
+        >
+          {isManagingSubscription && <Loader2 className="h-4 w-4 animate-spin" />}
+          Resume Subscription
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={() => manageSubscription('cancel')}
+          disabled={isManagingSubscription}
+          className="flex items-center gap-2"
+        >
+          {isManagingSubscription && <Loader2 className="h-4 w-4 animate-spin" />}
+          Cancel Subscription
+        </Button>
+      )}
+      
+      <Button
+        variant="secondary"
+        onClick={() => manageSubscription('portal')}
+        disabled={isManagingSubscription}
+        className="flex items-center gap-2"
+      >
+        {isManagingSubscription && <Loader2 className="h-4 w-4 animate-spin" />}
+        Manage Billing
       </Button>
-    );
-  } else if (status === 'canceled') {
-    return (
-      <Button variant="outline" onClick={handleReactivateSubscription} className="mt-2">
-        Reactivate Subscription
-      </Button>
-    );
-  }
-  
-  return null;
-};
-
-export default ManageSubscription;
+    </div>
+  );
+}

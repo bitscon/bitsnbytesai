@@ -1,260 +1,279 @@
 
 /**
- * Structured logging utility for the frontend application
+ * Application Logging System
+ * 
+ * A centralized logging system for the application that supports different log levels,
+ * structured logging, and context information.
  */
 
-// Log levels in order of severity
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-// Context data to include with each log entry
-export interface LogContext {
-  userId?: string;
-  sessionId?: string;
-  component?: string;
-  path?: string;
-  [key: string]: any;
+// Define log levels
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error'
 }
 
-// Structure of a log entry
+// Log entry structure
 export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
-  context: LogContext;
-  error?: {
-    message: string;
-    stack?: string;
-    code?: string;
-  };
+  context?: Record<string, any>;
+  userId?: string;
+  requestId?: string;
+  duration?: number;
+  tags?: string[];
 }
 
-// Configurable options for the logger
-interface LoggerOptions {
-  minLevel?: LogLevel;
-  captureConsole?: boolean;
-  sendToServer?: boolean;
-  serverEndpoint?: string;
-}
-
-// Default logger options
-const DEFAULT_OPTIONS: LoggerOptions = {
-  minLevel: 'info',
-  captureConsole: true,
-  sendToServer: false
+// Constants for logging
+const LOG_TO_CONSOLE = true;
+const INCLUDE_TIMESTAMP = true;
+const DEFAULT_CONTEXT: Record<string, any> = {
+  application: 'subscription-app',
+  environment: import.meta.env.MODE || 'development',
+  version: import.meta.env.VITE_APP_VERSION || 'dev'
 };
 
-/**
- * Logger class for structured application logging
- */
-export class Logger {
-  private context: LogContext;
-  private options: LoggerOptions;
-  private sessionId: string;
-  
-  constructor(context: LogContext = {}, options: LoggerOptions = {}) {
-    this.context = context;
-    this.options = { ...DEFAULT_OPTIONS, ...options };
-    this.sessionId = context.sessionId || this.generateSessionId();
-    
-    // Set up console capture if enabled
-    if (this.options.captureConsole) {
-      this.captureConsole();
-    }
+// Generate a unique request ID for correlation
+export const generateRequestId = (): string => {
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
+};
+
+// Main logger class
+class AppLogger {
+  private context: Record<string, any> = {};
+  private requestId: string | null = null;
+  private userId: string | null = null;
+
+  constructor() {
+    this.setDefaultContext();
   }
-  
-  /**
-   * Generate a unique session ID for tracking logs across page loads
-   */
-  private generateSessionId(): string {
-    const existingId = typeof window !== 'undefined' ? sessionStorage.getItem('app_log_session_id') : null;
-    
-    if (existingId) {
-      return existingId;
-    }
-    
-    const newId = Math.random().toString(36).substring(2, 15);
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('app_log_session_id', newId);
-    }
-    
-    return newId;
+
+  private setDefaultContext(): void {
+    this.context = { ...DEFAULT_CONTEXT };
   }
-  
-  /**
-   * Captures and redirects console methods to structured logging
-   */
-  private captureConsole() {
-    if (typeof window === 'undefined') return;
-    
-    const originalConsole = {
-      log: console.log,
-      info: console.info,
-      warn: console.warn,
-      error: console.error
-    };
-    
-    // Capture console.log
-    console.log = (...args: any[]) => {
-      this.debug(args[0], { consoleArgs: args.slice(1) });
-      originalConsole.log.apply(console, args);
-    };
-    
-    // Capture console.info
-    console.info = (...args: any[]) => {
-      this.info(args[0], { consoleArgs: args.slice(1) });
-      originalConsole.info.apply(console, args);
-    };
-    
-    // Capture console.warn
-    console.warn = (...args: any[]) => {
-      this.warn(args[0], { consoleArgs: args.slice(1) });
-      originalConsole.warn.apply(console, args);
-    };
-    
-    // Capture console.error
-    console.error = (...args: any[]) => {
-      const error = args.find(arg => arg instanceof Error);
-      if (error) {
-        this.error(args[0], error, { consoleArgs: args.filter(arg => arg !== error).slice(1) });
-      } else {
-        this.error(args[0], null, { consoleArgs: args.slice(1) });
-      }
-      originalConsole.error.apply(console, args);
-    };
+
+  public setRequestId(requestId: string): AppLogger {
+    this.requestId = requestId;
+    return this;
   }
-  
-  /**
-   * Creates a structured log entry
-   */
+
+  public setUserId(userId: string): AppLogger {
+    this.userId = userId;
+    return this;
+  }
+
+  public setContext(context: Record<string, any>): AppLogger {
+    this.context = { ...DEFAULT_CONTEXT, ...context };
+    return this;
+  }
+
+  public addContext(key: string, value: any): AppLogger {
+    this.context[key] = value;
+    return this;
+  }
+
   private createLogEntry(
     level: LogLevel,
     message: string,
-    additionalContext?: Record<string, any>,
-    error?: Error | null
+    context?: Record<string, any>,
+    duration?: number,
+    tags?: string[]
   ): LogEntry {
-    const logEntry: LogEntry = {
+    const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
       message,
-      context: {
-        ...this.context,
-        sessionId: this.sessionId,
-        path: typeof window !== 'undefined' ? window.location.pathname : undefined,
-        ...additionalContext,
-      },
+      context: { ...this.context, ...(context || {}) },
+      tags
     };
 
-    if (error) {
-      logEntry.error = {
-        message: error.message,
-        stack: error.stack,
-        code: (error as any).code,
-      };
+    if (this.userId) {
+      entry.userId = this.userId;
     }
 
-    return logEntry;
+    if (this.requestId) {
+      entry.requestId = this.requestId;
+    }
+
+    if (duration !== undefined) {
+      entry.duration = duration;
+    }
+
+    return entry;
   }
 
-  /**
-   * Processes and outputs a log entry
-   */
-  private log(entry: LogEntry) {
-    // In production, you might want to send this to a logging service
-    // For now, we'll use console.log with proper formatting
-    console.log(`[${entry.timestamp}] [${entry.level.toUpperCase()}] ${entry.message}`, entry);
+  private formatConsoleOutput(entry: LogEntry): string {
+    const timestamp = INCLUDE_TIMESTAMP ? `[${new Date(entry.timestamp).toLocaleTimeString()}] ` : '';
+    const userId = entry.userId ? `[User: ${entry.userId}] ` : '';
+    const requestId = entry.requestId ? `[ReqID: ${entry.requestId.substring(0, 6)}] ` : '';
+    const duration = entry.duration !== undefined ? ` (${entry.duration.toFixed(2)}ms)` : '';
     
-    // If server logging is enabled, send log to server
-    if (this.options.sendToServer && this.options.serverEndpoint) {
-      this.sendToServer(entry);
+    return `${timestamp}${userId}${requestId}${entry.level.toUpperCase()}: ${entry.message}${duration}`;
+  }
+
+  private logToConsole(entry: LogEntry): void {
+    if (!LOG_TO_CONSOLE) return;
+
+    const formattedMessage = this.formatConsoleOutput(entry);
+    const contextObject = { ...entry.context };
+
+    switch (entry.level) {
+      case LogLevel.DEBUG:
+        console.debug(formattedMessage, contextObject);
+        break;
+      case LogLevel.INFO:
+        console.info(formattedMessage, contextObject);
+        break;
+      case LogLevel.WARN:
+        console.warn(formattedMessage, contextObject);
+        break;
+      case LogLevel.ERROR:
+        console.error(formattedMessage, contextObject);
+        break;
+      default:
+        console.log(formattedMessage, contextObject);
     }
   }
-  
-  /**
-   * Sends a log entry to the server for storage/analysis
-   */
-  private async sendToServer(entry: LogEntry) {
-    if (!this.options.serverEndpoint) return;
+
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: Record<string, any>,
+    duration?: number,
+    tags?: string[]
+  ): void {
+    const entry = this.createLogEntry(level, message, context, duration, tags);
+    this.logToConsole(entry);
     
-    try {
-      await fetch(this.options.serverEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(entry),
-        // Send logs with low priority and don't block main thread
-        keepalive: true
-      });
-    } catch (err) {
-      // Don't log this error to avoid infinite loops
-      console.error('Failed to send log to server:', err);
-    }
+    // TODO: In the future, we can add external logging services here
+    // like sending logs to a backend API or a third-party service.
   }
 
-  /**
-   * Log a debug message
-   */
-  debug(message: string, context?: Record<string, any>) {
-    if (this.shouldLog('debug')) {
-      this.log(this.createLogEntry('debug', message, context));
-    }
+  // Public logging methods
+  public debug(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
+    this.log(LogLevel.DEBUG, message, context, duration, tags);
   }
 
-  /**
-   * Log an info message
-   */
-  info(message: string, context?: Record<string, any>) {
-    if (this.shouldLog('info')) {
-      this.log(this.createLogEntry('info', message, context));
-    }
+  public info(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
+    this.log(LogLevel.INFO, message, context, duration, tags);
   }
 
-  /**
-   * Log a warning message
-   */
-  warn(message: string, context?: Record<string, any>) {
-    if (this.shouldLog('warn')) {
-      this.log(this.createLogEntry('warn', message, context));
-    }
+  public warn(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
+    this.log(LogLevel.WARN, message, context, duration, tags);
   }
 
-  /**
-   * Log an error message with optional Error object
-   */
-  error(message: string, error: Error | null = null, context?: Record<string, any>) {
-    if (this.shouldLog('error')) {
-      this.log(this.createLogEntry('error', message, context, error));
-    }
+  public error(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
+    this.log(LogLevel.ERROR, message, context, duration, tags);
   }
-  
-  /**
-   * Check if the given level should be logged based on configured minLevel
-   */
-  private shouldLog(level: LogLevel): boolean {
-    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
-    const minLevelIndex = levels.indexOf(this.options.minLevel || 'info');
-    const currentLevelIndex = levels.indexOf(level);
-    
-    return currentLevelIndex >= minLevelIndex;
+
+  // Timer methods for performance logging
+  public startTimer(): number {
+    return performance.now();
   }
-  
-  /**
-   * Create a child logger with additional context
-   */
-  child(additionalContext: LogContext): Logger {
-    return new Logger(
-      { ...this.context, ...additionalContext },
-      this.options
+
+  public endTimer(startTime: number): number {
+    return performance.now() - startTime;
+  }
+
+  public logWithTiming(level: LogLevel, message: string, startTime: number, context?: Record<string, any>, tags?: string[]): void {
+    const duration = this.endTimer(startTime);
+    this.log(level, message, context, duration, tags);
+  }
+}
+
+// Create global instance
+export const appLogger = new AppLogger();
+
+// Create context-specific loggers
+export const createLogger = (context: Record<string, any>): AppLogger => {
+  return new AppLogger().setContext(context);
+};
+
+// Export a database logger specifically for database operations
+export const dbLogger = createLogger({ module: 'database' });
+
+// Export an API logger for API calls
+export const apiLogger = createLogger({ module: 'api' });
+
+// Export an auth logger for authentication events
+export const authLogger = createLogger({ module: 'auth' });
+
+// Export a subscription logger
+export const subscriptionLogger = createLogger({ module: 'subscription' });
+
+// Helper for logging API requests and responses
+export const logApiCall = async <T>(
+  name: string,
+  fn: () => Promise<T>,
+  context?: Record<string, any>
+): Promise<T> => {
+  const startTime = apiLogger.startTimer();
+  try {
+    apiLogger.info(`API Call: ${name} - Started`, context);
+    const result = await fn();
+    const duration = apiLogger.endTimer(startTime);
+    apiLogger.info(
+      `API Call: ${name} - Completed`,
+      { ...context, success: true, duration },
+      duration,
+      ['api']
     );
+    return result;
+  } catch (error: any) {
+    const duration = apiLogger.endTimer(startTime);
+    apiLogger.error(
+      `API Call: ${name} - Failed`,
+      { ...context, error: error.message, stack: error.stack, duration },
+      duration,
+      ['api', 'error']
+    );
+    throw error;
   }
-}
+};
 
-// Create a default application logger instance
-export const appLogger = new Logger({ 
-  component: 'App'
-});
+// Export a utility for wrapping database queries with logging
+export const logDbQuery = async <T>(
+  queryName: string,
+  fn: () => Promise<T>,
+  context?: Record<string, any>
+): Promise<T> => {
+  const startTime = dbLogger.startTimer();
+  try {
+    dbLogger.debug(`DB Query: ${queryName} - Started`, context);
+    const result = await fn();
+    const duration = dbLogger.endTimer(startTime);
+    
+    // Log slow queries with a warning level
+    if (duration > 500) {
+      dbLogger.warn(
+        `DB Query: ${queryName} - Slow Query`,
+        { ...context, duration },
+        duration,
+        ['database', 'slow-query']
+      );
+    } else {
+      dbLogger.debug(
+        `DB Query: ${queryName} - Completed`,
+        { ...context, duration },
+        duration,
+        ['database']
+      );
+    }
+    
+    return result;
+  } catch (error: any) {
+    const duration = dbLogger.endTimer(startTime);
+    dbLogger.error(
+      `DB Query: ${queryName} - Failed`,
+      { ...context, error: error.message, duration },
+      duration,
+      ['database', 'error']
+    );
+    throw error;
+  }
+};
 
-// Export a hook to use the logger in components
-export function useLogger(componentName: string) {
-  return appLogger.child({ component: componentName });
-}
+export default appLogger;

@@ -36,8 +36,9 @@ export class ErrorBoundary extends Component<Props, State> {
     // Log the error to our logging system
     appLogger.error(
       'Uncaught error in component', 
-      error, 
       { 
+        errorMessage: error.message,
+        stack: error.stack,
         componentStack: errorInfo.componentStack,
         componentName: typeof this.props.children === 'object' && 
                       this.props.children !== null && 
@@ -45,7 +46,9 @@ export class ErrorBoundary extends Component<Props, State> {
                       typeof this.props.children.type === 'function' 
                         ? this.props.children.type.name 
                         : 'Unknown'
-      }
+      },
+      undefined,
+      ['react', 'error-boundary']
     );
     
     // Call the onError callback if provided

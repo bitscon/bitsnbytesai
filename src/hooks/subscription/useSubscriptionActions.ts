@@ -1,9 +1,11 @@
+
 import { useCallback, useState } from 'react';
 import { createStripeCheckout } from '@/utils/subscription/checkoutUtils';
 import { manageStripeSubscription, changeStripeSubscription } from '@/utils/subscription/managementUtils';
 import { toast } from '@/hooks/use-toast';
 import { subscriptionEvents } from '@/utils/subscription/subscriptionLogger';
 import { useAuth } from '@/context/auth';
+import { SubscriptionTier } from '@/types/subscription';
 
 interface UseSubscriptionActionsProps {
   userEmail?: string;
@@ -27,7 +29,7 @@ export function useSubscriptionActions({
   setSubscribingStatus,
   setManagingStatus,
   updateCancelAtPeriodEnd
-}) {
+}: UseSubscriptionActionsProps) {
   const [isChangingSubscription, setIsChangingSubscription] = useState(false);
   const [changeSubscriptionError, setChangeSubscriptionError] = useState('');
   const [changeSubscriptionSuccess, setChangeSubscriptionSuccess] = useState(false);
@@ -63,7 +65,7 @@ export function useSubscriptionActions({
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in subscribe:', error);
       subscriptionEvents.logCheckoutAbandoned(userId, 'free' as SubscriptionTier);
       toast({
@@ -99,9 +101,9 @@ export function useSubscriptionActions({
     
     try {
       if (action === 'cancel') {
-        subscriptionEvents.logSubscriptionCanceled(userId, stripeSubscriptionId, 'free' as SubscriptionTier, false);
+        subscriptionEvents.logSubscriptionCanceled(userId, stripeSubscriptionId || '', 'free' as SubscriptionTier, false);
       } else if (action === 'reactivate') {
-        subscriptionEvents.logSubscriptionReactivated(userId, stripeSubscriptionId, 'free' as SubscriptionTier);
+        subscriptionEvents.logSubscriptionReactivated(userId, stripeSubscriptionId || '', 'free' as SubscriptionTier);
       }
       
       const result = await manageStripeSubscription(
@@ -137,7 +139,7 @@ export function useSubscriptionActions({
       }
       
       await loadUserSubscription();
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error in manageSubscription (${action}):`, error);
       toast({
         title: 'Error',
@@ -190,7 +192,7 @@ export function useSubscriptionActions({
       });
       
       await loadUserSubscription();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in changeSubscription:', error);
       setChangeSubscriptionError(error.message || 'An unexpected error occurred');
       toast({

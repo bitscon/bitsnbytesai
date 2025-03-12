@@ -1,105 +1,117 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { appLogger } from '@/utils/logging';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSubscription } from '@/hooks/use-subscription';
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
-import ManageSubscription from './ManageSubscription';
+import { CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { formatDistance } from 'date-fns';
+import { UserSubscription } from '@/types/subscription';
 
-export const SubscriptionStatus = () => {
-  const subscription = useSubscription();
+interface SubscriptionStatusProps {
+  subscription: UserSubscription;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd?: string;
+}
+
+export function SubscriptionStatus({ 
+  subscription, 
+  cancelAtPeriodEnd, 
+  currentPeriodEnd 
+}: SubscriptionStatusProps) {
+  if (!subscription) return null;
   
-  if (subscription.isLoading) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Subscription Status</CardTitle>
-          <CardDescription>Loading your subscription information...</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  // Helper function to determine subscription status
+  const getSubscriptionStatus = (): 'active' | 'canceled' | 'canceling' | 'inactive' => {
+    if ((subscription as any).status === 'canceled') {
+      return 'canceled';
+    }
+    
+    if (cancelAtPeriodEnd) {
+      return 'canceling';
+    }
+    
+    if (subscription.tier !== 'free') {
+      return 'active';
+    }
+    
+    return 'inactive';
+  };
   
-  if (!subscription.userSubscription) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Subscription Status</CardTitle>
-          <CardDescription>You don't have an active subscription.</CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button asChild>
-            <a href="/subscription-signup">Subscribe Now</a>
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  }
+  const status = getSubscriptionStatus();
   
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = () => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500">Active</Badge>;
+        return (
+          <div className="flex items-center gap-1.5 text-green-600 dark:text-green-500">
+            <CheckCircle className="h-4 w-4" />
+            <span className="text-sm font-medium">Active</span>
+          </div>
+        );
+      case 'canceling':
+        return (
+          <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500">
+            <Clock className="h-4 w-4" />
+            <span className="text-sm font-medium">Canceling</span>
+          </div>
+        );
       case 'canceled':
-        return <Badge className="bg-yellow-500">Canceled</Badge>;
-      case 'expired':
-        return <Badge className="bg-red-500">Expired</Badge>;
+        return (
+          <div className="flex items-center gap-1.5 text-red-600 dark:text-red-500">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm font-medium">Canceled</span>
+          </div>
+        );
+      case 'inactive':
+        return (
+          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm font-medium">Inactive</span>
+          </div>
+        );
       default:
-        return <Badge className="bg-gray-500">{status}</Badge>;
+        return null;
     }
   };
   
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return format(new Date(dateString), 'MMMM d, yyyy');
+  const getStatusMessage = () => {
+    switch (status) {
+      case 'active':
+        if (currentPeriodEnd) {
+          try {
+            const endDate = new Date(currentPeriodEnd);
+            const timeUntil = formatDistance(endDate, new Date(), { addSuffix: true });
+            return `Renews ${timeUntil}`;
+          } catch (error) {
+            return 'Active subscription';
+          }
+        }
+        return 'Active subscription';
+        
+      case 'canceling':
+        if (currentPeriodEnd) {
+          try {
+            const endDate = new Date(currentPeriodEnd);
+            const timeUntil = formatDistance(endDate, new Date(), { addSuffix: true });
+            return `Access ends ${timeUntil}`;
+          } catch (error) {
+            return 'Will be canceled at the end of the billing period';
+          }
+        }
+        return 'Will be canceled at the end of the billing period';
+        
+      case 'canceled':
+        return 'Your subscription has ended';
+        
+      case 'inactive':
+        return 'No active subscription';
+        
+      default:
+        return '';
+    }
   };
   
-  // Log subscription data
-  appLogger.info('Rendering subscription status', {
-    subscriptionId: subscription.userSubscription.id,
-    tier: subscription.userSubscription.tier,
-    status: subscription.userSubscription.status || 'unknown'
-  });
-  
   return (
-    <ErrorBoundary>
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Subscription Status</span>
-            {subscription.userSubscription.status && getStatusBadge(subscription.userSubscription.status)}
-          </CardTitle>
-          <CardDescription>
-            {subscription.userSubscription.status === 'active' 
-              ? 'Your subscription is currently active.' 
-              : 'Your subscription is not active.'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <p className="text-sm font-medium">Plan:</p>
-            <p className="capitalize">{subscription.userSubscription.tier || 'Free'}</p>
-          </div>
-          
-          {subscription.userSubscription.current_period_end && (
-            <div>
-              <p className="text-sm font-medium">Next billing date:</p>
-              <p>{formatDate(subscription.userSubscription.current_period_end)}</p>
-            </div>
-          )}
-          
-          {subscription.userSubscription.status && (
-            <ManageSubscription 
-              status={subscription.userSubscription.status} 
-              subscriptionId={subscription.userSubscription.id}
-            />
-          )}
-        </CardContent>
-      </Card>
-    </ErrorBoundary>
+    <div className="space-y-1">
+      {getStatusBadge()}
+      <p className="text-xs text-gray-500 dark:text-gray-400">{getStatusMessage()}</p>
+    </div>
   );
-};
+}

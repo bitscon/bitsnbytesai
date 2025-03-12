@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSubscription } from '@/hooks/use-subscription';
 import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
@@ -126,7 +127,7 @@ export default function Subscription() {
           <SubscriptionDetails
             subscription={subscription}
             stripeSubscription={stripeSubscription}
-            cancelAtPeriodEnd={cancelAtPeriodEnd}
+            cancelAtPeriodEnd={cancelAtPeriodEnd === true}
             currentUsage={currentUsage}
             isManagingSubscription={isManagingSubscription}
             isChangingSubscription={isChangingSubscription}
@@ -136,7 +137,7 @@ export default function Subscription() {
             formatDate={formatDate}
             plans={plans}
             changeSubscriptionError={changeSubscriptionError}
-            changeSubscriptionSuccess={changeSubscriptionSuccess}
+            changeSubscriptionSuccess={changeSubscriptionSuccess ? "true" : ""}
           />
         )}
         
