@@ -28,14 +28,14 @@ export function useSubscriptionManagementAction({
   /**
    * Manages subscription (cancel, reactivate, or open portal)
    */
-  const manageSubscription = useCallback(async (action: 'portal' | 'cancel' | 'reactivate') => {
+  const manageSubscription = useCallback(async (action: 'portal' | 'cancel' | 'reactivate'): Promise<void> => {
     if (!userId) {
       toast({
         title: 'Error',
         description: 'You must be logged in and have a subscription to manage it.',
         variant: 'destructive',
       });
-      return { success: false, error: 'User not logged in' };
+      return;
     }
     
     try {
@@ -55,13 +55,13 @@ export function useSubscriptionManagementAction({
             description: result.message || 'Failed to open subscription management.',
             variant: 'destructive',
           });
-          return { success: false, error: result.message };
+          return;
         }
         
         // Redirect to Stripe Customer Portal
         if (result.url) {
           window.location.href = result.url;
-          return { success: true, url: result.url };
+          return;
         }
       } else if (action === 'cancel' || action === 'reactivate') {
         // Cancel or reactivate subscription
@@ -78,7 +78,7 @@ export function useSubscriptionManagementAction({
             description: result.message || `Failed to ${action} subscription.`,
             variant: 'destructive',
           });
-          return { success: false, error: result.message };
+          return;
         }
         
         updateCancelAtPeriodEnd(action === 'cancel');
@@ -91,11 +91,8 @@ export function useSubscriptionManagementAction({
         });
         
         // Refresh subscription data
-        loadUserSubscription();
-        return { success: true };
+        await loadUserSubscription();
       }
-      
-      return { success: false, error: 'Invalid action' };
     } catch (error: any) {
       console.error(`Error in manageSubscription (${action}):`, error);
       toast({
@@ -103,7 +100,6 @@ export function useSubscriptionManagementAction({
         description: 'An unexpected error occurred. Please try again later.',
         variant: 'destructive',
       });
-      return { success: false, error: error.message || 'Unknown error' };
     } finally {
       setManagingStatus(false);
     }

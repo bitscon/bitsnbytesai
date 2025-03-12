@@ -53,10 +53,10 @@ export function useSubscriptionChangeAction({
   /**
    * Changes an existing subscription to a new plan
    */
-  const changeSubscription = useCallback(async (planId: string, interval: 'month' | 'year') => {
+  const changeSubscription = useCallback(async (planId: string, interval: 'month' | 'year'): Promise<void> => {
     if (!userId || !stripeSubscriptionId) {
       setChangeSubscriptionError('You must have an active subscription to change plans.');
-      return { success: false, error: 'No active subscription' };
+      return;
     }
     
     try {
@@ -68,7 +68,7 @@ export function useSubscriptionChangeAction({
       const plan = await getPlanById(planId);
       if (!plan) {
         setChangeSubscriptionError('Selected plan not found.');
-        return { success: false, error: 'Plan not found' };
+        return;
       }
       
       const priceId = interval === 'month' 
@@ -77,7 +77,7 @@ export function useSubscriptionChangeAction({
         
       if (!priceId) {
         setChangeSubscriptionError(`No ${interval}ly price available for selected plan.`);
-        return { success: false, error: `No ${interval}ly price available` };
+        return;
       }
       
       // Call the API to update the subscription
@@ -91,7 +91,7 @@ export function useSubscriptionChangeAction({
       if (!result.success) {
         console.error('Error updating subscription:', result.message);
         setChangeSubscriptionError(result.message || 'Failed to update subscription. Please try again.');
-        return { success: false, error: result.message || 'Update failed' };
+        return;
       }
       
       // Update successful
@@ -103,12 +103,10 @@ export function useSubscriptionChangeAction({
       
       // Refresh subscription data
       await loadUserSubscription();
-      return { success: true };
       
     } catch (error: any) {
       console.error('Error in changeSubscription:', error);
       setChangeSubscriptionError('An unexpected error occurred. Please try again.');
-      return { success: false, error: error.message || 'Unknown error' };
     } finally {
       setIsChangingSubscription(false);
     }
