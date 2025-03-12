@@ -46,7 +46,7 @@ export function useSubscriptionActions({
     setSubscribingStatus(true);
     
     try {
-      subscriptionEvents.logCheckoutInitiated(userId, 'unknown', priceId, interval);
+      subscriptionEvents.logCheckoutInitiated(userId, 'free' as SubscriptionTier, priceId, interval);
       
       const result = await createStripeCheckout(
         priceId,
@@ -56,7 +56,7 @@ export function useSubscriptionActions({
       );
       
       if (!result.success) {
-        subscriptionEvents.logCheckoutAbandoned(userId, 'unknown');
+        subscriptionEvents.logCheckoutAbandoned(userId, 'free' as SubscriptionTier);
         toast({
           title: 'Error',
           description: result.message || 'Failed to create checkout session',
@@ -65,7 +65,7 @@ export function useSubscriptionActions({
       }
     } catch (error) {
       console.error('Error in subscribe:', error);
-      subscriptionEvents.logCheckoutAbandoned(userId, 'unknown');
+      subscriptionEvents.logCheckoutAbandoned(userId, 'free' as SubscriptionTier);
       toast({
         title: 'Error',
         description: error.message || 'An unexpected error occurred',
@@ -99,9 +99,9 @@ export function useSubscriptionActions({
     
     try {
       if (action === 'cancel') {
-        subscriptionEvents.logSubscriptionCanceled(userId, stripeSubscriptionId, 'unknown', false);
+        subscriptionEvents.logSubscriptionCanceled(userId, stripeSubscriptionId, 'free' as SubscriptionTier, false);
       } else if (action === 'reactivate') {
-        subscriptionEvents.logSubscriptionReactivated(userId, stripeSubscriptionId, 'unknown');
+        subscriptionEvents.logSubscriptionReactivated(userId, stripeSubscriptionId, 'free' as SubscriptionTier);
       }
       
       const result = await manageStripeSubscription(
@@ -164,7 +164,7 @@ export function useSubscriptionActions({
     setChangeSubscriptionSuccess(false);
     
     try {
-      subscriptionEvents.logSubscriptionUpdated(userId, stripeSubscriptionId, 'unknown', 'unknown', 'other');
+      subscriptionEvents.logSubscriptionUpdated(userId, stripeSubscriptionId, 'free' as SubscriptionTier, 'free' as SubscriptionTier, 'other');
       
       const result = await changeStripeSubscription(
         stripeSubscriptionId,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSubscription } from '@/hooks/use-subscription';
 import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
@@ -40,14 +39,12 @@ export default function Subscription() {
     formatDate
   } = useSubscription();
 
-  // Ensure subscription data is loaded properly
   useEffect(() => {
     if (isLoggedIn && user) {
       loadUserSubscription();
     }
   }, [isLoggedIn, user, loadUserSubscription]);
 
-  // Calculate average prices for the billing selector
   const visiblePlans = plans?.filter(plan => plan.is_visible !== false) || [];
   const avgMonthlyPrice = visiblePlans.length 
     ? visiblePlans.reduce((sum, plan) => sum + plan.price_monthly, 0) / visiblePlans.length 

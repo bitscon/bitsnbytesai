@@ -39,7 +39,12 @@ export class ErrorBoundary extends Component<Props, State> {
       error, 
       { 
         componentStack: errorInfo.componentStack,
-        componentName: this.props.children?.type?.name || 'Unknown'
+        componentName: typeof this.props.children === 'object' && 
+                      this.props.children !== null && 
+                      'type' in this.props.children && 
+                      typeof this.props.children.type === 'function' 
+                        ? this.props.children.type.name 
+                        : 'Unknown'
       }
     );
     
