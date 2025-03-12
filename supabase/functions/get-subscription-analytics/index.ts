@@ -3,84 +3,81 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { authenticateUser } from "./auth.ts";
 import { fetchSubscriptionData } from "./analytics.ts";
-import { formatResponse } from "./response.ts";
+import { createLogger } from "../_shared/logging.ts";
+import { createResponse } from "./response.ts";
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  const requestId = crypto.randomUUID();
+  const logger = createLogger('get-subscription-analytics', requestId);
+  
   try {
-    // Parse request parameters
-    const body = await req.json();
-    const { startDate, endDate, period } = body;
-    
-    // Get auth token from request
+    // Handle CORS
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    // Extract authorization token
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      logger.warn('Missing authorization header');
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Authenticate the user
-    const token = authHeader.replace('Bearer ', '');
-    const { user, error: authError, isAdmin } = await authenticateUser(token);
+
+    // Authenticate user
+    logger.info('Authenticating user');
+    const { user, error: authError, isAdmin } = await authenticateUser(authHeader.replace('Bearer ', ''));
     
     if (authError || !user || !isAdmin) {
-      console.error("Auth error:", authError);
+      logger.warn('Authentication failed', { 
+        error: authError?.message,
+        isAdmin,
+        userId: user?.id 
+      });
       return new Response(
-        JSON.stringify({ error: !user ? "Invalid token" : "Admin access required" }),
-        { status: !user ? 401 : 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Parse date range
-    const end = endDate ? new Date(endDate) : new Date();
-    let start = startDate ? new Date(startDate) : new Date(end);
-    
-    // If period is provided instead of explicit dates, calculate the range
-    if (period === 'week') {
-      start.setDate(end.getDate() - 7);
-    } else if (period === 'month') {
-      start.setMonth(end.getMonth() - 1);
-    } else if (period === 'quarter') {
-      start.setMonth(end.getMonth() - 3);
-    } else if (period === 'year') {
-      start.setFullYear(end.getFullYear() - 1);
-    } else if (!startDate) {
-      // Default to 1 month if no period or startDate specified
-      start.setMonth(end.getMonth() - 1);
-    }
-    
-    // Format dates for SQL queries
-    const startDateStr = start.toISOString();
-    const endDateStr = end.toISOString();
-    
-    console.log(`Fetching subscription analytics from ${startDateStr} to ${endDateStr}`);
-    
-    // Fetch all required data
-    const analyticsData = await fetchSubscriptionData(startDateStr, endDateStr);
-    
-    // Format and return the response
-    const response = formatResponse(analyticsData, startDateStr, endDateStr);
-    
+
+    // Update logger with authenticated user ID
+    const logger = createLogger('get-subscription-analytics', requestId, user.id);
+    logger.info('User authenticated successfully', { isAdmin });
+
+    // Parse request body
+    const { startDate, endDate } = await req.json();
+    logger.info('Processing analytics request', { startDate, endDate });
+
+    // Fetch subscription data
+    const data = await fetchSubscriptionData(startDate, endDate);
+    logger.info('Successfully fetched subscription data');
+
+    // Process and return the response
+    const response = createResponse(data);
     return new Response(
       JSON.stringify(response),
-      {
+      { 
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
+
   } catch (error) {
-    console.error("Error retrieving subscription analytics:", error);
+    logger.error('Unexpected error in analytics function', error as Error, {
+      path: req.url,
+      method: req.method,
+    });
+
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
+      JSON.stringify({ 
+        error: 'Internal server error',
+        requestId, // Include requestId for error tracking
+      }),
+      { 
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
