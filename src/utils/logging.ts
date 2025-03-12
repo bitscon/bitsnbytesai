@@ -24,6 +24,7 @@ export interface LogEntry {
   requestId?: string;
   duration?: number;
   tags?: string[];
+  error?: Error;
 }
 
 // Constants for logging
@@ -75,10 +76,20 @@ class AppLogger {
     return this;
   }
 
+  // Add child method to create a derived logger with additional context
+  public child(additionalContext: Record<string, any>): AppLogger {
+    const childLogger = new AppLogger();
+    childLogger.setContext({ ...this.context, ...additionalContext });
+    if (this.requestId) childLogger.setRequestId(this.requestId);
+    if (this.userId) childLogger.setUserId(this.userId);
+    return childLogger;
+  }
+
   private createLogEntry(
     level: LogLevel,
     message: string,
     context?: Record<string, any>,
+    error?: Error,
     duration?: number,
     tags?: string[]
   ): LogEntry {
@@ -87,7 +98,8 @@ class AppLogger {
       level,
       message,
       context: { ...this.context, ...(context || {}) },
-      tags
+      tags,
+      error
     };
 
     if (this.userId) {
@@ -131,7 +143,7 @@ class AppLogger {
         console.warn(formattedMessage, contextObject);
         break;
       case LogLevel.ERROR:
-        console.error(formattedMessage, contextObject);
+        console.error(formattedMessage, contextObject, entry.error);
         break;
       default:
         console.log(formattedMessage, contextObject);
@@ -142,10 +154,11 @@ class AppLogger {
     level: LogLevel,
     message: string,
     context?: Record<string, any>,
+    error?: Error,
     duration?: number,
     tags?: string[]
   ): void {
-    const entry = this.createLogEntry(level, message, context, duration, tags);
+    const entry = this.createLogEntry(level, message, context, error, duration, tags);
     this.logToConsole(entry);
     
     // TODO: In the future, we can add external logging services here
@@ -153,20 +166,20 @@ class AppLogger {
   }
 
   // Public logging methods
-  public debug(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
-    this.log(LogLevel.DEBUG, message, context, duration, tags);
+  public debug(message: string, context?: Record<string, any>, error?: Error, tags?: string[]): void {
+    this.log(LogLevel.DEBUG, message, context, error, undefined, tags);
   }
 
-  public info(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
-    this.log(LogLevel.INFO, message, context, duration, tags);
+  public info(message: string, context?: Record<string, any>, error?: Error, tags?: string[]): void {
+    this.log(LogLevel.INFO, message, context, error, undefined, tags);
   }
 
-  public warn(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
-    this.log(LogLevel.WARN, message, context, duration, tags);
+  public warn(message: string, context?: Record<string, any>, error?: Error, tags?: string[]): void {
+    this.log(LogLevel.WARN, message, context, error, undefined, tags);
   }
 
-  public error(message: string, context?: Record<string, any>, duration?: number, tags?: string[]): void {
-    this.log(LogLevel.ERROR, message, context, duration, tags);
+  public error(message: string, context?: Record<string, any>, error?: Error, tags?: string[]): void {
+    this.log(LogLevel.ERROR, message, context, error, undefined, tags);
   }
 
   // Timer methods for performance logging
@@ -178,9 +191,9 @@ class AppLogger {
     return performance.now() - startTime;
   }
 
-  public logWithTiming(level: LogLevel, message: string, startTime: number, context?: Record<string, any>, tags?: string[]): void {
+  public logWithTiming(level: LogLevel, message: string, startTime: number, context?: Record<string, any>, error?: Error, tags?: string[]): void {
     const duration = this.endTimer(startTime);
-    this.log(level, message, context, duration, tags);
+    this.log(level, message, context, error, duration, tags);
   }
 }
 
@@ -218,7 +231,7 @@ export const logApiCall = async <T>(
     apiLogger.info(
       `API Call: ${name} - Completed`,
       { ...context, success: true, duration },
-      duration,
+      undefined,
       ['api']
     );
     return result;
@@ -227,7 +240,7 @@ export const logApiCall = async <T>(
     apiLogger.error(
       `API Call: ${name} - Failed`,
       { ...context, error: error.message, stack: error.stack, duration },
-      duration,
+      error,
       ['api', 'error']
     );
     throw error;
@@ -251,14 +264,14 @@ export const logDbQuery = async <T>(
       dbLogger.warn(
         `DB Query: ${queryName} - Slow Query`,
         { ...context, duration },
-        duration,
+        undefined,
         ['database', 'slow-query']
       );
     } else {
       dbLogger.debug(
         `DB Query: ${queryName} - Completed`,
         { ...context, duration },
-        duration,
+        undefined,
         ['database']
       );
     }
@@ -269,7 +282,7 @@ export const logDbQuery = async <T>(
     dbLogger.error(
       `DB Query: ${queryName} - Failed`,
       { ...context, error: error.message, duration },
-      duration,
+      error,
       ['database', 'error']
     );
     throw error;

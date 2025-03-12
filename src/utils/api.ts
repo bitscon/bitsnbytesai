@@ -7,6 +7,7 @@ export const apiLogger = {
   warn: (message: string, data?: any) => appLogger.warn(message, data, undefined, ['api']),
   error: (message: string, data?: any, error?: Error) => appLogger.error(message, data, error, ['api']),
   debug: (message: string, data?: any) => appLogger.debug(message, data, undefined, ['api']),
+  child: (context: Record<string, any>) => appLogger.child({ ...context, module: 'api' }),
   
   // API specific log methods
   request: (endpoint: string, method: string, data?: any) => {
