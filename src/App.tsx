@@ -1,114 +1,56 @@
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { AppRoutes } from './AppRoutes';
+import { AppThemeWrapper } from './components/AppThemeWrapper';
+import { AuthProvider } from './context/auth';
+import { Toaster } from './components/ui/toaster';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { appLogger } from './utils/logging';
 
-import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// Pages
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import Account from "./pages/Account";
-import SavedPrompts from "./pages/SavedPrompts";
-import NotFound from "./pages/NotFound";
-import Subscription from "./pages/Subscription";
-import SubscriptionSignup from "./pages/SubscriptionSignup";
-import SubscriptionSuccess from "./pages/SubscriptionSuccess";
-import CheckoutSuccess from "./pages/CheckoutSuccess";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminPrompts from "./pages/AdminPrompts";
-import AdminApiSettings from "./pages/AdminApiSettings";
-import AdminThemeSettings from "./pages/AdminThemeSettings";
-import AdminUsers from "./pages/AdminUsers";
-import AdminSubscriptionAnalytics from "./pages/AdminSubscriptionAnalytics";
-import AdminSubscriptionPlans from "./pages/AdminSubscriptionPlans";
-
-// Components
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
-import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from "./context/theme/ThemeContext";
-
-// Create a client
-const queryClient = new QueryClient();
+// Create a client for React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
+  // Log application startup
+  useEffect(() => {
+    appLogger.info('Application initialized', {
+      version: import.meta.env.VITE_APP_VERSION || 'development',
+      environment: import.meta.env.MODE,
+      buildTimestamp: import.meta.env.VITE_BUILD_TIMESTAMP || new Date().toISOString()
+    });
+    
+    // Log when application unloads
+    const handleUnload = () => {
+      appLogger.info('Application closed');
+    };
+    
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/subscription-signup" element={<SubscriptionSignup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
-
-            {/* Protected Routes */}
-            <Route
-              path="/dashboard"
-              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
-            />
-            <Route
-              path="/account"
-              element={<ProtectedRoute><Account /></ProtectedRoute>}
-            />
-            <Route
-              path="/saved-prompts"
-              element={<ProtectedRoute><SavedPrompts /></ProtectedRoute>}
-            />
-            <Route
-              path="/subscription"
-              element={<ProtectedRoute><Subscription /></ProtectedRoute>}
-            />
-            <Route
-              path="/subscription/success"
-              element={<SubscriptionSuccess />}
-            />
-
-            {/* Admin Routes */}
-            <Route
-              path="/admin/dashboard"
-              element={<AdminRoute><AdminDashboard /></AdminRoute>}
-            />
-            <Route
-              path="/admin/settings"
-              element={<AdminRoute><AdminApiSettings /></AdminRoute>}
-            />
-            <Route
-              path="/admin/theme"
-              element={<AdminRoute><AdminThemeSettings /></AdminRoute>}
-            />
-            <Route
-              path="/admin/prompts"
-              element={<AdminRoute><AdminPrompts /></AdminRoute>}
-            />
-            <Route
-              path="/admin/users"
-              element={<AdminRoute><AdminUsers /></AdminRoute>}
-            />
-            <Route
-              path="/admin/subscription-analytics"
-              element={<AdminRoute><AdminSubscriptionAnalytics /></AdminRoute>}
-            />
-            <Route
-              path="/admin/subscription-plans"
-              element={<AdminRoute><AdminSubscriptionPlans /></AdminRoute>}
-            />
-
-            {/* 404 Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster position="top-right" richColors />
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AppThemeWrapper>
+          <AuthProvider>
+            <Router>
+              <AppRoutes />
+              <Toaster />
+            </Router>
+          </AuthProvider>
+        </AppThemeWrapper>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

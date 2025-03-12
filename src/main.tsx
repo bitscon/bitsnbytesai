@@ -1,22 +1,54 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+import { appLogger } from './utils/logging';
 
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App.tsx'
-import './index.css'
+// Create global error handler for uncaught exceptions
+window.addEventListener('error', (event) => {
+  appLogger.error(
+    'Uncaught global error', 
+    event.error || new Error(event.message), 
+    {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      type: 'uncaught_error'
+    }
+  );
+});
 
-const rootElement = document.getElementById("root");
-if (!rootElement) throw new Error('Root element not found');
+// Create global error handler for unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  const error = event.reason instanceof Error 
+    ? event.reason
+    : new Error(String(event.reason));
+  
+  appLogger.error(
+    'Unhandled promise rejection', 
+    error, 
+    {
+      type: 'unhandled_rejection',
+      reason: String(event.reason)
+    }
+  );
+});
 
-// Insert a global style element for dynamic theming if it doesn't exist
-const existingStyle = document.getElementById('global-theme-style');
-if (!existingStyle) {
-  const globalStyle = document.createElement('style');
-  globalStyle.id = 'global-theme-style';
-  document.head.appendChild(globalStyle);
-}
+// Log navigation events
+const logNavigation = () => {
+  appLogger.info(`Page navigation: ${window.location.pathname}${window.location.search}`);
+};
 
-createRoot(rootElement).render(
-  <BrowserRouter>
+// Log initial navigation
+logNavigation();
+
+// Log subsequent navigations
+window.addEventListener('popstate', logNavigation);
+
+// Initialize React app
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
     <App />
-  </BrowserRouter>
+  </React.StrictMode>,
 );
