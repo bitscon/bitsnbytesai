@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
@@ -78,8 +79,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: tierDistribution, error: tierError } = await supabaseAdmin
       .from('user_subscriptions')
       .select('tier, count')
-      .order('tier')
-      .group('tier');
+      .groupBy('tier')
+      .order('tier');
     
     if (tierError) {
       console.error("Error fetching tier distribution:", tierError);
@@ -172,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from('user_subscriptions')
       .select('tier, count')
       .neq('tier', 'free')
-      .group('tier');
+      .groupBy('tier');
     
     if (activeError) {
       console.error("Error fetching active subscriptions:", activeError);
