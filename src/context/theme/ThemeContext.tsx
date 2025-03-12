@@ -20,6 +20,7 @@ interface ThemeContextType {
   loadingTheme: boolean;
 }
 
+// Create the context with a default undefined value
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {

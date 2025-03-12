@@ -10,6 +10,7 @@ import { SubscriptionPlan } from '@/types/subscription';
 import SubscriptionPlansList from '@/components/admin/subscription/SubscriptionPlansList';
 import SubscriptionPlanDialog from '@/components/admin/subscription/SubscriptionPlanDialog';
 import { toast } from 'sonner';
+// No direct useTheme import or usage here, which is good
 
 export default function AdminSubscriptionPlans() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

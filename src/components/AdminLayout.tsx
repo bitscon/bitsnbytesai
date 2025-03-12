@@ -17,7 +17,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { checkAdminStatus } from "@/context/auth/utils/adminUtils";
-import { useTheme } from "@/context/theme/ThemeContext";
+// Remove the useTheme import from here if it's not being used
+// import { useTheme } from "@/context/theme/ThemeContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading } = useAuth();
