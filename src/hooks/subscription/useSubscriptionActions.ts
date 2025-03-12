@@ -1,7 +1,7 @@
 
-import { useSubscribe } from './actions/useSubscribe';
-import { useSubscriptionChange } from './actions/useSubscriptionChange';
-import { useSubscriptionManagement } from './actions/useSubscriptionManagement';
+import { useSubscribeAction } from './actions/useSubscribeAction';
+import { useSubscriptionChangeAction } from './actions/useSubscriptionChangeAction';
+import { useSubscriptionManagementAction } from './actions/useSubscriptionManagementAction';
 
 interface UseSubscriptionActionsProps {
   userEmail?: string;
@@ -15,6 +15,10 @@ interface UseSubscriptionActionsProps {
   updateCancelAtPeriodEnd: (status: boolean) => void;
 }
 
+/**
+ * Central hook for all subscription-related actions
+ * This hook composes multiple specialized hooks to provide a unified API
+ */
 export function useSubscriptionActions({
   userEmail,
   userId,
@@ -27,7 +31,7 @@ export function useSubscriptionActions({
   updateCancelAtPeriodEnd
 }: UseSubscriptionActionsProps) {
   // Initialize subscription actions
-  const { subscribe } = useSubscribe({
+  const { subscribe } = useSubscribeAction({
     userEmail,
     userId,
     subscriptionStripeCustomerId,
@@ -39,13 +43,13 @@ export function useSubscriptionActions({
     isChangingSubscription,
     changeSubscriptionError,
     changeSubscriptionSuccess
-  } = useSubscriptionChange({
+  } = useSubscriptionChangeAction({
     userId,
     stripeSubscriptionId,
     loadUserSubscription
   });
 
-  const { manageSubscription } = useSubscriptionManagement({
+  const { manageSubscription } = useSubscriptionManagementAction({
     userId,
     stripeCustomerId,
     stripeSubscriptionId,
