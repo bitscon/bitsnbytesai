@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +40,6 @@ export default function AdminDashboard() {
       try {
         setIsLoading(true);
         
-        // Fetch API status
         const { data: apiData, error: apiError } = await supabase.functions.invoke('admin-api-settings', {
           method: 'GET',
         });
@@ -63,7 +61,6 @@ export default function AdminDashboard() {
           });
         }
         
-        // Fetch total users count
         const { count: totalUsers, error: usersError } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
@@ -72,7 +69,6 @@ export default function AdminDashboard() {
           console.error("Error fetching users count:", usersError);
         }
         
-        // Fetch subscription metrics
         const { data: subscriptionData, error: subError } = await supabase.functions.invoke('get-subscription-analytics', {
           method: 'POST',
           body: { period: 'month' }
@@ -82,7 +78,6 @@ export default function AdminDashboard() {
           console.error("Error fetching subscription analytics:", subError);
         }
         
-        // Fetch recent payments (last 7 days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
@@ -95,7 +90,6 @@ export default function AdminDashboard() {
           console.error("Error fetching recent payments:", paymentsError);
         }
         
-        // Fetch total sales
         const { data: salesData, error: salesError } = await supabase
           .from('user_purchases')
           .select('amount');
@@ -106,7 +100,6 @@ export default function AdminDashboard() {
         
         const totalSales = salesData ? salesData.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) : 0;
         
-        // Set all dashboard data
         setDashboardData({
           totalUsers: totalUsers || 0,
           totalSales: totalSales || 0,
@@ -114,7 +107,6 @@ export default function AdminDashboard() {
           subscriptionMetrics: {
             totalSubscribers: subscriptionData?.metrics?.total_subscribers || 0,
             paidSubscribers: subscriptionData?.metrics?.paid_subscribers || 0,
-            // Convert the conversion rate to a string to fix the type error
             conversionRate: (subscriptionData?.metrics?.conversion_rate || 0).toString(),
             paymentFailures: subscriptionData?.metrics?.payment_failures || 0
           }

@@ -24,6 +24,9 @@ export function PromptLibrary() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [isChangingCategory, setIsChangingCategory] = useState(false);
   const { user } = useAuth();
+  
+  // Get saved prompt IDs for filtering - moved this up before its use
+  const savedPromptIds = savedPrompts.map(sp => sp.prompt_id);
 
   // Filter prompts based on selected category, difficulty, and search term
   const filteredPrompts = React.useMemo(() => {
@@ -61,9 +64,6 @@ export function PromptLibrary() {
     
     return () => clearTimeout(timer);
   }, [selectedCategory]);
-
-  // Get saved prompt IDs for filtering
-  const savedPromptIds = savedPrompts.map(sp => sp.prompt_id);
   
   const handleDifficultyChange = (difficulty: DifficultyLevel | null) => {
     setSelectedDifficulty(difficulty);
