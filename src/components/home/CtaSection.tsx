@@ -13,8 +13,15 @@ export function CtaSection() {
     if (user) {
       navigate("/subscription");
     } else {
-      // For demo purposes, go to subscription signup page with demo flag
-      navigate("/subscription-signup", { state: { demo: true } });
+      // Pass actual plan data for the basic tier instead of demo flag
+      navigate("/subscription-signup", { 
+        state: { 
+          planId: "basic", 
+          planName: "Basic Plan",
+          planPrice: "9",
+          priceId: "price_1NyBIhGSwRLFjrGcGBs0OQsj" // You should replace this with your actual Stripe price ID
+        } 
+      });
     }
   };
   
