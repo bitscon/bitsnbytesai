@@ -41,7 +41,11 @@ export default function Dashboard() {
       }
     };
 
-    checkPurchaseStatus();
+    if (user) {
+      checkPurchaseStatus();
+    } else {
+      setIsLoading(false);
+    }
   }, [user]);
 
   return (
@@ -60,19 +64,21 @@ export default function Dashboard() {
           </p>
         </motion.div>
         
-        {isLoading ? (
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-32 bg-gray-200 rounded mb-4"></div>
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
-            <Card className="p-6 shadow-md">
-              {hasPurchased ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <Card className="p-6 shadow-md">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+                  <div className="h-32 bg-gray-200 rounded mb-4"></div>
+                </div>
+              </div>
+            ) : (
+              hasPurchased ? (
                 <PromptLibrary />
               ) : (
                 <div className="text-center py-12">
@@ -85,10 +91,10 @@ export default function Dashboard() {
                     Purchase Access
                   </Button>
                 </div>
-              )}
-            </Card>
-          </motion.div>
-        )}
+              )
+            )}
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

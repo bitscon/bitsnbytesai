@@ -8,101 +8,51 @@ import { useDebounce } from '@/hooks/use-debounce';
 export function usePrompts() {
   const [categories, setCategories] = useState<PromptCategory[]>([]);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  // Fetch categories
+  // Fetch all prompts and categories at once
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchPromptsAndCategories = async () => {
       try {
-        console.log("Fetching prompt categories for library...");
+        setIsLoading(true);
+        console.log("Fetching prompt categories and all prompts for library...");
         setError(null);
         
-        const { data, error } = await supabase
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
           .from('prompt_categories')
           .select('*')
           .order('name');
         
-        if (error) {
-          console.error('Supabase error fetching categories:', error);
-          throw error;
+        if (categoriesError) {
+          console.error('Supabase error fetching categories:', categoriesError);
+          throw categoriesError;
         }
         
-        console.log(`Successfully fetched ${data?.length || 0} categories for library`);
-        setCategories(data as PromptCategory[]);
+        console.log(`Successfully fetched ${categoriesData?.length || 0} categories for library`);
+        setCategories(categoriesData as PromptCategory[]);
         
-        // Auto-select the first category if none is selected
-        if (data.length > 0 && !selectedCategory) {
-          setSelectedCategory(data[0].id);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        setError(error as Error);
-        toast({
-          title: 'Failed to load categories',
-          description: error.message || 'Network error or database connection issue',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    fetchCategories();
-  }, [toast]);
-
-  // Fetch prompts
-  useEffect(() => {
-    const fetchPrompts = async () => {
-      if (!selectedCategory) {
-        setPrompts([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      setIsLoading(true);
-      setError(null);
-      try {
-        console.log(`Fetching prompts for category ${selectedCategory}...`);
-        
-        let query = supabase
+        // Fetch all prompts at once
+        const { data: promptsData, error: promptsError } = await supabase
           .from('prompts')
-          .select('*');
-          
-        // Apply category filter
-        query = query.eq('category_id', selectedCategory);
-          
-        // Apply difficulty filter if selected
-        if (selectedDifficulty) {
-          query = query.eq('difficulty_level', selectedDifficulty);
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (promptsError) {
+          console.error('Supabase error fetching prompts:', promptsError);
+          throw promptsError;
         }
         
-        // Apply search filter if present
-        if (debouncedSearchTerm) {
-          query = query.or(`prompt_text.ilike.%${debouncedSearchTerm}%,why_it_works.ilike.%${debouncedSearchTerm}%`);
-        }
+        console.log(`Successfully fetched ${promptsData?.length || 0} prompts for library`);
+        setPrompts(promptsData as Prompt[]);
         
-        const { data, error } = await query.order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Supabase error fetching prompts:', error);
-          throw error;
-        }
-        
-        console.log(`Successfully fetched ${data?.length || 0} prompts for category ${selectedCategory}`);
-        
-        // Artificial delay to ensure smooth transition
-        await new Promise(resolve => setTimeout(resolve, 300));
-        setPrompts(data as Prompt[]);
       } catch (error) {
-        console.error('Error fetching prompts:', error);
+        console.error('Error fetching prompts and categories:', error);
         setError(error as Error);
         toast({
-          title: 'Failed to load prompts',
+          title: 'Failed to load content',
           description: error.message || 'Network error or database connection issue',
           variant: 'destructive',
         });
@@ -111,8 +61,8 @@ export function usePrompts() {
       }
     };
 
-    fetchPrompts();
-  }, [selectedCategory, selectedDifficulty, debouncedSearchTerm, toast]);
+    fetchPromptsAndCategories();
+  }, [toast]);
 
   // Set up real-time subscription for prompts
   useEffect(() => {
@@ -128,39 +78,27 @@ export function usePrompts() {
         },
         (payload) => {
           console.log('Received change event for prompts in library:', payload);
-          // Refetch prompts when there are changes
-          if (selectedCategory) {
-            const fetchPrompts = async () => {
-              try {
-                let query = supabase
-                  .from('prompts')
-                  .select('*')
-                  .eq('category_id', selectedCategory);
-                  
-                if (selectedDifficulty) {
-                  query = query.eq('difficulty_level', selectedDifficulty);
-                }
-                
-                if (debouncedSearchTerm) {
-                  query = query.or(`prompt_text.ilike.%${debouncedSearchTerm}%,why_it_works.ilike.%${debouncedSearchTerm}%`);
-                }
-                
-                const { data, error } = await query.order('created_at', { ascending: false });
-                
-                if (error) {
-                  console.error('Error fetching prompts after change:', error);
-                  return;
-                }
-                
-                console.log(`Updated prompts after change: ${data?.length || 0} prompts`);
-                setPrompts(data as Prompt[]);
-              } catch (err) {
-                console.error('Error in subscription callback:', err);
+          // Refetch all prompts when there are changes
+          const fetchPrompts = async () => {
+            try {
+              const { data, error } = await supabase
+                .from('prompts')
+                .select('*')
+                .order('created_at', { ascending: false });
+              
+              if (error) {
+                console.error('Error fetching prompts after change:', error);
+                return;
               }
-            };
-            
-            fetchPrompts();
-          }
+              
+              console.log(`Updated prompts after change: ${data?.length || 0} prompts`);
+              setPrompts(data as Prompt[]);
+            } catch (err) {
+              console.error('Error in subscription callback:', err);
+            }
+          };
+          
+          fetchPrompts();
         }
       )
       .subscribe((status) => {
@@ -171,13 +109,13 @@ export function usePrompts() {
       console.log('Cleaning up subscription for prompts in library');
       supabase.removeChannel(subscription);
     };
-  }, [selectedCategory, selectedDifficulty, debouncedSearchTerm]);
+  }, []);
 
   // Set up real-time subscription for categories
   useEffect(() => {
     console.log("Setting up real-time subscription for categories in library");
     const subscription = supabase
-      .channel('schema-db-changes')
+      .channel('schema-db-changes-categories')
       .on(
         'postgres_changes',
         { 
@@ -223,13 +161,7 @@ export function usePrompts() {
   return {
     categories,
     prompts,
-    selectedCategory,
-    selectedDifficulty,
-    searchTerm,
     isLoading,
     error,
-    setSelectedCategory,
-    setSelectedDifficulty,
-    setSearchTerm,
   };
 }
