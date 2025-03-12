@@ -551,6 +551,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_active_theme: {
         Args: {
           mode: boolean
