@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { createStripeCheckout } from '@/utils/subscription/stripeUtils';
+import { createStripeCheckout } from '@/utils/subscription/checkoutUtils';
 
 interface UseSubscribeActionProps {
   userEmail?: string;

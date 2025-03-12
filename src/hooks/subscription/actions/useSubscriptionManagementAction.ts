@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { manageStripeSubscription } from '@/utils/subscription/stripeUtils';
+import { manageStripeSubscription } from '@/utils/subscription/managementUtils';
 
 interface UseSubscriptionManagementActionProps {
   userId?: string;

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth';
-import { verifySubscription } from '@/utils/subscription/stripeUtils';
+import { verifySubscription } from '@/utils/subscription/checkoutUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SubscriptionPlan } from '@/types/subscription';
 import { supabase } from '@/integrations/supabase/client';
-import { changeStripeSubscription } from '@/utils/subscription/stripeUtils';
+import { changeStripeSubscription } from '@/utils/subscription/managementUtils';
 
 interface UseSubscriptionChangeActionProps {
   userId?: string;
