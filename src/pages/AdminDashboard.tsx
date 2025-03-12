@@ -108,7 +108,7 @@ export default function AdminDashboard() {
           subscriptionMetrics: {
             totalSubscribers: subscriptionData?.metrics?.total_subscribers || 0,
             paidSubscribers: subscriptionData?.metrics?.paid_subscribers || 0,
-            conversionRate: String(subscriptionData?.metrics?.conversion_rate || 0), // Convert to string
+            conversionRate: subscriptionData?.metrics?.conversion_rate || "0", // Ensure this is a string
             paymentFailures: subscriptionData?.metrics?.payment_failures || 0
           }
         });
