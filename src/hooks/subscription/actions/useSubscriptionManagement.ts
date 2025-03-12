@@ -1,113 +1,103 @@
 
 import { useCallback } from 'react';
+import { manageStripeSubscription } from '@/utils/subscription/managementUtils';
+import { subscriptionEvents } from '@/utils/subscription/subscriptionLogger';
 import { useToast } from '@/hooks/use-toast';
-import { manageStripeSubscription } from '@/utils/subscription/stripeUtils';
+import { SubscriptionTier } from '@/types/subscription';
 
 interface UseSubscriptionManagementProps {
   userId?: string;
-  stripeCustomerId?: string;
+  userEmail?: string;
   stripeSubscriptionId?: string;
-  loadUserSubscription: () => Promise<void>;
+  subscriptionStripeCustomerId: string | null;
   setManagingStatus: (status: boolean) => void;
   updateCancelAtPeriodEnd: (status: boolean) => void;
+  loadUserSubscription: () => Promise<void>;
 }
 
 export function useSubscriptionManagement({
   userId,
-  stripeCustomerId,
+  userEmail,
   stripeSubscriptionId,
-  loadUserSubscription,
+  subscriptionStripeCustomerId,
   setManagingStatus,
-  updateCancelAtPeriodEnd
+  updateCancelAtPeriodEnd,
+  loadUserSubscription
 }: UseSubscriptionManagementProps) {
   const { toast } = useToast();
 
-  /**
-   * Manages subscription (cancel, reactivate, or open portal)
-   */
   const manageSubscription = useCallback(async (action: 'portal' | 'cancel' | 'reactivate') => {
-    if (!userId) {
+    if (!userId || !userEmail) {
       toast({
         title: 'Error',
-        description: 'You must be logged in and have a subscription to manage it.',
+        description: 'You must be logged in to manage your subscription',
         variant: 'destructive',
       });
       return;
     }
     
+    if (action !== 'portal' && !stripeSubscriptionId) {
+      toast({
+        title: 'Error',
+        description: 'No active subscription found',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setManagingStatus(true);
+    
     try {
-      setManagingStatus(true);
-      
-      if (action === 'portal') {
-        // Open Stripe Customer Portal
-        const result = await manageStripeSubscription(
-          'portal',
-          userId,
-          stripeCustomerId
-        );
-        
-        if (!result.success) {
-          toast({
-            title: 'Error',
-            description: result.message || 'Failed to open subscription management.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        
-        // Redirect to Stripe Customer Portal
-        if (result.url) {
-          window.location.href = result.url;
-        }
-      } else if (action === 'cancel' || action === 'reactivate') {
-        // Cancel or reactivate subscription
-        const result = await manageStripeSubscription(
-          action,
-          userId,
-          undefined,
-          stripeSubscriptionId
-        );
-        
-        if (!result.success) {
-          toast({
-            title: 'Error',
-            description: result.message || `Failed to ${action} subscription.`,
-            variant: 'destructive',
-          });
-          return;
-        }
-        
-        updateCancelAtPeriodEnd(action === 'cancel');
-        
-        toast({
-          title: action === 'cancel' ? 'Subscription Cancelled' : 'Subscription Reactivated',
-          description: result.message || (action === 'cancel' 
-            ? 'Your subscription will end at the end of the current billing period.' 
-            : 'Your subscription has been reactivated and will renew automatically.'),
-        });
-        
-        // Refresh subscription data
-        loadUserSubscription();
+      if (action === 'cancel') {
+        subscriptionEvents.logSubscriptionCanceled(userId, stripeSubscriptionId || '', 'free' as SubscriptionTier, false);
+      } else if (action === 'reactivate') {
+        subscriptionEvents.logSubscriptionReactivated(userId, stripeSubscriptionId || '', 'free' as SubscriptionTier);
       }
+      
+      const result = await manageStripeSubscription(
+        action,
+        userId,
+        subscriptionStripeCustomerId,
+        stripeSubscriptionId
+      );
+      
+      if (!result.success) {
+        toast({
+          title: 'Error',
+          description: result.message || `Failed to ${action} subscription`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      if (action === 'cancel') {
+        updateCancelAtPeriodEnd(true);
+        toast({
+          title: 'Subscription Canceled',
+          description: 'Your subscription will be canceled at the end of the current billing period',
+        });
+      } else if (action === 'reactivate') {
+        updateCancelAtPeriodEnd(false);
+        toast({
+          title: 'Subscription Reactivated',
+          description: 'Your subscription has been reactivated',
+        });
+      } else if (action === 'portal' && result.url) {
+        window.location.href = result.url;
+      }
+      
+      await loadUserSubscription();
     } catch (error: any) {
       console.error(`Error in manageSubscription (${action}):`, error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again later.',
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
       setManagingStatus(false);
     }
-  }, [
-    userId, 
-    stripeCustomerId,
-    stripeSubscriptionId,
-    toast,
-    setManagingStatus,
-    updateCancelAtPeriodEnd,
-    loadUserSubscription
-  ]);
+  }, [userId, userEmail, stripeSubscriptionId, subscriptionStripeCustomerId, setManagingStatus, updateCancelAtPeriodEnd, loadUserSubscription, toast]);
 
   return { manageSubscription };
 }

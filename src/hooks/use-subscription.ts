@@ -70,11 +70,6 @@ export function useSubscription() {
     loadSubscriptionPlans();
   }, [loadSubscriptionPlans]);
 
-  // Fetch user subscription when user logs in or changes
-  useEffect(() => {
-    loadUserSubscription();
-  }, [loadUserSubscription]);
-
   // Return the public API for the hook
   return {
     // State

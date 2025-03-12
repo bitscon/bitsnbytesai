@@ -1,52 +1,45 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from './App.tsx';
 import './index.css';
 import { appLogger } from './utils/logging';
 
-// Create global error handler for uncaught exceptions
+// Log unhandled errors at the global level
 window.addEventListener('error', (event) => {
   appLogger.error(
-    'Uncaught global error', 
-    event.error || new Error(event.message), 
+    'Uncaught global error',
     {
       message: event.message,
       filename: event.filename,
       lineno: event.lineno,
       colno: event.colno,
-      type: 'uncaught_error'
-    }
+      type: event.type
+    },
+    event.error,
+    ['global', 'uncaught']
   );
 });
 
-// Create global error handler for unhandled promise rejections
+// Log unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
-  const error = event.reason instanceof Error 
-    ? event.reason
-    : new Error(String(event.reason));
-  
   appLogger.error(
-    'Unhandled promise rejection', 
-    error, 
+    'Unhandled promise rejection',
     {
-      type: 'unhandled_rejection',
-      reason: String(event.reason)
-    }
+      type: event.type,
+      reason: event.reason?.toString() || 'Unknown reason'
+    },
+    event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+    ['global', 'unhandled-promise']
   );
 });
 
-// Log navigation events
-const logNavigation = () => {
-  appLogger.info(`Page navigation: ${window.location.pathname}${window.location.search}`);
-};
+// Log initial page load
+appLogger.info('Application starting', {
+  url: window.location.href,
+  userAgent: navigator.userAgent
+});
 
-// Log initial navigation
-logNavigation();
-
-// Log subsequent navigations
-window.addEventListener('popstate', logNavigation);
-
-// Initialize React app
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

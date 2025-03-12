@@ -1,65 +1,67 @@
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { createStripeCheckout } from '@/utils/subscription/checkoutUtils';
+import { subscriptionEvents } from '@/utils/subscription/subscriptionLogger';
 import { useToast } from '@/hooks/use-toast';
-import { createStripeCheckout } from '@/utils/subscription/stripeUtils';
+import { SubscriptionTier } from '@/types/subscription';
 
 interface UseSubscribeProps {
   userEmail?: string;
   userId?: string;
-  subscriptionStripeCustomerId: string | null;
+  stripeCustomerId?: string;
   setSubscribingStatus: (status: boolean) => void;
 }
 
 export function useSubscribe({
   userEmail,
   userId,
-  subscriptionStripeCustomerId,
+  stripeCustomerId,
   setSubscribingStatus
 }: UseSubscribeProps) {
   const { toast } = useToast();
 
-  /**
-   * Initiates subscription checkout process
-   */
   const subscribe = useCallback(async (priceId: string, interval: 'month' | 'year') => {
-    if (!userEmail) {
+    if (!userEmail || !userId) {
       toast({
         title: 'Error',
-        description: 'You must be logged in to purchase a subscription.',
+        description: 'You must be logged in to subscribe',
         variant: 'destructive',
       });
       return;
     }
     
+    setSubscribingStatus(true);
+    
     try {
-      setSubscribingStatus(true);
+      subscriptionEvents.logCheckoutInitiated(userId, 'free' as SubscriptionTier, priceId, interval);
       
       const result = await createStripeCheckout(
         priceId,
         interval,
         userId,
-        subscriptionStripeCustomerId
+        stripeCustomerId
       );
       
       if (!result.success) {
+        subscriptionEvents.logCheckoutAbandoned(userId, 'free' as SubscriptionTier);
         toast({
           title: 'Error',
-          description: result.message || 'Failed to create subscription checkout.',
+          description: result.message || 'Failed to create checkout session',
           variant: 'destructive',
         });
       }
-      
-    } catch (error) {
-      console.error('Error in subscribe function:', error);
+    } catch (error: any) {
+      console.error('Error in subscribe:', error);
+      subscriptionEvents.logCheckoutAbandoned(userId, 'free' as SubscriptionTier);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again later.',
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
       setSubscribingStatus(false);
     }
-  }, [userEmail, userId, subscriptionStripeCustomerId, toast, setSubscribingStatus]);
+  }, [userEmail, userId, stripeCustomerId, setSubscribingStatus, toast]);
 
   return { subscribe };
 }
