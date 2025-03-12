@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
@@ -10,10 +9,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Parse request to get date range
-    const { startDate, endDate } = await req.json();
+    // Parse request parameters - handle both date range and period format
+    const body = await req.json();
+    const { startDate, endDate, period } = body;
     
-    // Validate admin access using auth header
+    // Get auth token from request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -26,6 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
+      console.error("Auth error:", userError);
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -51,8 +52,21 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Set default date range if not provided
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate ? new Date(startDate) : new Date(end);
-    start.setMonth(start.getMonth() - 1); // Default to 1 month period
+    let start = startDate ? new Date(startDate) : new Date(end);
+    
+    // If period is provided instead of explicit dates, calculate the range
+    if (period === 'week') {
+      start.setDate(end.getDate() - 7);
+    } else if (period === 'month') {
+      start.setMonth(end.getMonth() - 1);
+    } else if (period === 'quarter') {
+      start.setMonth(end.getMonth() - 3);
+    } else if (period === 'year') {
+      start.setFullYear(end.getFullYear() - 1);
+    } else if (!startDate) {
+      // Default to 1 month if no period or startDate specified
+      start.setMonth(end.getMonth() - 1);
+    }
     
     // Format dates for SQL queries
     const startDateStr = start.toISOString();
@@ -164,7 +178,20 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error fetching active subscriptions:", activeError);
     }
     
-    // Return all analytics data
+    // Calculate summary metrics for the dashboard
+    const totalSubscribers = (tierDistribution || []).reduce(
+      (total, item) => total + Number(item.count), 0) || 0;
+    
+    const paidSubscribers = (tierDistribution || []).reduce(
+      (total, item) => item.tier !== 'free' ? total + Number(item.count) : total, 0) || 0;
+    
+    const conversionRate = totalSubscribers > 0 
+      ? ((paidSubscribers / totalSubscribers) * 100).toFixed(1) 
+      : '0';
+    
+    const paymentFailures = (failures || []).length;
+    
+    // Return analytics data including the summary metrics
     return new Response(
       JSON.stringify({
         tierDistribution: tierDistribution || [
@@ -180,6 +207,12 @@ const handler = async (req: Request): Promise<Response> => {
         period: {
           start: startDateStr,
           end: endDateStr
+        },
+        metrics: {
+          total_subscribers: totalSubscribers,
+          paid_subscribers: paidSubscribers,
+          conversion_rate: conversionRate,
+          payment_failures: paymentFailures
         }
       }),
       {
