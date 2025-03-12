@@ -17,10 +17,13 @@ const handler = async (req: Request): Promise<Response> => {
       headers: Object.fromEntries(req.headers.entries())
     });
     
-    // Handle CORS
+    // Handle CORS preflight request
     if (req.method === "OPTIONS") {
       logger.info('Handling CORS preflight request');
-      return new Response(null, { headers: corsHeaders });
+      return new Response(null, { 
+        status: 204,
+        headers: corsHeaders 
+      });
     }
 
     // Extract authorization token
@@ -59,7 +62,18 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Parse request body
-    const { startDate, endDate } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      logger.error('Failed to parse request body', e as Error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body', requestId }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { startDate, endDate } = body;
     userLogger.info('Processing analytics request', { 
       startDate, 
       endDate,

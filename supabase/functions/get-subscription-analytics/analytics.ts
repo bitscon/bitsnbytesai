@@ -11,30 +11,39 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
   
   try {
     // Fetch current subscription tier distribution
-    const tierTimer = logger.startTimer('fetch_tier_distribution');
+    const tierTimer = logger.startTimer();
     logger.info('Fetching tier distribution');
+    
+    // Using aggregation query without groupBy which was causing issues
     const { data: tierDistribution, error: tierError } = await supabaseAdmin
       .from('user_subscriptions')
-      .select('tier, count(*)')
-      .groupBy('tier');
+      .select('tier, id')
+      .order('tier');
+
+    // Process the data to create our own aggregation
+    const processedTierDistribution = tierDistribution ? 
+      Array.from(tierDistribution.reduce((acc, item) => {
+        const tier = item.tier;
+        acc.set(tier, (acc.get(tier) || 0) + 1);
+        return acc;
+      }, new Map<string, number>())).map(([tier, count]) => ({ tier, count })) : [];
     
-    tierTimer();
+    tierTimer.end();
     
     if (tierError) {
       logger.error("Error fetching tier distribution", tierError as Error, { 
-        query: 'tier_distribution',
-        sql: `SELECT tier, COUNT(*) FROM user_subscriptions GROUP BY tier`
+        query: 'tier_distribution'
       });
       throw new Error(`Error fetching tier distribution: ${tierError.message}`);
     }
     
     logger.info("Tier distribution fetched successfully", {
-      tiers: tierDistribution?.length || 0,
-      distribution: tierDistribution
+      tiers: processedTierDistribution?.length || 0,
+      distribution: processedTierDistribution
     });
     
     // Fetch new subscriptions created in the date range
-    const newSubTimer = logger.startTimer('fetch_new_subscriptions');
+    const newSubTimer = logger.startTimer();
     logger.info('Fetching new subscriptions', { startDate: startDateStr, endDate: endDateStr });
     const { data: newSubscriptions, error: newSubError } = await supabaseAdmin
       .from('user_subscriptions')
@@ -43,13 +52,12 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
       .lte('created_at', endDateStr)
       .order('created_at', { ascending: false });
     
-    newSubTimer();
+    newSubTimer.end();
     
     if (newSubError) {
       logger.error("Error fetching new subscriptions", newSubError as Error, { 
         query: 'new_subscriptions',
-        dateRange: { start: startDateStr, end: endDateStr },
-        sql: `SELECT * FROM user_subscriptions WHERE created_at >= '${startDateStr}' AND created_at <= '${endDateStr}' ORDER BY created_at DESC`
+        dateRange: { start: startDateStr, end: endDateStr }
       });
       throw new Error(`Error fetching new subscriptions: ${newSubError.message}`);
     }
@@ -59,7 +67,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
     });
     
     // Fetch subscription changes (upgrades, downgrades, cancellations) in the date range
-    const changesTimer = logger.startTimer('fetch_subscription_changes');
+    const changesTimer = logger.startTimer();
     logger.info('Fetching subscription changes');
     const { data: subscriptionChanges, error: changesError } = await supabaseAdmin
       .from('subscription_events')
@@ -69,7 +77,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
       .in('event_type', ['subscription_updated', 'subscription_canceled', 'subscription_reactivated'])
       .order('created_at', { ascending: false });
     
-    changesTimer();
+    changesTimer.end();
     
     if (changesError) {
       logger.error("Error fetching subscription changes", changesError as Error, { 
@@ -88,7 +96,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
     });
     
     // Fetch payment failures in the date range
-    const failuresTimer = logger.startTimer('fetch_payment_failures');
+    const failuresTimer = logger.startTimer();
     logger.info('Fetching payment failures');
     const { data: paymentFailures, error: failuresError } = await supabaseAdmin
       .from('payment_failures')
@@ -97,7 +105,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
       .lte('created_at', endDateStr)
       .order('created_at', { ascending: false });
     
-    failuresTimer();
+    failuresTimer.end();
     
     if (failuresError) {
       logger.error("Error fetching payment failures", failuresError as Error, { 
@@ -112,7 +120,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
     });
     
     // Fetch active subscriptions over time for trend analysis
-    const activeTimer = logger.startTimer('fetch_active_subscriptions');
+    const activeTimer = logger.startTimer();
     logger.info('Fetching active subscriptions');
     const { data: activeSubscriptions, error: activeError } = await supabaseAdmin
       .from('user_subscriptions')
@@ -121,7 +129,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
       .lte('created_at', endDateStr)
       .order('created_at', { ascending: true });
     
-    activeTimer();
+    activeTimer.end();
     
     if (activeError) {
       logger.error("Error fetching active subscriptions", activeError as Error, { 
@@ -140,11 +148,8 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
     });
     
     logger.info('Successfully fetched all subscription data', {
-      totalQueriesTime: 
-        performance.now() - 
-        (performance as any).timeOrigin || 0,
       dataPointsCount: {
-        tierDistribution: tierDistribution?.length || 0,
+        tierDistribution: processedTierDistribution?.length || 0,
         newSubscriptions: newSubscriptions?.length || 0,
         subscriptionChanges: subscriptionChanges?.length || 0,
         paymentFailures: paymentFailures?.length || 0,
@@ -153,7 +158,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
     });
     
     return {
-      tierDistribution: tierDistribution || [],
+      tierDistribution: processedTierDistribution || [],
       newSubscriptions: newSubscriptions || [],
       subscriptionChanges: subscriptionChanges || [],
       paymentFailures: paymentFailures || [],
