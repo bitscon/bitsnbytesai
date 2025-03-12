@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth';
-import { verifySubscription } from '@/utils/subscription/checkoutUtils';
+import { verifySubscription, getCheckoutSessionIdFromUrl } from '@/utils/subscription/checkoutUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -20,6 +20,7 @@ export function StripeCheckoutStatus({
 }: StripeCheckoutStatusProps) {
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationError, setVerificationError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -64,7 +65,11 @@ export function StripeCheckoutStatus({
     if (sessionId) {
       verifyCheckout();
     }
-  }, [sessionId]);
+  }, [sessionId, retryCount]);
+  
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
   
   if (isVerifying) {
     return (
@@ -86,7 +91,7 @@ export function StripeCheckoutStatus({
         </Alert>
         
         <Button 
-          onClick={verifyCheckout} 
+          onClick={handleRetry} 
           variant="outline" 
           className="w-full"
         >

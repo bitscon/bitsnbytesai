@@ -60,3 +60,14 @@ export function getSessionData(key: string): string | null {
     return null;
   }
 }
+
+/**
+ * Clears temporary session data for payment flows
+ */
+export function clearSessionData(key: string): void {
+  try {
+    sessionStorage.removeItem(key);
+  } catch (error) {
+    console.error('Failed to clear session data:', error);
+  }
+}

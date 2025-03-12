@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { invokeSupabaseFunction, storeSessionData } from './paymentUtils';
+import { invokeSupabaseFunction, storeSessionData, clearSessionData } from './paymentUtils';
 
 /**
  * Creates and redirects to a Stripe checkout session
@@ -70,6 +70,11 @@ export async function createStripeCheckout(
       storeSessionData('stripe_customer_id', data.customerId);
     }
     
+    // Store checkout session ID for verification
+    if (data.sessionId) {
+      storeSessionData('checkout_session_id', data.sessionId);
+    }
+    
     // Redirect to Stripe Checkout
     window.location.href = data.url;
     return { success: true };
@@ -105,10 +110,22 @@ export async function verifySubscription(
       return { success: false, message: result.message };
     }
     
+    // Clear session storage after successful verification
+    clearSessionData('stripe_customer_id');
+    clearSessionData('checkout_session_id');
+    
     return { success: true, data: result.data };
     
   } catch (error: any) {
     console.error('Error in verifySubscription:', error);
     return { success: false, message: error.message };
   }
+}
+
+/**
+ * Retrieves the checkout session ID from the URL query parameters
+ */
+export function getCheckoutSessionIdFromUrl(): string | null {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('session_id');
 }

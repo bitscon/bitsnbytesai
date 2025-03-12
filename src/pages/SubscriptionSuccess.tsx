@@ -9,6 +9,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StripeCheckoutStatus } from '@/components/subscription/StripeCheckoutStatus';
+import { getCheckoutSessionIdFromUrl } from '@/utils/subscription/checkoutUtils';
 
 export default function SubscriptionSuccess() {
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
@@ -19,7 +20,7 @@ export default function SubscriptionSuccess() {
   const { fetchUserSubscription } = useSubscription();
   
   const queryParams = new URLSearchParams(location.search);
-  const sessionId = queryParams.get('session_id');
+  const sessionId = queryParams.get('session_id') || getCheckoutSessionIdFromUrl();
   
   // Refresh subscription data when verification is successful
   const handleSuccess = async (data: any) => {
@@ -31,6 +32,15 @@ export default function SubscriptionSuccess() {
   const handleError = (message: string) => {
     setErrorMessage(message);
   };
+  
+  // If redirected back from success URL without session ID, check session storage
+  useEffect(() => {
+    const storedSessionId = sessionStorage.getItem('checkout_session_id');
+    if (!sessionId && storedSessionId) {
+      // Redirect to include the session ID in the URL
+      navigate(`/subscription/success?session_id=${storedSessionId}`, { replace: true });
+    }
+  }, [sessionId, navigate]);
   
   return (
     <div className="min-h-screen bg-background">

@@ -19,7 +19,7 @@ export async function manageStripeSubscription(
     if (customerId) body.customerId = customerId;
     if (subscriptionId) body.subscriptionId = subscriptionId;
     
-    const result = await invokeSupabaseFunction('manage-subscription', { body });
+    const result = await invokeSupabaseFunction('manage-subscription', body);
     
     if (!result.success) {
       return { success: false, message: result.message };
