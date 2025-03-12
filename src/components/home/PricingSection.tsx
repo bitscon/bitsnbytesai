@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ export function PricingSection() {
         } else if (!plans || plans.length === 0) {
           setError("No subscription plans available at this time.");
         } else {
-          // Sort plans by price to ensure proper display order
           const sortedPlans = [...plans].sort((a, b) => 
             a.price_monthly - b.price_monthly
           );
@@ -50,15 +48,19 @@ export function PricingSection() {
   const handlePlanSelection = () => {
     if (user) {
       navigate("/subscription");
-    } else {
-      navigate("/login", { state: { returnTo: "/subscription" } });
+      return;
     }
+    
+    navigate("/signup", { 
+      state: { 
+        returnTo: "/subscription",
+        source: "pricing" 
+      }
+    });
   };
 
-  // Display the starter plan (usually the first one after free)
   const starterPlan = plans.find(plan => plan.tier === 'pro') || (plans.length > 1 ? plans[1] : plans[0]);
 
-  // Fallback pricing information when API fails
   const fallbackPlanInfo = {
     name: "Pro Plan",
     price_monthly: 19.99,
@@ -151,7 +153,7 @@ export function PricingSection() {
                   className="w-full" 
                   onClick={handlePlanSelection}
                 >
-                  {user ? 'Choose Plan' : 'Sign Up Now'}
+                  {user ? 'Choose Plan' : 'Get Started'}
                 </Button>
               </div>
             </Card>
