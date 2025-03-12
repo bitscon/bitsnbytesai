@@ -114,7 +114,8 @@ export default function AdminDashboard() {
           subscriptionMetrics: {
             totalSubscribers: subscriptionData?.metrics?.total_subscribers || 0,
             paidSubscribers: subscriptionData?.metrics?.paid_subscribers || 0,
-            conversionRate: subscriptionData?.metrics?.conversion_rate?.toString() || "0",
+            // Convert the conversion rate to a string to fix the type error
+            conversionRate: (subscriptionData?.metrics?.conversion_rate || 0).toString(),
             paymentFailures: subscriptionData?.metrics?.payment_failures || 0
           }
         });
