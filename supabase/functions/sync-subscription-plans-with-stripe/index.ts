@@ -37,9 +37,17 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user is an admin
-    const isAdmin = await checkIfUserIsAdmin(user.id);
-    if (!isAdmin) {
+    // Check if user is an admin by directly querying the admin_users table
+    const { data: adminData, error: adminError } = await supabaseAdmin
+      .from('admin_users')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+    
+    const isAdmin = !!adminData;
+    
+    if (adminError || !isAdmin) {
+      console.error("Admin check error:", adminError);
       return new Response(
         JSON.stringify({ error: "Admin access required" }),
         {

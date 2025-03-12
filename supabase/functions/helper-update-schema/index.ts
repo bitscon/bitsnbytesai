@@ -30,14 +30,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    // Check if the user is an admin
-    const { data: adminCheck, error: adminError } = await supabaseAdmin.rpc('is_admin', {}, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    // Check if the user is an admin by directly querying the admin_users table
+    const { data: adminData, error: adminError } = await supabaseAdmin
+      .from('admin_users')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
     
-    if (adminError || !adminCheck) {
+    const isAdmin = !!adminData;
+    
+    if (adminError || !isAdmin) {
       console.error("Admin check error:", adminError);
       return new Response(
         JSON.stringify({ error: "Admin access required" }),

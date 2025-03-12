@@ -57,17 +57,6 @@ serve(async (req) => {
       }
     }
     
-    // For GET requests, try to get action from the body too
-    if (!action && req.method === 'GET') {
-      try {
-        const body = await req.json()
-        action = body.action
-      } catch (e) {
-        // If parsing fails, continue without body action
-        console.log('Could not parse request body for GET')
-      }
-    }
-    
     console.log('Action parameter:', action)
     
     if (action === 'list_admins') {
@@ -86,11 +75,11 @@ serve(async (req) => {
         )
       }
       
-      console.log('Found admin users:', adminUsersData.length)
+      console.log('Found admin users:', adminUsersData?.length || 0)
       
       // Get profile details for each admin
       const adminUsersWithDetails = await Promise.all(
-        adminUsersData.map(async (admin) => {
+        (adminUsersData || []).map(async (admin) => {
           const { data: profileData } = await supabaseClient
             .from('profiles')
             .select('email, full_name')
@@ -129,6 +118,7 @@ serve(async (req) => {
       }
       
       const isAdmin = !!data
+      console.log(`Admin check for user ${user.id}: ${isAdmin}`)
       
       return new Response(
         JSON.stringify({ is_admin: isAdmin }),

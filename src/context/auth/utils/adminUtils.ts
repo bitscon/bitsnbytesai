@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { useToast } from '@/hooks/use-toast';
 
 export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
   if (!user) return false;
