@@ -51,8 +51,13 @@ export function useAdminPromptCategories() {
     console.log("Setting up real-time subscription for prompt_categories");
     
     // Use a unique channel name to avoid conflicts
+    const channelName = 'admin-categories-channel';
+    
+    // Clean up any existing channels with the same name to avoid duplicates
+    supabase.removeChannel(supabase.channel(channelName));
+    
     const categoriesSubscription = supabase
-      .channel('admin-categories-channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { 

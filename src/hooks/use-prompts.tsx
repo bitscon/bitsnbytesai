@@ -36,7 +36,14 @@ export function usePrompts() {
         // Fetch all prompts at once
         const { data: promptsData, error: promptsError } = await supabase
           .from('prompts')
-          .select('*')
+          .select(`
+            *,
+            prompt_categories (
+              id,
+              name,
+              created_at
+            )
+          `)
           .order('created_at', { ascending: false });
         
         if (promptsError) {
@@ -45,7 +52,27 @@ export function usePrompts() {
         }
         
         console.log(`Successfully fetched ${promptsData?.length || 0} prompts for library`);
-        setPrompts(promptsData as Prompt[]);
+        
+        // Format the prompts to match the Prompt type
+        const formattedPrompts = promptsData?.map(prompt => {
+          // Handle null prompt_categories
+          if (!prompt.prompt_categories) {
+            return prompt as unknown as Prompt;
+          }
+          
+          // Extract prompt_categories to handle it separately
+          const { prompt_categories, ...restPrompt } = prompt;
+          
+          // Return properly formatted Prompt object
+          return {
+            ...restPrompt,
+            prompt_categories: {
+              ...prompt_categories
+            }
+          } as Prompt;
+        }) || [];
+        
+        setPrompts(formattedPrompts);
         
       } catch (error: any) {
         console.error('Error fetching prompts and categories:', error);
@@ -67,11 +94,14 @@ export function usePrompts() {
   useEffect(() => {
     console.log("Setting up real-time subscription for prompts in library");
     
+    // Create a unique channel name to avoid conflicts
+    const channelName = 'prompts-library-changes';
+    
     // Clean up any existing channels with the same name to avoid duplicates
-    supabase.removeChannel(supabase.channel('schema-db-changes'));
+    supabase.removeChannel(supabase.channel(channelName));
     
     const subscription = supabase
-      .channel('schema-db-changes-prompts')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { 
@@ -86,7 +116,14 @@ export function usePrompts() {
             try {
               const { data, error } = await supabase
                 .from('prompts')
-                .select('*')
+                .select(`
+                  *,
+                  prompt_categories (
+                    id,
+                    name,
+                    created_at
+                  )
+                `)
                 .order('created_at', { ascending: false });
               
               if (error) {
@@ -95,7 +132,27 @@ export function usePrompts() {
               }
               
               console.log(`Updated prompts after change: ${data?.length || 0} prompts`);
-              setPrompts(data as Prompt[]);
+              
+              // Format the prompts to match the Prompt type
+              const formattedPrompts = data?.map(prompt => {
+                // Handle null prompt_categories
+                if (!prompt.prompt_categories) {
+                  return prompt as unknown as Prompt;
+                }
+                
+                // Extract prompt_categories to handle it separately
+                const { prompt_categories, ...restPrompt } = prompt;
+                
+                // Return properly formatted Prompt object
+                return {
+                  ...restPrompt,
+                  prompt_categories: {
+                    ...prompt_categories
+                  }
+                } as Prompt;
+              }) || [];
+              
+              setPrompts(formattedPrompts);
             } catch (err) {
               console.error('Error in subscription callback:', err);
             }
@@ -118,8 +175,11 @@ export function usePrompts() {
   useEffect(() => {
     console.log("Setting up real-time subscription for categories in library");
     
+    // Create a unique channel name to avoid conflicts
+    const channelName = 'categories-library-changes';
+    
     const subscription = supabase
-      .channel('schema-db-changes-categories')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { 

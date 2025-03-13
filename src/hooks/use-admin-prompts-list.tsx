@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Prompt } from "@/types/prompts";
+import { Prompt, PromptCategory } from "@/types/prompts";
 import { useToast } from "@/hooks/use-toast";
 
 export function useAdminPromptsList() {
@@ -35,7 +35,24 @@ export function useAdminPromptsList() {
         }
         
         console.log(`Successfully fetched ${data?.length || 0} prompts`);
-        setPrompts(data as Prompt[]);
+        
+        // Fix: Type cast with mapping to ensure correct types
+        const formattedPrompts = data?.map(prompt => {
+          // Extract prompt_categories to handle it separately
+          const { prompt_categories, ...restPrompt } = prompt;
+          
+          // Return properly formatted Prompt object
+          return {
+            ...restPrompt,
+            // Add created_at to match PromptCategory interface when needed
+            prompt_categories: prompt_categories ? {
+              ...prompt_categories,
+              created_at: prompt_categories.created_at || new Date().toISOString()
+            } : undefined
+          } as Prompt;
+        }) || [];
+        
+        setPrompts(formattedPrompts);
       } catch (error: any) {
         console.error('Error fetching prompts:', error);
         setError(error as Error);
@@ -56,11 +73,14 @@ export function useAdminPromptsList() {
   useEffect(() => {
     console.log("Setting up real-time subscription for prompts");
     
+    // Create a unique channel name to avoid conflicts
+    const channelName = 'admin-prompts-list-changes';
+    
     // Clean up any existing channels with the same name to avoid duplicates
-    supabase.removeChannel(supabase.channel('schema-db-changes'));
+    supabase.removeChannel(supabase.channel(channelName));
     
     const promptsSubscription = supabase
-      .channel('schema-db-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { 
@@ -90,7 +110,20 @@ export function useAdminPromptsList() {
               }
               
               console.log(`Updated prompts after change: ${data?.length || 0} prompts`);
-              setPrompts(data as Prompt[]);
+              
+              // Fix: Similar mapping to ensure correct types
+              const formattedPrompts = data?.map(prompt => {
+                const { prompt_categories, ...restPrompt } = prompt;
+                return {
+                  ...restPrompt,
+                  prompt_categories: prompt_categories ? {
+                    ...prompt_categories,
+                    created_at: prompt_categories.created_at || new Date().toISOString()
+                  } : undefined
+                } as Prompt;
+              }) || [];
+              
+              setPrompts(formattedPrompts);
             } catch (err) {
               console.error('Error in subscription callback:', err);
             }
