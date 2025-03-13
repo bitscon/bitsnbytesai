@@ -41,13 +41,13 @@ export function useAdminPromptsList() {
           const { prompt_categories, ...restPrompt } = prompt;
           
           // Create a proper PromptCategory object with all required fields
-          const formattedCategory: PromptCategory | undefined = prompt_categories 
+          const formattedCategory: PromptCategory | null = prompt_categories 
             ? {
                 id: prompt_categories.id,
                 name: prompt_categories.name,
                 created_at: new Date().toISOString() // Add the missing created_at field
               } 
-            : undefined;
+            : null;
           
           return {
             ...restPrompt,
@@ -119,13 +119,13 @@ export function useAdminPromptsList() {
                 const { prompt_categories, ...restPrompt } = prompt;
                 
                 // Create a proper PromptCategory object with all required fields
-                const formattedCategory: PromptCategory | undefined = prompt_categories 
+                const formattedCategory: PromptCategory | null = prompt_categories 
                   ? {
                       id: prompt_categories.id,
                       name: prompt_categories.name,
                       created_at: new Date().toISOString() // Add the missing created_at field
                     } 
-                  : undefined;
+                  : null;
                 
                 return {
                   ...restPrompt,
