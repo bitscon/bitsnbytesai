@@ -1,9 +1,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Prompt, PromptCategory, DifficultyLevel } from '@/types/prompts';
+import { Prompt, PromptCategory } from '@/types/prompts';
 import { useToast } from '@/hooks/use-toast';
-import { useDebounce } from '@/hooks/use-debounce';
 
 export function usePrompts() {
   const [categories, setCategories] = useState<PromptCategory[]>([]);
@@ -48,12 +47,12 @@ export function usePrompts() {
         console.log(`Successfully fetched ${promptsData?.length || 0} prompts for library`);
         setPrompts(promptsData as Prompt[]);
         
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching prompts and categories:', error);
         setError(error as Error);
         toast({
           title: 'Failed to load content',
-          description: error.message || 'Network error or database connection issue',
+          description: error?.message || 'Network error or database connection issue',
           variant: 'destructive',
         });
       } finally {
@@ -67,8 +66,12 @@ export function usePrompts() {
   // Set up real-time subscription for prompts
   useEffect(() => {
     console.log("Setting up real-time subscription for prompts in library");
+    
+    // Clean up any existing channels with the same name to avoid duplicates
+    supabase.removeChannel(supabase.channel('schema-db-changes'));
+    
     const subscription = supabase
-      .channel('schema-db-changes')
+      .channel('schema-db-changes-prompts')
       .on(
         'postgres_changes',
         { 
@@ -114,6 +117,7 @@ export function usePrompts() {
   // Set up real-time subscription for categories
   useEffect(() => {
     console.log("Setting up real-time subscription for categories in library");
+    
     const subscription = supabase
       .channel('schema-db-changes-categories')
       .on(

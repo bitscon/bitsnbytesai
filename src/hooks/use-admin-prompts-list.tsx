@@ -35,13 +35,13 @@ export function useAdminPromptsList() {
         }
         
         console.log(`Successfully fetched ${data?.length || 0} prompts`);
-        setPrompts(data as any[]);
-      } catch (error) {
+        setPrompts(data as Prompt[]);
+      } catch (error: any) {
         console.error('Error fetching prompts:', error);
         setError(error as Error);
         toast({
           title: 'Failed to load prompts',
-          description: error.message || 'An unknown error occurred',
+          description: error?.message || 'An unknown error occurred',
           variant: 'destructive',
         });
       } finally {
@@ -55,6 +55,10 @@ export function useAdminPromptsList() {
   // Set up real-time subscription
   useEffect(() => {
     console.log("Setting up real-time subscription for prompts");
+    
+    // Clean up any existing channels with the same name to avoid duplicates
+    supabase.removeChannel(supabase.channel('schema-db-changes'));
+    
     const promptsSubscription = supabase
       .channel('schema-db-changes')
       .on(
@@ -86,7 +90,7 @@ export function useAdminPromptsList() {
               }
               
               console.log(`Updated prompts after change: ${data?.length || 0} prompts`);
-              setPrompts(data as any[]);
+              setPrompts(data as Prompt[]);
             } catch (err) {
               console.error('Error in subscription callback:', err);
             }

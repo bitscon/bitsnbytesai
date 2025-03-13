@@ -26,7 +26,7 @@ export function PromptList({
 }: PromptListProps) {
   return (
     <>
-      {prompts.length > 0 ? (
+      {prompts && prompts.length > 0 ? (
         <div className="divide-y">
           {prompts.map((prompt: any) => (
             <div key={prompt.id} className="py-4">

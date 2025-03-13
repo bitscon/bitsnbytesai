@@ -30,12 +30,12 @@ export function useAdminPromptCategories() {
         
         console.log(`Successfully fetched ${data?.length || 0} categories`);
         setCategories(data as PromptCategory[]);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching categories:', error);
         setError(error as Error);
         toast({
           title: 'Failed to load categories',
-          description: error.message || 'An unknown error occurred',
+          description: error?.message || 'An unknown error occurred',
           variant: 'destructive',
         });
       } finally {
@@ -49,8 +49,10 @@ export function useAdminPromptCategories() {
   // Set up real-time subscription
   useEffect(() => {
     console.log("Setting up real-time subscription for prompt_categories");
+    
+    // Use a unique channel name to avoid conflicts
     const categoriesSubscription = supabase
-      .channel('schema-db-changes')
+      .channel('admin-categories-channel')
       .on(
         'postgres_changes',
         { 
