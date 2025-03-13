@@ -7,6 +7,7 @@ import { appLogger } from './utils/logging';
 
 // Log unhandled errors at the global level
 window.addEventListener('error', (event) => {
+  console.error('Uncaught global error:', event.error);
   appLogger.error(
     'Uncaught global error',
     {
@@ -23,6 +24,7 @@ window.addEventListener('error', (event) => {
 
 // Log unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
   appLogger.error(
     'Unhandled promise rejection',
     {
@@ -40,8 +42,29 @@ appLogger.info('Application starting', {
   userAgent: navigator.userAgent
 });
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+try {
+  const rootElement = document.getElementById('root');
+  if (!rootElement) {
+    throw new Error('Root element not found');
+  }
+  
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+} catch (error) {
+  console.error('Failed to render application:', error);
+  appLogger.error('Critical rendering failure', { error: String(error) }, error instanceof Error ? error : new Error(String(error)));
+  
+  // Fallback rendering in case of error
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    rootElement.innerHTML = `
+      <div style="padding: 20px; text-align: center;">
+        <h1>Something went wrong</h1>
+        <p>We're sorry, but the application failed to load. Please try refreshing the page.</p>
+      </div>
+    `;
+  }
+}

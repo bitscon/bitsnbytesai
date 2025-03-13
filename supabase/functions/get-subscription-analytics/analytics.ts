@@ -14,7 +14,7 @@ export async function fetchSubscriptionData(startDateStr: string, endDateStr: st
     const tierTimer = logger.startTimer();
     logger.info('Fetching tier distribution');
     
-    // Using aggregation query without groupBy which was causing issues
+    // Using simpler query approach without groupBy to avoid SQL parsing issues
     const { data: tierDistribution, error: tierError } = await supabaseAdmin
       .from('user_subscriptions')
       .select('tier, id')
