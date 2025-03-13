@@ -36,19 +36,22 @@ export function useAdminPromptsList() {
         
         console.log(`Successfully fetched ${data?.length || 0} prompts`);
         
-        // Fix: Type cast with mapping to ensure correct types
+        // Map data to Prompt type with proper prompt_categories handling
         const formattedPrompts = data?.map(prompt => {
-          // Extract prompt_categories to handle it separately
           const { prompt_categories, ...restPrompt } = prompt;
           
-          // Return properly formatted Prompt object
+          // Create a proper PromptCategory object with all required fields
+          const formattedCategory: PromptCategory | undefined = prompt_categories 
+            ? {
+                id: prompt_categories.id,
+                name: prompt_categories.name,
+                created_at: new Date().toISOString() // Add the missing created_at field
+              } 
+            : undefined;
+          
           return {
             ...restPrompt,
-            // Add created_at to match PromptCategory interface when needed
-            prompt_categories: prompt_categories ? {
-              ...prompt_categories,
-              created_at: prompt_categories.created_at || new Date().toISOString()
-            } : undefined
+            prompt_categories: formattedCategory
           } as Prompt;
         }) || [];
         
@@ -74,7 +77,7 @@ export function useAdminPromptsList() {
     console.log("Setting up real-time subscription for prompts");
     
     // Create a unique channel name to avoid conflicts
-    const channelName = 'admin-prompts-list-changes';
+    const channelName = `admin-prompts-list-changes-${Date.now()}`;
     
     // Clean up any existing channels with the same name to avoid duplicates
     supabase.removeChannel(supabase.channel(channelName));
@@ -111,15 +114,22 @@ export function useAdminPromptsList() {
               
               console.log(`Updated prompts after change: ${data?.length || 0} prompts`);
               
-              // Fix: Similar mapping to ensure correct types
+              // Map data to Prompt type with proper prompt_categories handling
               const formattedPrompts = data?.map(prompt => {
                 const { prompt_categories, ...restPrompt } = prompt;
+                
+                // Create a proper PromptCategory object with all required fields
+                const formattedCategory: PromptCategory | undefined = prompt_categories 
+                  ? {
+                      id: prompt_categories.id,
+                      name: prompt_categories.name,
+                      created_at: new Date().toISOString() // Add the missing created_at field
+                    } 
+                  : undefined;
+                
                 return {
                   ...restPrompt,
-                  prompt_categories: prompt_categories ? {
-                    ...prompt_categories,
-                    created_at: prompt_categories.created_at || new Date().toISOString()
-                  } : undefined
+                  prompt_categories: formattedCategory
                 } as Prompt;
               }) || [];
               
