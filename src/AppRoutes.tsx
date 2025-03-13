@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
@@ -35,39 +35,37 @@ const queryClient = new QueryClient({
 export default function AppRoutes() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AppThemeWrapper>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<SignUp />} />
-            
-            {/* User routes */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            
-            {/* Subscription routes */}
-            <Route path="/subscription" element={<Subscription />} />
-            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-            
-            {/* Admin routes */}
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/settings" element={<AdminApiSettings />} />
-            <Route path="/admin/prompts" element={<AdminPrompts />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/theme" element={<AdminThemeSettings />} />
-            <Route path="/admin/subscription-plans" element={<AdminSubscriptionPlans />} />
-            <Route path="/admin/subscription-analytics" element={<AdminSubscriptionAnalytics />} />
-            
-            {/* Fallback routes */}
-            <Route path="/404" element={<NotFoundPage />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
-          </Routes>
+      <AppThemeWrapper>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<SignUp />} />
           
-          <Toaster />
-          <SonnerToaster position="top-right" />
-        </AppThemeWrapper>
-      </Router>
+          {/* User routes */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Subscription routes */}
+          <Route path="/subscription" element={<Subscription />} />
+          <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+          
+          {/* Admin routes */}
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/settings" element={<AdminApiSettings />} />
+          <Route path="/admin/prompts" element={<AdminPrompts />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/theme" element={<AdminThemeSettings />} />
+          <Route path="/admin/subscription-plans" element={<AdminSubscriptionPlans />} />
+          <Route path="/admin/subscription-analytics" element={<AdminSubscriptionAnalytics />} />
+          
+          {/* Fallback routes */}
+          <Route path="/404" element={<NotFoundPage />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+        
+        <Toaster />
+        <SonnerToaster position="top-right" />
+      </AppThemeWrapper>
     </QueryClientProvider>
   );
 }

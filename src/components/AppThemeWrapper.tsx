@@ -10,7 +10,7 @@ export default function AppThemeWrapper({ children }: AppThemeWrapperProps) {
   const { themeStyle } = useTheme();
   
   return (
-    <div className="app-root" style={themeStyle}>
+    <div className="app-root min-h-screen bg-background text-foreground" style={themeStyle}>
       {children}
     </div>
   );
