@@ -13,6 +13,7 @@ export function usePrompts() {
 
   // Fetch all prompts and categories at once
   useEffect(() => {
+    let isMounted = true;
     const fetchPromptsAndCategories = async () => {
       try {
         setIsLoading(true);
@@ -29,6 +30,8 @@ export function usePrompts() {
           console.error('Supabase error fetching categories:', categoriesError);
           throw categoriesError;
         }
+        
+        if (!isMounted) return;
         
         console.log(`Successfully fetched ${categoriesData?.length || 0} categories for library`);
         setCategories(categoriesData as PromptCategory[]);
@@ -50,6 +53,8 @@ export function usePrompts() {
           console.error('Supabase error fetching prompts:', promptsError);
           throw promptsError;
         }
+        
+        if (!isMounted) return;
         
         console.log(`Successfully fetched ${promptsData?.length || 0} prompts for library`);
         
@@ -76,18 +81,40 @@ export function usePrompts() {
         
       } catch (error: any) {
         console.error('Error fetching prompts and categories:', error);
-        setError(error as Error);
-        toast({
-          title: 'Failed to load content',
-          description: error?.message || 'Network error or database connection issue',
-          variant: 'destructive',
-        });
+        if (isMounted) {
+          setError(error as Error);
+          toast({
+            title: 'Failed to load content',
+            description: error?.message || 'Network error or database connection issue',
+            variant: 'destructive',
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchPromptsAndCategories();
+    
+    // Add a safety timeout to ensure loading state doesn't get stuck
+    const timeoutId = setTimeout(() => {
+      if (isMounted && isLoading) {
+        setIsLoading(false);
+        console.warn('Fetch operation timed out - forcing loading state to complete');
+        toast({
+          title: 'Loading timed out',
+          description: 'Please refresh the page if content is missing',
+          variant: 'destructive',
+        });
+      }
+    }, 10000); // 10 second timeout
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [toast]);
 
   // Set up real-time subscription for prompts
