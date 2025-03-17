@@ -5,8 +5,8 @@ import { useErrorHandling } from './use-error-handling';
 import { subscribeToChanges, unsubscribeFromChanges } from '@/utils/supabase-realtime';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
-// Define available tables as a union type
-type SupabaseTables = 
+// Define available tables as a union type for type safety
+export type SupabaseTables = 
   | 'prompt_categories'
   | 'admin_users'
   | 'api_settings'

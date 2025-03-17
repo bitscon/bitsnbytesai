@@ -1,15 +1,14 @@
 
 import React from 'react';
 import { Calendar, RefreshCw } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface SubscriptionAnalyticsHeaderProps {
-  dateRange: DateRange | undefined;
-  onDateRangeChange: (range: DateRange | undefined) => void;
+  dateRange: { from?: Date; to?: Date } | undefined;
+  onDateRangeChange: (range: { from?: Date; to?: Date } | undefined) => void;
   onRefresh: () => void;
   isLoading: boolean;
 }
@@ -53,7 +52,7 @@ export default function SubscriptionAnalyticsHeader({
               mode="range"
               defaultMonth={dateRange?.from}
               selected={dateRange}
-              onSelect={onDateRangeChange}
+              onRangeSelect={onDateRangeChange}
               numberOfMonths={2}
             />
           </PopoverContent>

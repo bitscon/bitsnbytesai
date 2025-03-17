@@ -1,10 +1,11 @@
 
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseTables } from '@/hooks/use-supabase-query';
 
 // Type for subscription options
 export interface SubscriptionOptions {
-  table: string;
+  table: SupabaseTables;
   schema?: string;
   event?: 'INSERT' | 'UPDATE' | 'DELETE' | '*';
   filter?: string;
@@ -42,24 +43,26 @@ export const subscribeToChanges = (
   
   console.log(`Setting up real-time subscription for ${table}`);
   
-  // Create channel first, then add listeners
+  // Create a channel with the postgres_changes configuration
   const channel = supabase.channel(channelName);
   
-  // Now correctly add the postgres_changes event listener
-  const subscription = channel.on(
+  // Configure the channel to listen for postgres changes
+  const configuredChannel = channel.on(
     'postgres_changes',
-    { 
-      event, 
-      schema, 
-      table,
-      filter
+    {
+      event: event,
+      schema: schema,
+      table: table,
+      filter: filter || undefined
     },
     (payload) => {
       console.log(`Received change event for ${table}:`, payload);
       callback(payload);
     }
-  )
-  .subscribe((status) => {
+  );
+  
+  // Subscribe to the channel
+  const subscription = configuredChannel.subscribe((status) => {
     console.log(`Subscription status for ${table}:`, status);
   });
   

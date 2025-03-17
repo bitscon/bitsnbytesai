@@ -47,7 +47,7 @@ export function ApiKeyExpiryDate({
           mode="single"
           selected={date}
           onSelect={onExpiryDateChange}
-          disabled={(date) => date < new Date()}
+          disabled={(currentDate) => currentDate < new Date()}
           initialFocus
         />
       </PopoverContent>
