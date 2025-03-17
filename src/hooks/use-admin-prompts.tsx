@@ -2,14 +2,18 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Prompt, PromptCategory, DifficultyLevel } from '@/types/prompts';
+import { useErrorHandling } from '@/hooks/use-error-handling';
 import { useToast } from '@/hooks/use-toast';
 
 export function useAdminPrompts() {
   const { toast } = useToast();
+  const { withErrorHandling } = useErrorHandling({
+    errorTitle: 'Admin Prompts Error',
+  });
   
   // Create a new category
   const createCategory = async (name: string): Promise<PromptCategory | null> => {
-    try {
+    return await withErrorHandling(async () => {
       const { data, error } = await supabase
         .from('prompt_categories')
         .insert([{ name }])
@@ -26,20 +30,12 @@ export function useAdminPrompts() {
       });
       
       return data as PromptCategory;
-    } catch (error) {
-      console.error('Error creating category:', error);
-      toast({
-        title: 'Failed to create category',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return null;
-    }
+    }, true, 'Failed to create category');
   };
   
   // Update a category
   const updateCategory = async (id: string, name: string): Promise<boolean> => {
-    try {
+    return await withErrorHandling(async () => {
       const { error } = await supabase
         .from('prompt_categories')
         .update({ name })
@@ -55,20 +51,12 @@ export function useAdminPrompts() {
       });
       
       return true;
-    } catch (error) {
-      console.error('Error updating category:', error);
-      toast({
-        title: 'Failed to update category',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    }
+    }, true, 'Failed to update category');
   };
   
   // Delete a category
   const deleteCategory = async (id: string, name: string): Promise<boolean> => {
-    try {
+    return await withErrorHandling(async () => {
       const { error } = await supabase
         .from('prompt_categories')
         .delete()
@@ -84,20 +72,12 @@ export function useAdminPrompts() {
       });
       
       return true;
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      toast({
-        title: 'Failed to delete category',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    }
+    }, true, 'Failed to delete category');
   };
   
   // Create a new prompt
   const createPrompt = async (prompt: Omit<Prompt, 'id' | 'created_at' | 'updated_at'>): Promise<Prompt | null> => {
-    try {
+    return await withErrorHandling(async () => {
       const { data, error } = await supabase
         .from('prompts')
         .insert([prompt])
@@ -114,20 +94,12 @@ export function useAdminPrompts() {
       });
       
       return data as Prompt;
-    } catch (error) {
-      console.error('Error creating prompt:', error);
-      toast({
-        title: 'Failed to create prompt',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return null;
-    }
+    }, true, 'Failed to create prompt');
   };
   
   // Update a prompt
   const updatePrompt = async (id: string, promptData: Partial<Omit<Prompt, 'id' | 'created_at' | 'updated_at'>>): Promise<boolean> => {
-    try {
+    return await withErrorHandling(async () => {
       const { error } = await supabase
         .from('prompts')
         .update(promptData)
@@ -143,20 +115,12 @@ export function useAdminPrompts() {
       });
       
       return true;
-    } catch (error) {
-      console.error('Error updating prompt:', error);
-      toast({
-        title: 'Failed to update prompt',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    }
+    }, true, 'Failed to update prompt');
   };
   
   // Delete a prompt
   const deletePrompt = async (id: string): Promise<boolean> => {
-    try {
+    return await withErrorHandling(async () => {
       const { error } = await supabase
         .from('prompts')
         .delete()
@@ -172,15 +136,7 @@ export function useAdminPrompts() {
       });
       
       return true;
-    } catch (error) {
-      console.error('Error deleting prompt:', error);
-      toast({
-        title: 'Failed to delete prompt',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    }
+    }, true, 'Failed to delete prompt');
   };
   
   return {

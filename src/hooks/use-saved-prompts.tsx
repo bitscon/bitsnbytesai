@@ -3,23 +3,29 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import { SavedPrompt, Prompt } from '@/types/prompts';
-import { useToast } from '@/hooks/use-toast';
+import { useErrorHandling } from '@/hooks/use-error-handling';
+import { useSupabaseQuery } from '@/hooks/use-supabase-query';
+import { subscribeToChanges, unsubscribeFromChanges } from '@/utils/supabase-realtime';
 
 export function useSavedPrompts() {
-  const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuth();
-  const { toast } = useToast();
+  const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
+  const { error, isLoading, setIsLoading, handleError, withErrorHandling } = useErrorHandling({
+    errorTitle: 'Error with saved prompts',
+  });
+
+  // Format saved prompts to ensure they match the SavedPrompt type
+  const formatSavedPrompts = (data: any[]): SavedPrompt[] => {
+    return data as SavedPrompt[];
+  };
 
   const fetchSavedPrompts = async () => {
     if (!user) {
       setSavedPrompts([]);
-      setIsLoading(false);
-      return;
+      return [];
     }
 
-    setIsLoading(true);
-    try {
+    return await withErrorHandling(async () => {
       const { data, error } = await supabase
         .from('saved_prompts')
         .select(`
@@ -32,30 +38,19 @@ export function useSavedPrompts() {
         throw error;
       }
 
-      setSavedPrompts(data as unknown as SavedPrompt[]);
-    } catch (error) {
-      console.error('Error fetching saved prompts:', error);
-      toast({
-        title: 'Error fetching saved prompts',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      const formattedData = formatSavedPrompts(data);
+      setSavedPrompts(formattedData);
+      return formattedData;
+    }, true, 'Error fetching saved prompts');
   };
 
   const savePrompt = async (prompt: Prompt) => {
     if (!user) {
-      toast({
-        title: 'Authentication required',
-        description: 'Please sign in to save prompts',
-        variant: 'destructive',
-      });
+      handleError(new Error('Authentication required'), 'Authentication required', 'Please sign in to save prompts');
       return null;
     }
 
-    try {
+    return await withErrorHandling(async () => {
       const { data, error } = await supabase
         .from('saved_prompts')
         .insert({
@@ -69,29 +64,18 @@ export function useSavedPrompts() {
         throw error;
       }
 
-      toast({
-        title: 'Prompt saved',
-        description: 'The prompt has been added to your favorites',
-      });
-
       // Update local state
-      setSavedPrompts([...savedPrompts, { ...data, prompt } as unknown as SavedPrompt]);
+      const newSavedPrompt = { ...data, prompt } as SavedPrompt;
+      setSavedPrompts([...savedPrompts, newSavedPrompt]);
+      
       return data;
-    } catch (error) {
-      console.error('Error saving prompt:', error);
-      toast({
-        title: 'Error saving prompt',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return null;
-    }
+    }, true, 'Prompt saved', 'The prompt has been added to your favorites');
   };
 
   const unsavePrompt = async (promptId: string) => {
     if (!user) return false;
 
-    try {
+    return await withErrorHandling(async () => {
       const savedPrompt = savedPrompts.find(sp => sp.prompt_id === promptId);
       
       if (!savedPrompt) {
@@ -108,23 +92,10 @@ export function useSavedPrompts() {
         throw error;
       }
 
-      toast({
-        title: 'Prompt removed',
-        description: 'The prompt has been removed from your favorites',
-      });
-
       // Update local state
       setSavedPrompts(savedPrompts.filter(sp => sp.prompt_id !== promptId));
       return true;
-    } catch (error) {
-      console.error('Error removing saved prompt:', error);
-      toast({
-        title: 'Error removing prompt',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return false;
-    }
+    }, true, 'Prompt removed', 'The prompt has been removed from your favorites');
   };
 
   const isPromptSaved = (promptId: string) => {
@@ -140,30 +111,27 @@ export function useSavedPrompts() {
   useEffect(() => {
     if (!user) return;
 
-    const subscription = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'saved_prompts',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchSavedPrompts();
-        }
-      )
-      .subscribe();
+    const subscription = subscribeToChanges(
+      { 
+        table: 'saved_prompts',
+        filter: `user_id=eq.${user.id}`
+      },
+      () => {
+        fetchSavedPrompts();
+      }
+    );
 
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscription) {
+        unsubscribeFromChanges(subscription);
+      }
     };
   }, [user]);
 
   return {
     savedPrompts,
     isLoading,
+    error,
     savePrompt,
     unsavePrompt,
     isPromptSaved,
