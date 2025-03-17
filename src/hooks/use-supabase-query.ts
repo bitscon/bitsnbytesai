@@ -5,8 +5,26 @@ import { useErrorHandling } from './use-error-handling';
 import { subscribeToChanges, unsubscribeFromChanges } from '@/utils/supabase-realtime';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
+// Define available tables as a union type
+type SupabaseTables = 
+  | 'prompt_categories'
+  | 'admin_users'
+  | 'api_settings'
+  | 'payment_failures'
+  | 'profiles'
+  | 'prompts'
+  | 'saved_prompts'
+  | 'stripe_events'
+  | 'subscription_events'
+  | 'subscription_plans'
+  | 'theme_settings'
+  | 'user_prompt_usage'
+  | 'user_purchases'
+  | 'user_subscriptions'
+  | 'active_subscriptions';
+
 interface FetchOptions<T> {
-  table: string;
+  table: SupabaseTables; // Use the union type instead of string
   select?: string;
   order?: { column: string; ascending?: boolean };
   filter?: { column: string; value: any; operator?: string };
