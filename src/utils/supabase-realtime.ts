@@ -43,11 +43,11 @@ export const subscribeToChanges = (
   
   console.log(`Setting up real-time subscription for ${table}`);
   
-  // Create a channel with the postgres_changes configuration
+  // Create a channel for the subscription
   const channel = supabase.channel(channelName);
   
-  // Configure the channel to listen for postgres changes
-  const configuredChannel = channel.on(
+  // Configure the channel with postgres_changes
+  channel.on(
     'postgres_changes',
     {
       event: event,
@@ -62,7 +62,7 @@ export const subscribeToChanges = (
   );
   
   // Subscribe to the channel
-  const subscription = configuredChannel.subscribe((status) => {
+  const subscription = channel.subscribe((status) => {
     console.log(`Subscription status for ${table}:`, status);
   });
   

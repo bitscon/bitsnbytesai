@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
-  getDaysInMonth, 
   getLocalTimeZone, 
   today,
   CalendarDate,
@@ -210,9 +209,8 @@ function Calendar({
   };
   
   const getDaysArray = (year: number, month: number) => {
-    const calendarDate = new CalendarDate(year, month + 1, 1);
-    const daysInMonth = getDaysInMonth(calendarDate);
     const firstDay = new Date(year, month, 1).getDay(); // 0 for Sunday, 1 for Monday, etc.
+    const daysInMonth = new Date(year, month + 1, 0).getDate(); // Last day of month
     
     const days: (Date | null)[] = [];
     
