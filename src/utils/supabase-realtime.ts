@@ -43,32 +43,31 @@ export const subscribeToChanges = (
   
   console.log(`Setting up real-time subscription for ${table}`);
   
-  // Create a channel for the subscription
+  // Create a new channel
   const channel = supabase.channel(channelName);
   
-  // Configure the channel with postgres_changes
-  channel.on(
-    'postgres_changes',
-    {
-      event: event,
-      schema: schema,
-      table: table,
-      filter: filter || undefined
-    },
-    (payload) => {
-      console.log(`Received change event for ${table}:`, payload);
-      callback(payload);
-    }
-  );
+  // The correct way to set up postgres changes listener
+  channel
+    .on(
+      'postgres_changes',
+      {
+        event: event,
+        schema: schema,
+        table: table,
+        filter: filter || undefined
+      },
+      (payload) => {
+        console.log(`Received change event for ${table}:`, payload);
+        callback(payload);
+      }
+    )
+    .subscribe((status) => {
+      console.log(`Subscription status for ${table}:`, status);
+    });
   
-  // Subscribe to the channel
-  const subscription = channel.subscribe((status) => {
-    console.log(`Subscription status for ${table}:`, status);
-  });
+  activeSubscriptions.set(channelName, channel);
   
-  activeSubscriptions.set(channelName, subscription);
-  
-  return subscription;
+  return channel;
 };
 
 /**
