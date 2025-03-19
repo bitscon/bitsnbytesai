@@ -1,0 +1,2 @@
+/* This file ensures all routes redirect to index.html for single-page applications */
+/* /index.html 200
