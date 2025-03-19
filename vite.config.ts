@@ -6,7 +6,7 @@ import path from 'path'
 export default defineConfig({
   // Base path for GitHub Pages deployment - repository name
   base: '/bitsnbytesai/',
-  plugins: [react()],
+  plugins: [react() ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
