@@ -16,8 +16,13 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
       return false;
     }
     
-    // Use a direct RPC call to check admin status
-    const { data, error } = await supabase.rpc('is_admin_user');
+    // Use a direct query instead of RPC call to check admin status
+    // This avoids the infinite recursion issue
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
     
     if (error) {
       console.error("Error checking admin status:", error);

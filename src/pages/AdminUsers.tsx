@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,14 +71,14 @@ export default function AdminUsers() {
         throw new Error("Authentication session expired. Please log in again.");
       }
       
-      // Fetch admin users
+      // Fetch admin users directly without using functions
       const { data: adminData, error: adminError } = await supabase
         .from("admin_users")
         .select("id, created_at");
 
       if (adminError) throw new Error(adminError.message);
 
-      // For each admin ID, get the user's email
+      // For each admin ID, get the user's email from profiles table
       const adminUsersWithDetails = await Promise.all(
         (adminData || []).map(async (admin) => {
           const { data: profileData } = await supabase
@@ -96,7 +97,7 @@ export default function AdminUsers() {
 
       setAdminUsers(adminUsersWithDetails);
       
-      // Fetch regular users (users not in admin_users)
+      // Fetch regular users (all profiles)
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, email, full_name, created_at");
@@ -112,7 +113,7 @@ export default function AdminUsers() {
       setRegularUsers(regularUsersData);
     } catch (error) {
       console.error("Error fetching users:", error);
-      setError("Failed to load users. Please try again.");
+      setError(error instanceof Error ? error.message : "Failed to load users. Please try again.");
       toast({
         title: "Error",
         description: "Failed to load users.",
