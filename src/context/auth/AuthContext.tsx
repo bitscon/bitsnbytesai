@@ -1,4 +1,5 @@
 
-import { AuthProvider, useAuth } from './auth';
+import { AuthProvider } from './AuthProvider';
+import { useAuth } from './useAuth';
 
 export { AuthProvider, useAuth };
