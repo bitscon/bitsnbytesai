@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +18,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/auth";
 
 interface AdminUser {
   id: string;
@@ -34,6 +34,7 @@ interface RegularUser {
 }
 
 export default function AdminUsers() {
+  const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [regularUsers, setRegularUsers] = useState<RegularUser[]>([]);
@@ -52,12 +53,22 @@ export default function AdminUsers() {
   const [selectedUserId, setSelectedUserId] = useState("");
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (currentUser) {
+      fetchUsers();
+    }
+  }, [currentUser]);
 
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
+      setError("");
+      
+      // Ensure we have a current session with up-to-date token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error("Authentication session expired. Please log in again.");
+      }
       
       // Fetch admin users
       const { data: adminData, error: adminError } = await supabase
@@ -259,6 +270,20 @@ export default function AdminUsers() {
         </Alert>
       )}
 
+      <Button 
+        variant="outline" 
+        onClick={fetchUsers} 
+        className="mb-4"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <></>
+        )}
+        Refresh Users
+      </Button>
+
       <Tabs defaultValue="users" className="mb-6">
         <TabsList>
           <TabsTrigger value="users">Users</TabsTrigger>
@@ -303,7 +328,10 @@ export default function AdminUsers() {
                         variant="outline" 
                         size="sm"
                         className="flex items-center gap-1"
-                        onClick={() => promoteToAdmin(user.id, user.email)}
+                        onClick={() => {
+                          setSelectedUserId(user.id);
+                          promoteToAdmin(user.id, user.email);
+                        }}
                         disabled={isPromoting && selectedUserId === user.id}
                       >
                         {isPromoting && selectedUserId === user.id ? (

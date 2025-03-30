@@ -8,7 +8,15 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
   try {
     console.log("Checking admin status for user ID:", user.id);
     
-    // Use a direct SQL query to bypass RLS policies
+    // Get the current session to ensure we have a fresh auth token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error("Error getting current session:", sessionError);
+      return false;
+    }
+    
+    // Use a direct RPC call to check admin status
     const { data, error } = await supabase.rpc('is_admin_user');
     
     if (error) {
