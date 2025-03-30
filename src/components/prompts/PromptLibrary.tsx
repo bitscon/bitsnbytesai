@@ -23,59 +23,44 @@ export function PromptLibrary() {
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [isChangingCategory, setIsChangingCategory] = useState(false);
+  const debouncedCategory = useDebounce(selectedCategory, 300);
   const { user } = useAuth();
-  
-  // Get saved prompt IDs for filtering - moved this up before its use
-  const savedPromptIds = savedPrompts.map(sp => sp.prompt_id);
 
-  // Filter prompts based on selected category, difficulty, and search term
-  const filteredPrompts = React.useMemo(() => {
-    // First, filter prompts based on active tab
-    const displayPrompts = activeTab === 'all' 
-      ? prompts 
-      : prompts.filter(prompt => savedPromptIds.includes(prompt.id));
-    
-    // Then apply other filters
-    return displayPrompts
-      .filter(prompt => !selectedCategory || prompt.category_id === selectedCategory)
-      .filter(prompt => !selectedDifficulty || prompt.difficulty_level === selectedDifficulty)
-      .filter(prompt => {
-        if (!debouncedSearchTerm) return true;
-        const searchLower = debouncedSearchTerm.toLowerCase();
-        return (
-          prompt.prompt_text.toLowerCase().includes(searchLower) ||
-          prompt.why_it_works.toLowerCase().includes(searchLower)
-        );
-      });
-  }, [
-    activeTab, 
-    prompts, 
-    savedPromptIds, 
-    selectedCategory, 
-    selectedDifficulty, 
-    debouncedSearchTerm
-  ]);
-
-  // Monitor category changes for animation
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (debouncedCategory !== selectedCategory) {
+      setIsChangingCategory(true);
+    } else {
       setIsChangingCategory(false);
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [selectedCategory]);
+    }
+  }, [debouncedCategory, selectedCategory]);
+
+  // Get saved prompt IDs for filtering
+  const savedPromptIds = savedPrompts.map(sp => sp.prompt_id);
   
+  // Filter prompts based on selected tab
+  const displayPrompts = activeTab === 'all' 
+    ? prompts 
+    : prompts.filter(prompt => savedPromptIds.includes(prompt.id));
+
+  const filteredPrompts = displayPrompts
+    .filter(prompt => !selectedCategory || prompt.category_id === selectedCategory)
+    .filter(prompt => !selectedDifficulty || prompt.difficulty_level === selectedDifficulty)
+    .filter(prompt => {
+      if (!debouncedSearchTerm) return true;
+      const searchLower = debouncedSearchTerm.toLowerCase();
+      return (
+        prompt.prompt_text.toLowerCase().includes(searchLower) ||
+        prompt.why_it_works.toLowerCase().includes(searchLower)
+      );
+    });
+
   const handleDifficultyChange = (difficulty: DifficultyLevel | null) => {
     setSelectedDifficulty(difficulty);
   };
 
   const handleCategoryChange = (categoryId: string | null) => {
-    if (categoryId !== selectedCategory) {
-      setIsChangingCategory(true);
-      setSelectedCategory(categoryId);
-    } else {
-      setSelectedCategory(null);
-    }
+    setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
+    setIsChangingCategory(true);
   };
 
   const clearFilters = () => {
@@ -92,6 +77,8 @@ export function PromptLibrary() {
       </div>
     );
   }
+
+  const hasActiveFilters = selectedCategory || selectedDifficulty || searchTerm;
 
   return (
     <div className="space-y-6">

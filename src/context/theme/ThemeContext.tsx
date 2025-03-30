@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,7 +19,6 @@ interface ThemeContextType {
   loadingTheme: boolean;
 }
 
-// Create the context with a default undefined value
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
@@ -56,21 +54,17 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         .select("*")
         .eq("is_dark", dark)
         .eq("is_active", true)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error fetching theme:', error);
         setActiveTheme(null);
-      } else if (data) {
+      } else {
         console.log('Active theme fetched:', data);
         setActiveTheme(data);
-      } else {
-        console.log('No active theme found, using default');
-        setActiveTheme(null);
       }
     } catch (error) {
       console.error('Error:', error);
-      setActiveTheme(null);
     } finally {
       setLoadingTheme(false);
     }
@@ -89,39 +83,21 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.body.classList.remove('dark');
     }
     
-    // Create a style element for theme variables if it doesn't exist
-    let styleElement = document.getElementById('global-theme-style') as HTMLStyleElement;
-    if (!styleElement) {
-      styleElement = document.createElement('style');
-      styleElement.id = 'global-theme-style';
-      document.head.appendChild(styleElement);
-    }
-    
-    // Apply theme settings as CSS variables
+    // Apply theme settings as a CSS filter on the root element
     if (activeTheme) {
       console.log('Applying theme settings to root:', activeTheme);
-      
-      styleElement.textContent = `
-        :root {
-          --theme-brightness: ${activeTheme.brightness}%;
-          --theme-contrast: ${activeTheme.contrast}%;
-          --theme-saturation: ${activeTheme.saturation}%;
-        }
-      `;
+      root.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
+      document.body.style.filter = `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`;
     } else {
-      // Default values if no theme is active
-      styleElement.textContent = `
-        :root {
-          --theme-brightness: 100%;
-          --theme-contrast: 100%;
-          --theme-saturation: 100%;
-        }
-      `;
+      root.style.filter = '';
+      document.body.style.filter = '';
     }
     
-    // Clean up direct filter application
-    root.style.filter = '';
-    document.body.style.filter = '';
+    return () => {
+      // Cleanup filter styles when component unmounts
+      root.style.filter = '';
+      document.body.style.filter = '';
+    };
   }, [isDarkMode, activeTheme]);
   
   // Fetch active theme on initial load and subscribe to changes
@@ -161,11 +137,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [isDarkMode]);
 
-  // Generate theme style for components that need to apply the filter directly
+  // Generate CSS custom properties for the active theme
   const themeStyle = React.useMemo(() => {
-    if (!activeTheme) {
-      return {};
-    }
+    if (!activeTheme) return {};
 
     return {
       filter: `brightness(${activeTheme.brightness}%) contrast(${activeTheme.contrast}%) saturate(${activeTheme.saturation}%)`,

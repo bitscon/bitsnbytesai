@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ApiSetting, GroupedSettings, ApiKeyMetadata } from '@/components/admin/api-settings/types';
-import { format } from 'date-fns';
+import { ApiSetting, GroupedSettings } from '@/components/admin/api-settings/types';
 
 export function useApiSettings() {
   const [settings, setSettings] = useState<ApiSetting[]>([]);
@@ -124,10 +123,7 @@ export function useApiSettings() {
     try {
       const { error } = await supabase.functions.invoke('admin-api-settings', {
         method: 'POST',
-        body: { 
-          key_name: key, 
-          key_value: newValue,
-        },
+        body: { key_name: key, key_value: newValue },
       });
 
       if (error) {
@@ -136,7 +132,7 @@ export function useApiSettings() {
 
       toast({
         title: 'Success',
-        description: `Setting "${formatSettingName(key)}" updated successfully.`,
+        description: `Setting "${key}" updated successfully.`,
       });
       
       // Update local state immediately
@@ -150,103 +146,6 @@ export function useApiSettings() {
       toast({
         title: 'Error',
         description: `Failed to update setting. Please try again.`,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(prev => ({ ...prev, [key]: false }));
-    }
-  };
-
-  const handleExpiryDateChange = async (key: string, date: Date | undefined) => {
-    setIsSaving(prev => ({ ...prev, [key]: true }));
-
-    try {
-      const metadata: ApiKeyMetadata = {
-        expires_at: date ? format(date, 'yyyy-MM-dd') : null
-      };
-
-      const { error } = await supabase.functions.invoke('admin-api-settings', {
-        method: 'POST',
-        body: { 
-          key_name: key, 
-          metadata
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      toast({
-        title: 'Success',
-        description: `Expiry date for "${formatSettingName(key)}" updated successfully.`,
-      });
-      
-      // Update local state immediately
-      setSettings(settings.map(setting => 
-        setting.key_name === key 
-          ? { ...setting, expires_at: date ? format(date, 'yyyy-MM-dd') : null } 
-          : setting
-      ));
-    } catch (error) {
-      console.error(`Error updating expiry date for ${key}:`, error);
-      toast({
-        title: 'Error',
-        description: `Failed to update expiry date. Please try again.`,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(prev => ({ ...prev, [key]: false }));
-    }
-  };
-
-  const handleRenewKey = async (key: string) => {
-    setIsSaving(prev => ({ ...prev, [key]: true }));
-
-    try {
-      // Default expiry to 90 days from now for renewed keys
-      const nowDate = new Date();
-      const expiryDate = new Date();
-      expiryDate.setDate(nowDate.getDate() + 90);
-      
-      const metadata: ApiKeyMetadata = {
-        expires_at: format(expiryDate, 'yyyy-MM-dd'),
-        last_renewed_at: format(nowDate, 'yyyy-MM-dd')
-      };
-
-      const { error } = await supabase.functions.invoke('admin-api-settings', {
-        method: 'POST',
-        body: { 
-          key_name: key, 
-          metadata,
-          action: 'renew'
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      toast({
-        title: 'Success',
-        description: `Key "${formatSettingName(key)}" has been renewed.`,
-      });
-      
-      // Update local state immediately
-      setSettings(settings.map(setting => 
-        setting.key_name === key 
-          ? { 
-              ...setting, 
-              expires_at: format(expiryDate, 'yyyy-MM-dd'),
-              last_renewed_at: format(nowDate, 'yyyy-MM-dd')
-            } 
-          : setting
-      ));
-    } catch (error) {
-      console.error(`Error renewing key ${key}:`, error);
-      toast({
-        title: 'Error',
-        description: `Failed to renew key. Please try again.`,
         variant: 'destructive',
       });
     } finally {
@@ -272,8 +171,6 @@ export function useApiSettings() {
     const grouped: GroupedSettings = {
       'PayPal': [],
       'Stripe': [],
-      'Email': [],
-      'API': [],
       'General': []
     };
     
@@ -282,23 +179,8 @@ export function useApiSettings() {
         grouped['PayPal'].push(setting);
       } else if (setting.key_name.startsWith('STRIPE_')) {
         grouped['Stripe'].push(setting);
-      } else if (setting.key_name.startsWith('RESEND_') || 
-                setting.key_name.includes('EMAIL') || 
-                setting.key_name.includes('MAIL')) {
-        grouped['Email'].push(setting);
-      } else if (setting.key_name.includes('API') || 
-                setting.key_name.includes('KEY') || 
-                setting.key_name.includes('SECRET')) {
-        grouped['API'].push(setting);
       } else {
         grouped['General'].push(setting);
-      }
-    });
-    
-    // Remove empty categories
-    Object.keys(grouped).forEach(key => {
-      if (grouped[key].length === 0) {
-        delete grouped[key];
       }
     });
     
@@ -317,8 +199,6 @@ export function useApiSettings() {
     handleToggleChange,
     handleInputChange,
     handleSaveSetting,
-    handleExpiryDateChange,
-    handleRenewKey,
     toggleShowSecret,
     formatSettingName
   };

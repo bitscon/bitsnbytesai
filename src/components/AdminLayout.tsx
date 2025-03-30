@@ -10,15 +10,12 @@ import {
   KeyRound,
   MessageSquare,
   Users,
-  Palette,
-  BarChart,
-  CreditCard
+  Palette
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { checkAdminStatus } from "@/context/auth/utils/adminUtils";
-// Remove the useTheme import from here if it's not being used
-// import { useTheme } from "@/context/theme/ThemeContext";
+import { useTheme } from "@/context/theme/ThemeContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading } = useAuth();
@@ -145,26 +142,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Users className="mr-2 h-4 w-4" />
                 Users
-              </Button>
-            </li>
-            <li>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start"
-                onClick={() => navigate("/admin/subscription-plans")}
-              >
-                <CreditCard className="mr-2 h-4 w-4" />
-                Subscription Plans
-              </Button>
-            </li>
-            <li>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start"
-                onClick={() => navigate("/admin/subscription-analytics")}
-              >
-                <BarChart className="mr-2 h-4 w-4" />
-                Subscription Analytics
               </Button>
             </li>
           </ul>

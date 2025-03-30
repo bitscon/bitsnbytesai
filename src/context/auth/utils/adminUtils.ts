@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
@@ -5,107 +6,29 @@ export const checkAdminStatus = async (user: User | null): Promise<boolean> => {
   if (!user) return false;
   
   try {
-    console.log("Checking admin status for user:", user.id);
+    console.log("Checking admin status for user ID:", user.id);
     
-    // Use RPC to call the security definer function
-    const { data, error } = await supabase.rpc('check_is_admin');
+    // Use a direct SQL query to bypass RLS policies
+    const { data, error } = await supabase.rpc('is_admin_user');
     
     if (error) {
       console.error("Error checking admin status:", error);
       return false;
     }
     
-    console.log("Admin check result:", data);
+    const isAdmin = !!data;
+    console.log("Admin check result:", isAdmin);
     
     // For audit purposes, log admin access attempts
-    if (data) {
+    if (isAdmin) {
       console.log("Admin access verified for user:", user.id, user.email);
-      
-      // Add additional logging for admin activities
-      await supabase.from('subscription_events').insert({
-        user_id: user.id,
-        event_type: 'admin_login',
-        metadata: {
-          email: user.email,
-          timestamp: new Date().toISOString()
-        }
-      }).then(({ error }) => {
-        if (error) console.error("Error logging admin login:", error);
-      });
     } else {
       console.log("Admin access check failed for user:", user.id, user.email);
     }
     
-    return !!data;
+    return isAdmin;
   } catch (err) {
     console.error("Admin check exception:", err);
     return false;
-  }
-};
-
-/**
- * Helper function to handle admin operations on subscriptions
- * This ensures all admin operations respect the RLS policies
- */
-export const performAdminSubscriptionOperation = async (
-  operation: 'create' | 'update' | 'delete',
-  subscriptionData: any,
-  userId?: string
-): Promise<{success: boolean, error?: string, data?: any}> => {
-  try {
-    if (operation === 'create') {
-      const { data, error } = await supabase.functions.invoke('admin-manage-subscription', {
-        body: {
-          action: 'create',
-          userId: userId || subscriptionData.user_id,
-          subscription: subscriptionData
-        }
-      });
-      
-      if (error) {
-        return { success: false, error: error.message };
-      }
-      
-      return { success: true, data };
-    }
-    
-    if (operation === 'update') {
-      const { data, error } = await supabase.functions.invoke('admin-manage-subscription', {
-        body: {
-          action: 'update',
-          userId: userId || subscriptionData.user_id,
-          subscription: subscriptionData
-        }
-      });
-      
-      if (error) {
-        return { success: false, error: error.message };
-      }
-      
-      return { success: true, data };
-    }
-    
-    if (operation === 'delete') {
-      const { data, error } = await supabase.functions.invoke('admin-manage-subscription', {
-        body: {
-          action: 'delete',
-          userId: userId || subscriptionData.user_id
-        }
-      });
-      
-      if (error) {
-        return { success: false, error: error.message };
-      }
-      
-      return { success: true };
-    }
-    
-    return { success: false, error: 'Invalid operation' };
-  } catch (err) {
-    console.error('Error in performAdminSubscriptionOperation:', err);
-    return { 
-      success: false, 
-      error: err instanceof Error ? err.message : 'Unknown error occurred'
-    };
   }
 };

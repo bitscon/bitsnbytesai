@@ -42,89 +42,27 @@ serve(async (req) => {
       )
     }
     
-    // Check for action parameter from URL query params or request body
-    const url = new URL(req.url)
-    let action = url.searchParams.get('action')
+    // Check if the user is an admin by directly querying the admin_users table
+    const { data, error } = await supabaseClient
+      .from('admin_users')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
     
-    // If action is not in query params, check in the request body
-    if (!action && req.method === 'POST') {
-      try {
-        const body = await req.json()
-        action = body.action
-      } catch (e) {
-        // If parsing fails, continue without body action
-        console.log('Could not parse request body')
-      }
+    if (error) {
+      console.error('Error checking admin status:', error)
+      return new Response(
+        JSON.stringify({ error: 'Failed to check admin status' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
     
-    console.log('Action parameter:', action)
+    const isAdmin = !!data
     
-    if (action === 'list_admins') {
-      console.log('Listing all admin users')
-      
-      // Direct SQL query to avoid RLS
-      const { data: adminUsersData, error: adminUsersError } = await supabaseClient
-        .from('admin_users')
-        .select('id, created_at')
-      
-      if (adminUsersError) {
-        console.error('Error fetching admin users:', adminUsersError)
-        return new Response(
-          JSON.stringify({ error: 'Failed to fetch admin users' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        )
-      }
-      
-      console.log('Found admin users:', adminUsersData?.length || 0)
-      
-      // Get profile details for each admin
-      const adminUsersWithDetails = await Promise.all(
-        (adminUsersData || []).map(async (admin) => {
-          const { data: profileData } = await supabaseClient
-            .from('profiles')
-            .select('email, full_name')
-            .eq('id', admin.id)
-            .single()
-          
-          return {
-            id: admin.id,
-            email: profileData?.email || 'Unknown',
-            full_name: profileData?.full_name || null,
-            created_at: admin.created_at,
-          }
-        })
-      )
-      
-      console.log('Returning admin users with details:', adminUsersWithDetails.length)
-      
-      return new Response(
-        JSON.stringify({ admin_users: adminUsersWithDetails }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      )
-    } else {
-      // Check if the user is an admin by directly querying the admin_users table
-      const { data, error } = await supabaseClient
-        .from('admin_users')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle()
-      
-      if (error) {
-        console.error('Error checking admin status:', error)
-        return new Response(
-          JSON.stringify({ error: 'Failed to check admin status' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        )
-      }
-      
-      const isAdmin = !!data
-      console.log(`Admin check for user ${user.id}: ${isAdmin}`)
-      
-      return new Response(
-        JSON.stringify({ is_admin: isAdmin }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      )
-    }
+    return new Response(
+      JSON.stringify({ is_admin: isAdmin }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    )
   } catch (error) {
     console.error('Function error:', error)
     return new Response(

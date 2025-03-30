@@ -11,8 +11,6 @@ import { ThemeModeSwitcher } from './theme/ThemeModeSwitcher';
 import { ThemeActions } from './theme/ThemeActions';
 import { useThemePresets } from '@/hooks/use-theme-presets';
 
-// This component needs to be wrapped with ThemeProvider where it's used
-
 export function ThemeCustomization() {
   const [currentMode, setCurrentMode] = useState<'light' | 'dark'>('light');
   const [isActivateDialogOpen, setIsActivateDialogOpen] = useState<boolean>(false);

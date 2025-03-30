@@ -9,27 +9,16 @@ import {
 
 interface PaymentErrorProps {
   error: string;
-  onRetry?: () => void;
 }
 
-export function PaymentError({ error, onRetry }: PaymentErrorProps) {
+export function PaymentError({ error }: PaymentErrorProps) {
   if (!error) return null;
   
   return (
-    <Alert variant="destructive" className="mb-4">
+    <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Payment Error</AlertTitle>
-      <AlertDescription className="flex flex-col">
-        <p>{error}</p>
-        {onRetry && (
-          <button 
-            onClick={onRetry}
-            className="text-left underline text-sm mt-2 font-medium"
-          >
-            Try again
-          </button>
-        )}
-      </AlertDescription>
+      <AlertTitle>Error</AlertTitle>
+      <AlertDescription>{error}</AlertDescription>
     </Alert>
   );
 }

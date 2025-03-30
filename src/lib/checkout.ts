@@ -23,7 +23,6 @@ export async function fetchStripePriceId(): Promise<string> {
     if (priceIdSetting && priceIdSetting.has_value) {
       return priceIdSetting.key_value;
     } else {
-      console.info("No STRIPE_PRICE_ID setting found, using fallback price ID");
       // Fallback to hardcoded price ID
       return "price_1OtQhgFCNu0wSsHhBRs2ZWZy";
     }
@@ -53,11 +52,6 @@ export async function initiateStripeCheckout(
 ): Promise<void> {
   try {
     console.log("Initiating Stripe checkout for email:", email);
-    
-    if (!stripePriceId) {
-      throw new Error("No price ID available. Please refresh the page and try again.");
-    }
-    
     const { data, error } = await supabase.functions.invoke("create-checkout-session", {
       body: {
         price_id: stripePriceId === "configured" ? "use_db_value" : stripePriceId,
@@ -69,12 +63,12 @@ export async function initiateStripeCheckout(
 
     if (error) {
       console.error("Error invoking create-checkout-session:", error);
-      throw new Error(error.message || "Failed to create checkout session");
+      throw new Error(error.message);
     }
 
     if (!data?.url) {
       console.error("No checkout URL returned:", data);
-      throw new Error("Payment service unavailable. Please try again later.");
+      throw new Error("Failed to create checkout session");
     }
 
     // Store the email in session storage for verification
@@ -83,27 +77,13 @@ export async function initiateStripeCheckout(
     // Redirect to Stripe Checkout
     console.log("Redirecting to Stripe checkout URL:", data.url);
     window.location.href = data.url;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating checkout session:", error);
-    let errorMessage = "There was an error starting the checkout process. Please try again.";
-    
-    // Provide more specific error messages based on common issues
-    if (error.message?.includes("network") || error.message?.includes("fetch")) {
-      errorMessage = "Network error. Please check your internet connection and try again.";
-    } else if (error.message?.includes("price") || error.message?.includes("Price")) {
-      errorMessage = "Product pricing information is unavailable. Please contact support.";
-    } else if (error.message?.includes("Invalid email")) {
-      errorMessage = "Please provide a valid email address.";
-    } else if (error.message) {
-      // Use the actual error message if available
-      errorMessage = error.message;
-    }
-    
-    setPaymentError(errorMessage);
+    setPaymentError("There was an error starting the checkout process. Please try again.");
     setIsLoading(false);
     toast({
-      title: "Checkout Error",
-      description: errorMessage,
+      title: "Checkout error",
+      description: "There was an error starting the checkout process. Please try again.",
       variant: "destructive",
     });
   }
@@ -117,11 +97,6 @@ export async function initiatePayPalCheckout(
 ): Promise<void> {
   try {
     console.log("Initiating PayPal checkout for email:", email);
-    
-    if (!price || price <= 0) {
-      throw new Error("Invalid price for PayPal checkout");
-    }
-    
     // Create a PayPal order
     const { data, error } = await supabase.functions.invoke("paypal-create-order", {
       body: {
@@ -169,24 +144,10 @@ export async function initiatePayPalCheckout(
     window.location.href = approveUrl;
   } catch (error: any) {
     console.error("Error creating PayPal order:", error);
-    let errorMessage = "There was an error starting the PayPal checkout process.";
-    
-    // Provide more specific error messages based on common issues
-    if (error.message?.includes("network") || error.message?.includes("fetch")) {
-      errorMessage = "Network error. Please check your internet connection and try again.";
-    } else if (error.message?.includes("amount") || error.message?.includes("price")) {
-      errorMessage = "There was an issue with the payment amount. Please contact support.";
-    } else if (error.message?.includes("PayPal")) {
-      errorMessage = "PayPal service is currently unavailable. Please try another payment method.";
-    } else if (error.message) {
-      // Use the actual error message if available
-      errorMessage = `${errorMessage} ${error.message}`;
-    }
-    
-    setPaymentError(errorMessage);
+    setPaymentError(`There was an error starting the PayPal checkout process: ${error.message}`);
     toast({
-      title: "PayPal Checkout Error",
-      description: errorMessage,
+      title: "Checkout error",
+      description: `Failed to connect to PayPal: ${error.message}`,
       variant: "destructive",
     });
     setIsLoading(false);

@@ -1,11 +1,14 @@
-import { BrowserRouter } from 'react-router-dom';
-import { App } from './App';
-import { createRoot } from 'react-dom/client';
-import './index.css';
 
-// Use BrowserRouter with the correct base name for GitHub Pages
-createRoot(document.getElementById('root')!).render(
-  <BrowserRouter basename="/bitsnbytesai">
-    <App />
-  </BrowserRouter>
-);
+import { createRoot } from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error('Root element not found');
+
+// Insert a global style element for dynamic theming
+const globalStyle = document.createElement('style');
+globalStyle.id = 'global-theme-style';
+document.head.appendChild(globalStyle);
+
+createRoot(rootElement).render(<App />);

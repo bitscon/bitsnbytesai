@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 
 interface PromptListProps {
-  prompts: Prompt[]; // Updated to use proper type
+  prompts: any[]; // Using any[] because of the joined prompt_categories in your data
   onAddPrompt: () => void;
   onEditPrompt: (prompt: Prompt) => void;
   onDeletePrompt: (prompt: Prompt) => void;
@@ -26,9 +26,9 @@ export function PromptList({
 }: PromptListProps) {
   return (
     <>
-      {prompts && prompts.length > 0 ? (
+      {prompts.length > 0 ? (
         <div className="divide-y">
-          {prompts.map((prompt: Prompt) => (
+          {prompts.map((prompt: any) => (
             <div key={prompt.id} className="py-4">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">

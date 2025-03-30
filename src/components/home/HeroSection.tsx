@@ -3,19 +3,11 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Shield, Star } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export function HeroSection() {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const handleButtonClick = () => {
-    if (user) {
-      navigate("/dashboard");
-    } else {
-      document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   return (
     <section className="pt-24 pb-16 md:pt-32 md:pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -35,31 +27,27 @@ export function HeroSection() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={handleButtonClick} className="bg-primary hover:bg-primary/90">
-              {user ? 'Go to Dashboard' : 'View Pricing'} <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            {user ? (
+              <Button size="lg" onClick={() => navigate("/dashboard")} className="bg-primary hover:bg-primary/90">
+                Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            ) : (
+              <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => {
+                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+              }}>
+                View Pricing <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            )}
           </div>
           
-          <div className="mt-10 pt-8 border-t border-muted">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Shield className="h-4 w-4 text-primary" />
-              <p className="text-sm font-medium">Trusted by professionals across industries</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 items-center">
-              <div className="flex items-center">
-                <Star className="h-3 w-3 text-amber-400" />
-                <Star className="h-3 w-3 text-amber-400" />
-                <Star className="h-3 w-3 text-amber-400" />
-                <Star className="h-3 w-3 text-amber-400" />
-                <Star className="h-3 w-3 text-amber-400" />
-                <span className="ml-2 text-sm font-medium">4.9/5 average rating</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium text-primary">1,000+</span> active users
-              </div>
-              <div className="text-sm">
-                <span className="font-medium text-primary">10,000+</span> prompts used
-              </div>
+          <div className="mt-10 text-sm text-muted-foreground">
+            <p>Used by professionals at companies like</p>
+            <div className="mt-2 flex flex-wrap justify-center gap-x-8 gap-y-4">
+              <span className="font-semibold">Google</span>
+              <span className="font-semibold">Microsoft</span>
+              <span className="font-semibold">Adobe</span>
+              <span className="font-semibold">Shopify</span>
+              <span className="font-semibold">Canva</span>
             </div>
           </div>
         </div>

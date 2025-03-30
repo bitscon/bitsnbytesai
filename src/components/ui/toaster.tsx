@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -8,14 +7,10 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { useEffect, useState } from "react"
 
 export function Toaster() {
-  // Since we're using sonner for actual toast rendering,
-  // we'll create a simplified implementation that doesn't rely on the toasts array
-  // This component is currently not used since we're using sonner directly
-  const [toasts, setToasts] = useState<any[]>([])
-  
+  const { toasts } = useToast()
+
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {

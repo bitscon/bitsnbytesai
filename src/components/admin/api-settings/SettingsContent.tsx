@@ -17,8 +17,6 @@ interface SettingsContentProps {
   handleSaveSetting: (key: string) => void;
   handleToggleChange: (key: string, currentValue: string) => void;
   toggleShowSecret: (key: string) => void;
-  handleExpiryDateChange?: (key: string, date: Date | undefined) => void;
-  handleRenewKey?: (key: string) => void;
   formatSettingName: (name: string) => string;
 }
 
@@ -33,8 +31,6 @@ export function SettingsContent({
   handleSaveSetting,
   handleToggleChange,
   toggleShowSecret,
-  handleExpiryDateChange,
-  handleRenewKey,
   formatSettingName
 }: SettingsContentProps) {
   return (
@@ -58,8 +54,6 @@ export function SettingsContent({
                 handleSaveSetting={handleSaveSetting}
                 handleToggleChange={handleToggleChange}
                 toggleShowSecret={toggleShowSecret}
-                handleExpiryDateChange={handleExpiryDateChange}
-                handleRenewKey={handleRenewKey}
                 formatSettingName={formatSettingName}
               />
             )
