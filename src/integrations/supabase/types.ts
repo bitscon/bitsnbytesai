@@ -51,6 +51,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_failures: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          metadata: Json | null
+          payment_intent_id: string | null
+          reason: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          reason?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          reason?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -80,16 +122,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          tier_access: Database["public"]["Enums"]["subscription_tier"]
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          tier_access?: Database["public"]["Enums"]["subscription_tier"]
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          tier_access?: Database["public"]["Enums"]["subscription_tier"]
         }
         Relationships: []
       }
@@ -104,6 +149,7 @@ export type Database = {
           image_url: string | null
           prompt_text: string
           short_description: string | null
+          tier_access: Database["public"]["Enums"]["subscription_tier"]
           title: string
           updated_at: string
           why_it_works: string
@@ -118,6 +164,7 @@ export type Database = {
           image_url?: string | null
           prompt_text: string
           short_description?: string | null
+          tier_access?: Database["public"]["Enums"]["subscription_tier"]
           title: string
           updated_at?: string
           why_it_works: string
@@ -132,6 +179,7 @@ export type Database = {
           image_url?: string | null
           prompt_text?: string
           short_description?: string | null
+          tier_access?: Database["public"]["Enums"]["subscription_tier"]
           title?: string
           updated_at?: string
           why_it_works?: string
@@ -175,6 +223,117 @@ export type Database = {
           },
         ]
       }
+      stripe_events: {
+        Row: {
+          created_at: string | null
+          data: Json
+          error: string | null
+          id: string
+          last_error: string | null
+          processed_at: string | null
+          retry_count: number | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          error?: string | null
+          id: string
+          last_error?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          error?: string | null
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
+      subscription_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_tier: string | null
+          old_tier: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_tier?: string | null
+          old_tier?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_tier?: string | null
+          old_tier?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          features: Json
+          id: string
+          is_visible: boolean
+          metadata: Json | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
+          stripe_product_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          features: Json
+          id?: string
+          is_visible?: boolean
+          metadata?: Json | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          features?: Json
+          id?: string
+          is_visible?: boolean
+          metadata?: Json | null
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          stripe_product_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       theme_settings: {
         Row: {
           brightness: number
@@ -211,6 +370,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_prompt_usage: {
+        Row: {
+          count: number
+          created_at: string
+          id: string
+          month: number
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          id?: string
+          month: number
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          id?: string
+          month?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           amount: number
@@ -244,11 +433,128 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          id: string
+          is_manually_created: boolean | null
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string
+          is_manually_created?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string
+          is_manually_created?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      active_subscriptions: {
+        Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          id: string | null
+          is_manually_created: boolean | null
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"] | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string | null
+          is_manually_created?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"] | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string | null
+          is_manually_created?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"] | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      check_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_active_theme: {
         Args: {
           mode: boolean
@@ -265,6 +571,50 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_prompt_usage_stats: {
+        Args: {
+          start_date?: string
+          end_date?: string
+        }
+        Returns: {
+          date: string
+          prompt_count: number
+        }[]
+      }
+      get_subscription_status: {
+        Args: {
+          period_end: string
+          cancel_at_period_end: boolean
+          ended_at: string
+          status: string
+        }
+        Returns: string
+      }
+      get_user_subscription_tier: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: Database["public"]["Enums"]["subscription_tier"]
+      }
+      has_remaining_prompts: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: boolean
+      }
+      has_tier_access: {
+        Args: {
+          user_uuid: string
+          required_tier: Database["public"]["Enums"]["subscription_tier"]
+        }
+        Returns: boolean
+      }
+      increment_prompt_usage: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: undefined
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -273,9 +623,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_manual_subscription: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: boolean
+      }
+      is_subscription_active: {
+        Args: {
+          subscription_record: unknown
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       difficulty_level: "Beginner" | "Intermediate" | "Advanced"
+      subscription_tier: "free" | "pro" | "premium" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
