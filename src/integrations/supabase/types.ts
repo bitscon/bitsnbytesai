@@ -571,6 +571,16 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_prompt_usage_stats: {
+        Args: {
+          start_date?: string
+          end_date?: string
+        }
+        Returns: {
+          date: string
+          prompt_count: number
+        }[]
+      }
       get_subscription_status: {
         Args: {
           period_end: string
